@@ -1,18 +1,23 @@
-# EMM — First Playable Slice
+# EMM — Native Android First Playable Slice
 
-**Status:** reference audit complete; playable implementation not started.
+**Status:** Local Warfare APK reference audit complete; EMM native implementation not started.
 
-## Scope
+## Product decision
 
-Build one polished, original first slice for EMM:
+EMM is to be built as a **native Android application without Unity**.
 
-- One fully rigged playable character.
-- One compact, rusted industrial-yard map.
-- A complete obstacle layout with reliable player collision and bot navigation.
-- Bot opponents that can patrol, detect relevant activity, choose a reachable route, move around obstacles, reposition when blocked, and resume their task.
-- A stable Android build with a simple match loop and performance settings.
+Local Warfare is an installable Android APK, but inspection of its player files identifies a Unity 2022.3.62f2 runtime and IL2CPP. That describes the implementation of the reference game; it does not require EMM to use Unity. Unity's IL2CPP compiles managed code into platform-specific native machine code packaged in the Android application.
 
-“Rusty” is treated as an industrial-yard visual theme for this first pass. The character, map layout, names, textures, animations, and UI must be original EMM work unless written permission explicitly covers use of Local Warfare material.
+## First playable slice
+
+- One polished, fully rigged playable character with tested movement animations.
+- One original, compact rusted industrial-yard map.
+- Obstacles with consistent collision and navigation.
+- Non-combat bot navigation: patrol routes, waypoint/objective movement, obstacle avoidance, and stuck recovery.
+- A local objective-based test loop for validating movement, map layout, collision, and navigation.
+- A stable Android build with measured performance settings.
+
+The character, map layout, names, textures, animations, and UI must be original or appropriately licensed unless written permission expressly covers Local Warfare material.
 
 ## Reference APK audit
 
@@ -27,61 +32,55 @@ The supplied archive contains:
 - The build is IL2CPP: it contains `global-metadata.dat` and native `libil2cpp.so`, rather than an editable `Assembly-CSharp.dll`.
 - The assembly manifest lists Unity AI Navigation, Mirror and related transport assemblies, and PlayFab.
 
-These assembly entries show what libraries are packaged, not whether or how every feature is used. The APK does **not** contain the original Unity Editor project, editable scenes, prefabs, source scripts, or the source asset hierarchy. It is therefore not enough to safely modify the original game as a normal Unity project.
+Assembly entries show which libraries are packaged; they do not prove how every feature is used. The APK does **not** contain the editable original project, scenes, prefabs, source scripts, or original asset hierarchy. It is not a native Android source project.
 
-## Implementation direction
+## Native Android architecture (no Unity)
 
-### Character
+### Android application layer
 
-- Use a production-ready humanoid mesh, clean topology, UVs, PBR materials, and a properly weighted rig.
-- Include a coherent movement animation set and smooth transitions; avoid primitive/block placeholders.
-- Validate proportions, silhouette, materials, clipping, and animation deformation in-engine before calling it complete.
-- Keep mobile texture sizes, mesh complexity, and LODs appropriate to the target Android devices.
+- Kotlin/Java for the Android Activity lifecycle, input, window/surface lifecycle, permissions, settings, and packaging.
+- JNI boundary between Android-facing code and the native game runtime.
+- Keep ordinary menus and Android-facing UI separate from the real-time 3D renderer.
 
-### Industrial-yard map
+### Native game runtime
 
-- Create an original, readable arena with distinct landmarks and multiple connected routes.
-- Build obstacles as real meshes with matching collision, not decorative objects that players or bots can walk through.
-- Include low and tall cover, walls, barriers, containers, ramps, and clear spawn/return paths.
-- Bake and validate navigation data; use obstacle carving or runtime navigation updates only where needed.
-- Check sightlines, collision gaps, spawn safety, stuck locations, and performance on-device.
+- C++ through the Android NDK, built with CMake where the selected development environment supports it.
+- A renderer abstraction: evaluate OpenGL ES as a broad compatibility baseline and Vulkan as an optional newer-device backend after capability checks and profiling. Android supports both APIs; Vulkan is lower-level and is not available on every device.
+- Separate modules for scene loading, transforms/math, mesh/material resources, skeletal animation, lighting, collision, navigation, input, audio, and frame pacing.
+- Prepare optimized runtime assets through a separate asset pipeline; do not rely on the phone to perform expensive authoring/import work.
 
-### Bots
+### Character, map, and bots
 
-- Use navigation-based movement with patrol routes, task goals, obstacle-aware pathfinding, and route recovery.
-- Bots must not walk through solid geometry, repeatedly push into blocked routes, or become permanently stuck.
-- Test each obstacle and route from multiple start points.
-- Keep bot logic modular so behaviour can be tuned without rebuilding the map.
+- Character: production-quality humanoid model, clean topology, UVs, PBR materials, weighted rig, smooth movement animation transitions, and target-device validation. No primitive stand-ins as final art.
+- Map: original industrial-yard layout with distinct landmarks, connected routes, finished materials, and obstacle meshes whose collision matches their visible geometry.
+- Bots: implement non-combat navigation first—patrol, waypoint/objective movement, obstacle-aware path planning, collision response, and stuck recovery. Test routes from multiple start positions.
 
-### Networking and architecture
+### Networking
 
-- Treat Mirror as a candidate reference because its assemblies are present in the APK; verify the actual original project configuration before adopting it.
-- Do not assume the original transport, server model, or PlayFab integration from assembly names alone.
-- Keep the first slice small and measurable; do not introduce online dependencies into a local test build unless the feature requires them.
+- Do not infer the reference game's server model from the presence of Mirror assemblies alone.
+- First stabilize and measure the local game loop. Evaluate networking architecture separately against the actual multiplayer requirements and target-device connectivity.
 
 ## Quality gates
 
-No feature is marked complete just because it compiles.
-
-1. The character must use a finished rigged model and tested animations; no cubes or primitive stand-ins as final art.
-2. The map must have finished materials, lighting, landmarks, collision, and tested navigation.
-3. Bots must complete repeatable route tests around every obstacle without getting stuck.
-4. A clean Android build must install and launch, complete a match loop, and survive repeated runs.
-5. Profile frame time, memory, loading, and thermal behaviour on a real target phone. Tune quality settings and LODs from measured results.
-6. Keep before/after screenshots, build logs, and a test checklist for each milestone.
+1. Finished character model and tested movement animations; no cube placeholders as final art.
+2. Finished map materials, lighting, landmarks, collision, and validated navigation.
+3. Bots complete repeatable movement routes without clipping through obstacles or getting stuck.
+4. Clean Android build installs, launches, and completes the local objective loop repeatedly.
+5. Measure frame time, memory, loading, and thermal behaviour on real target phones; tune from evidence.
+6. Keep screenshots, build logs, device details, and a test checklist for each milestone.
 
 ## Current blockers
 
-- The EMM repository currently contains only its initial README; no Unity project or game code is present.
-- The supplied APK is a compiled reference build, not the editable source project.
+- The EMM repository had only its initial README before this audit document; it has no native Android or C++ game project yet.
+- The supplied Local Warfare APK is a compiled Unity/IL2CPP reference build, not editable source.
+- The development setup must be checked for Android NDK, CMake, native compiler, and asset-pipeline support. Do not claim Code on the Go can build the complete native renderer until that has been tested.
 - No written permission from the original developer has been reviewed here. Do not copy Local Warfare code, models, textures, maps, sounds, UI art, or other proprietary assets unless permission expressly covers that use.
-- To modify the original project itself, obtain the Unity project and written permission covering the intended changes and separate EMM build. Otherwise, implement original EMM systems and assets using the APK only as a high-level behaviour reference.
 
 ## Next implementation gate
 
-Before writing game scripts or importing assets, obtain one of:
+1. Verify Android NDK/CMake toolchain availability in the actual development setup.
+2. Create the smallest native Android shell that opens a native rendering surface.
+3. Verify a real 3D test scene on the target phone and measure frame time.
+4. Build the character, industrial-yard scene, collision, and bot navigation as separate, testable milestones.
 
-- The original Unity project and written permission for the intended modifications; or
-- An EMM Unity project to build on, with original/licensed character and environment assets.
-
-Then inspect the actual project structure and build settings before changing anything.
+Do not create fake placeholder art and call it finished. Do not claim to modify Local Warfare's original source: the supplied APK does not contain that editable source.
