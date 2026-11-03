@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+**/build/
+local.properties
+
+# Android Studio / Code editors
+.idea/
+*.iml
+.externalNativeBuild/
+.cxx/
+
+# Local device outputs
+captures/
+*.apk
+*.aab
