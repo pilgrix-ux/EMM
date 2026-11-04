@@ -25,6 +25,7 @@ int gHeight = 1;
 float gCameraYaw = 0.35f;
 float gCameraPitch = 0.62f;
 float gCameraDistance = 112.0f;
+bool gFrameLogged = false;
 
 struct Vec3 { float x, y, z; };
 struct Color { float r, g, b; };
@@ -37,6 +38,14 @@ using Mat4 = std::array<float, 16>;
 
 std::vector<Vertex> gVertices;
 std::vector<std::uint32_t> gIndices;
+
+void logGlError(const char* stage) {
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        __android_log_print(ANDROID_LOG_ERROR, kLogTag,
+            "OpenGL error 0x%x at %s", error, stage);
+    }
+}
 
 Vec3 sub(Vec3 a, Vec3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
 Vec3 scale(Vec3 a, float s) { return {a.x * s, a.y * s, a.z * s}; }
@@ -261,7 +270,6 @@ void buildWorld() {
     watchTower(-39.0f,39.0f);
     watchTower(39.0f,39.0f);
 
-    // Central objective yard and low cover.
     box(0.0f,0.25f,3.0f,13.0f,0.5f,10.0f,{0.38f,0.39f,0.35f});
     box(0.0f,0.72f,3.0f,4.2f,0.45f,4.2f,{0.23f,0.29f,0.28f});
     box(0.0f,1.7f,3.0f,2.2f,1.6f,2.2f,{0.43f,0.35f,0.22f});
@@ -272,7 +280,6 @@ void buildWorld() {
         box(x,0.7f,-5.0f,3.0f,1.4f,1.1f,{0.43f,0.40f,0.31f});
     }
 
-    // Concrete barriers, crates and drums form readable cover lanes.
     for (int i=0;i<5;++i) {
         const float x=-31.0f+i*4.0f;
         box(x,0.75f,3.0f,2.6f,1.5f,1.0f,{0.48f,0.45f,0.35f});
@@ -291,7 +298,6 @@ void buildWorld() {
         cylinder(x,1.40f,z,0.64f,0.08f,{0.20f,0.22f,0.21f},12);
     }
 
-    // Utility structures and perimeter details.
     for (int i=0;i<6;++i) {
         lightPole(-32.0f+i*12.8f,-5.0f);
         lightPole(-32.0f+i*12.8f,34.0f);
@@ -312,6 +318,11 @@ void buildWorld() {
 
 GLuint compileShader(GLenum type,const char* source) {
     GLuint shader=glCreateShader(type);
+    if (!shader) {
+        __android_log_print(ANDROID_LOG_ERROR,kLogTag,
+            "glCreateShader failed for type 0x%x",type);
+        return 0;
+    }
     glShaderSource(shader,1,&source,nullptr);
     glCompileShader(shader);
     GLint ok=GL_FALSE;
@@ -324,6 +335,7 @@ GLuint compileShader(GLenum type,const char* source) {
         glDeleteShader(shader);
         return 0;
     }
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,"Shader compiled: type=0x%x",type);
     return shader;
 }
 
@@ -370,6 +382,11 @@ GLuint createProgram() {
     GLuint fs=compileShader(GL_FRAGMENT_SHADER,fragmentSource);
     if (!fs) { glDeleteShader(vs); return 0; }
     GLuint program=glCreateProgram();
+    if (!program) {
+        glDeleteShader(vs); glDeleteShader(fs);
+        __android_log_print(ANDROID_LOG_ERROR,kLogTag,"glCreateProgram failed");
+        return 0;
+    }
     glAttachShader(program,vs); glAttachShader(program,fs); glLinkProgram(program);
     glDeleteShader(vs); glDeleteShader(fs);
     GLint linked=GL_FALSE; glGetProgramiv(program,GL_LINK_STATUS,&linked);
@@ -380,6 +397,7 @@ GLuint createProgram() {
         __android_log_print(ANDROID_LOG_ERROR,kLogTag,"Link error: %s",log.data());
         glDeleteProgram(program); return 0;
     }
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,"Shader program linked: %u",program);
     return program;
 }
 
@@ -437,25 +455,51 @@ void uploadWorld() {
         reinterpret_cast<void*>(offsetof(Vertex,color)));
     glBindVertexArray(0);
     gIndexCount=static_cast<GLsizei>(gIndices.size());
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,
+        "GPU upload: VAO=%u VBO=%u EBO=%u vertices=%zu indices=%d",
+        gVertexArray,gVertexBuffer,gIndexBuffer,gVertices.size(),gIndexCount);
+    logGlError("uploadWorld");
 }
 
 void initializeRenderer() {
+    gFrameLogged=false;
+    const GLubyte* vendor=glGetString(GL_VENDOR);
+    const GLubyte* renderer=glGetString(GL_RENDERER);
+    const GLubyte* version=glGetString(GL_VERSION);
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,
+        "Surface created. GL vendor=%s renderer=%s version=%s",
+        vendor?reinterpret_cast<const char*>(vendor):"(null)",
+        renderer?reinterpret_cast<const char*>(renderer):"(null)",
+        version?reinterpret_cast<const char*>(version):"(null)");
+
+    // A conspicuous clear color makes a failed scene draw distinguishable
+    // from a surface/context that never reaches the renderer callbacks.
+    glClearColor(0.12f,0.34f,0.48f,1.0f);
+    glClearDepthf(1.0f);
+    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+    glDisable(GL_BLEND);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    logGlError("renderer state setup");
+
     gProgram=createProgram();
     if (!gProgram) {
-        __android_log_print(ANDROID_LOG_ERROR,kLogTag,"World shader initialization failed.");
+        __android_log_print(ANDROID_LOG_ERROR,kLogTag,
+            "Shader initialization failed; diagnostic blue background will remain.");
         return;
     }
     gMvpLocation=glGetUniformLocation(gProgram,"uMvp");
     gViewLocation=glGetUniformLocation(gProgram,"uView");
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,
+        "Uniform locations: uMvp=%d uView=%d",gMvpLocation,gViewLocation);
+
     buildWorld();
     uploadWorld();
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_CULL_FACE);
     glClearColor(0.48f,0.64f,0.72f,1.0f);
     __android_log_print(ANDROID_LOG_INFO,kLogTag,
-        "EMM industrial-yard environment ready: %zu vertices, %zu indices.",
-        gVertices.size(),gIndices.size());
+        "World ready: %zu vertices, %zu indices.",gVertices.size(),gIndices.size());
 }
 
 } // namespace
@@ -470,11 +514,20 @@ Java_com_pilgrix_emm_MainActivity_nativeOnSurfaceChanged(
     gWidth=std::max(1,static_cast<int>(width));
     gHeight=std::max(1,static_cast<int>(height));
     glViewport(0,0,gWidth,gHeight);
+    __android_log_print(ANDROID_LOG_INFO,kLogTag,
+        "Surface changed: %dx%d",gWidth,gHeight);
+    logGlError("surface changed");
 }
 extern "C" JNIEXPORT void JNICALL
 Java_com_pilgrix_emm_MainActivity_nativeOnDrawFrame(
     JNIEnv*,jobject,jfloat) {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    if (!gFrameLogged) {
+        __android_log_print(ANDROID_LOG_INFO,kLogTag,
+            "First frame: program=%u vao=%u indices=%d viewport=%dx%d",
+            gProgram,gVertexArray,gIndexCount,gWidth,gHeight);
+        gFrameLogged=true;
+    }
     if (!gProgram || !gVertexArray || !gIndexCount) return;
 
     const float cp=std::cos(gCameraPitch);
@@ -485,7 +538,7 @@ Java_com_pilgrix_emm_MainActivity_nativeOnDrawFrame(
     };
     const Mat4 view=lookAt(eye,{0.0f,0.0f,0.0f},{0.0f,1.0f,0.0f});
     const Mat4 projection=perspective(0.78539816339f,
-        static_cast<float>(gWidth)/static_cast<float>(gHeight),0.1f,220.0f);
+        static_cast<float>(gWidth)/static_cast<float>(gHeight),0.1f,300.0f);
     const Mat4 mvp=multiply(projection,view);
 
     glUseProgram(gProgram);
@@ -494,6 +547,7 @@ Java_com_pilgrix_emm_MainActivity_nativeOnDrawFrame(
     glBindVertexArray(gVertexArray);
     glDrawElements(GL_TRIANGLES,gIndexCount,GL_UNSIGNED_INT,nullptr);
     glBindVertexArray(0);
+    if (!gFrameLogged) logGlError("first draw");
 }
 extern "C" JNIEXPORT void JNICALL
 Java_com_pilgrix_emm_MainActivity_nativeAddTouch(
