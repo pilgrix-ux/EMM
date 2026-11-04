@@ -19,7 +19,7 @@ This repository currently contains the app interface and local interactions only
 
 1. Open this repository as an Android project.
 2. Use JDK 17 or newer.
-3. Let Android Studio sync the Gradle project and install Android SDK Platform 37 if it is not already installed.
+3. Let Android Studio sync the Gradle project and install Android SDK Platform 36 if it is not already installed.
 4. Run the app configuration on an Android device or emulator (Android 8.0 / API 26 or newer).
 
 The project uses Android Gradle Plugin 9.1.1, Gradle 9.3.1, Kotlin Compose compiler plugin 2.4.10, and Compose BOM 2026.09.00.
