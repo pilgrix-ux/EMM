@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="true"
-        android:label="EMM Ads"
+        android:label="EMM Ads Creator"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
