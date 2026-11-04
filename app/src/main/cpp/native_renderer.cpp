@@ -23,8 +23,8 @@ GLsizei gIndexCount = 0;
 int gWidth = 1;
 int gHeight = 1;
 float gCameraYaw = 0.35f;
-float gCameraPitch = 0.48f;
-float gCameraDistance = 88.0f;
+float gCameraPitch = 0.62f;
+float gCameraDistance = 112.0f;
 
 struct Vec3 { float x, y, z; };
 struct Color { float r, g, b; };
@@ -38,7 +38,6 @@ using Mat4 = std::array<float, 16>;
 std::vector<Vertex> gVertices;
 std::vector<std::uint32_t> gIndices;
 
-Vec3 add(Vec3 a, Vec3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
 Vec3 sub(Vec3 a, Vec3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
 Vec3 scale(Vec3 a, float s) { return {a.x * s, a.y * s, a.z * s}; }
 float dot(Vec3 a, Vec3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
@@ -123,7 +122,7 @@ void sphere(Vec3 center, Vec3 radii, Color color, int rings=8, int segments=12) 
 
 float terrainHeight(float x, float z) {
     const float radius = std::sqrt(x*x + z*z);
-    const float edge = std::clamp((radius-28.0f)/28.0f,0.0f,1.0f);
+    const float edge = std::clamp((radius-45.0f)/13.0f,0.0f,1.0f);
     const float rolling = 0.34f*std::sin(x*0.105f)*std::cos(z*0.087f)
                         + 0.20f*std::sin((x+z)*0.16f);
     return edge * (1.5f + rolling*2.0f);
@@ -143,7 +142,7 @@ void terrain() {
             const Vec3 d{x0,terrainHeight(x0,z1),z1};
             const float variation=0.94f+0.06f*std::sin(x0*0.31f+z0*0.17f);
             const Color ground=tint({0.30f,0.34f,0.25f},variation);
-            quad(a,b,c,d,ground);
+            quad(a,d,c,b,ground);
         }
     }
 }
@@ -196,21 +195,24 @@ void fenceLine(float x0,float z0,float x1,float z1) {
     for (int i=0;i<=posts;++i) {
         const float t=static_cast<float>(i)/std::max(1,posts);
         const float x=x0+dx*t, z=z0+dz*t;
-        box(x,1.25f,z,0.18f,2.5f,0.18f,{0.25f,0.28f,0.27f});
+        const float base=terrainHeight(x,z);
+        box(x,base+1.25f,z,0.18f,2.5f,0.18f,{0.25f,0.28f,0.27f});
     }
-    box((x0+x1)*0.5f,2.0f,(z0+z1)*0.5f,length,0.12f,0.12f,{0.34f,0.37f,0.35f});
-    box((x0+x1)*0.5f,0.85f,(z0+z1)*0.5f,length,0.10f,0.10f,{0.34f,0.37f,0.35f});
+    const float middleGround=terrainHeight((x0+x1)*0.5f,(z0+z1)*0.5f);
+    box((x0+x1)*0.5f,middleGround+2.0f,(z0+z1)*0.5f,length,0.12f,0.12f,{0.34f,0.37f,0.35f});
+    box((x0+x1)*0.5f,middleGround+0.85f,(z0+z1)*0.5f,length,0.10f,0.10f,{0.34f,0.37f,0.35f});
 }
 
 void watchTower(float x,float z) {
+    const float base=terrainHeight(x,z);
     for (int dx=-1;dx<=1;dx+=2)
         for (int dz=-1;dz<=1;dz+=2)
-            cylinder(x+dx*1.35f,0.0f,z+dz*1.35f,0.10f,7.0f,{0.27f,0.30f,0.29f},8);
-    box(x,6.9f,z,3.6f,0.35f,3.6f,{0.29f,0.32f,0.30f});
-    box(x,8.0f,z,3.0f,2.0f,3.0f,{0.31f,0.35f,0.34f});
-    box(x,9.1f,z,3.4f,0.18f,3.4f,{0.19f,0.23f,0.23f});
+            cylinder(x+dx*1.35f,base,z+dz*1.35f,0.10f,7.0f,{0.27f,0.30f,0.29f},8);
+    box(x,base+6.9f,z,3.6f,0.35f,3.6f,{0.29f,0.32f,0.30f});
+    box(x,base+8.0f,z,3.0f,2.0f,3.0f,{0.31f,0.35f,0.34f});
+    box(x,base+9.1f,z,3.4f,0.18f,3.4f,{0.19f,0.23f,0.23f});
     for (int i=0;i<5;++i)
-        box(x-0.8f+i*0.4f,7.9f,z+1.53f,0.12f,1.2f,0.08f,{0.13f,0.18f,0.19f});
+        box(x-0.8f+i*0.4f,base+7.9f,z+1.53f,0.12f,1.2f,0.08f,{0.13f,0.18f,0.19f});
 }
 
 void tree(float x,float z,float size) {
@@ -249,9 +251,10 @@ void buildWorld() {
     fenceLine(43.0f,-43.0f,43.0f,43.0f);
     fenceLine(-43.0f,43.0f,-14.0f,43.0f);
     fenceLine(14.0f,43.0f,43.0f,43.0f);
-    box(0.0f,1.6f,43.0f,27.0f,3.2f,0.8f,{0.39f,0.38f,0.32f});
-    box(-7.0f,2.0f,42.45f,0.35f,4.0f,0.18f,{0.22f,0.25f,0.24f});
-    box(7.0f,2.0f,42.45f,0.35f,4.0f,0.18f,{0.22f,0.25f,0.24f});
+    const float gateGround=terrainHeight(0.0f,43.0f);
+    box(0.0f,gateGround+1.6f,43.0f,27.0f,3.2f,0.8f,{0.39f,0.38f,0.32f});
+    box(-7.0f,gateGround+2.0f,42.45f,0.35f,4.0f,0.18f,{0.22f,0.25f,0.24f});
+    box(7.0f,gateGround+2.0f,42.45f,0.35f,4.0f,0.18f,{0.22f,0.25f,0.24f});
 
     watchTower(-39.0f,-39.0f);
     watchTower(39.0f,-39.0f);
