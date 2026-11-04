@@ -112,6 +112,26 @@ private enum class StudioTool(
     STYLE("Style", "✳", listOf("Premium and elegant", "Bright and energetic", "Minimal and clean", "Playful and bold", "Cinematic"), "Premium and elegant")
 }
 
+private data class AdConcept(val title: String, val subtitle: String, val prompt: String)
+
+private val starterConcepts = listOf(
+    AdConcept(
+        "Product spotlight",
+        "Make the product the hero",
+        "Create a premium product spotlight: open with the strongest product shot, highlight the main benefit, and finish with a clear call to action."
+    ),
+    AdConcept(
+        "Problem → solution",
+        "Show the value clearly",
+        "Build a problem-to-solution ad: show the customer's problem, reveal the product as the solution, and finish with the result they can expect."
+    ),
+    AdConcept(
+        "Lifestyle story",
+        "Let viewers picture it",
+        "Create a lifestyle-led ad: show the product naturally in use, help viewers imagine the result, and close with a memorable line."
+    )
+)
+
 private data class ChatMessage(val text: String, val fromUser: Boolean)
 
 @Composable
@@ -119,6 +139,7 @@ private fun EmmAdsApp() {
     val context = LocalContext.current
     var selectedVideo by remember { mutableStateOf<Uri?>(null) }
     var prompt by remember { mutableStateOf("") }
+    var selectedConcept by remember { mutableStateOf<String?>(null) }
     var activeTool by remember { mutableStateOf<StudioTool?>(null) }
     val chosenOptions = remember { mutableStateMapOf<StudioTool, String>() }
     val messages = remember {
@@ -164,6 +185,17 @@ private fun EmmAdsApp() {
                 onUpload = { videoPicker.launch("video/*") },
                 onClear = { selectedVideo = null }
             )
+
+            if (selectedVideo != null) {
+                Spacer(Modifier.height(16.dp))
+                SuggestionPanel(
+                    selected = selectedConcept,
+                    onSelect = { concept ->
+                        selectedConcept = concept.title
+                        prompt = concept.prompt
+                    }
+                )
+            }
 
             Spacer(Modifier.height(20.dp))
             Row(
@@ -436,6 +468,54 @@ private fun VideoWorkspace(videoUri: Uri?, onUpload: () -> Unit, onClear: () -> 
                 )
                 if (videoUri != null) {
                     Text("Replace", color = Brand, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onUpload).padding(3.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionPanel(selected: String?, onSelect: (AdConcept) -> Unit) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("Starter ad directions", fontSize = 15.sp, color = Ink, fontWeight = FontWeight.Bold)
+                Text("Choose an approach or write your own below", fontSize = 11.sp, color = Muted)
+            }
+            Surface(color = BrandSoft, shape = RoundedCornerShape(50)) {
+                Text("IDEAS", color = Brand, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            starterConcepts.forEach { concept ->
+                val isSelected = selected == concept.title
+                Surface(
+                    modifier = Modifier.width(205.dp).clickable(onClick = { onSelect(concept) }),
+                    color = if (isSelected) Color(0xFFF0F3FF) else White,
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, if (isSelected) Brand else Line)
+                ) {
+                    Column(Modifier.padding(13.dp)) {
+                        Text(concept.title, fontSize = 12.sp, color = Ink, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(4.dp))
+                        Text(concept.subtitle, fontSize = 10.sp, color = Muted)
+                        Spacer(Modifier.height(9.dp))
+                        Text(
+                            if (isSelected) "SELECTED ✓" else "USE THIS DIRECTION  →",
+                            color = Brand,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
         }
