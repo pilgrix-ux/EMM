@@ -24,6 +24,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.1'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -40,9 +45,7 @@ jobs:
             "cmake;3.22.1"
 
       - name: Build debug APK
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon :app:assembleDebug
+        run: gradle --no-daemon :app:assembleDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
