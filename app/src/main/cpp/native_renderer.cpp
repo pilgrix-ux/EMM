@@ -345,7 +345,7 @@ GLuint createProgram() {
             vNormal=mat3(uView)*aNormal;
             vColor=aColor;
             gl_Position=uMvp*vec4(aPosition,1.0);
-        })";
+        }";
     static constexpr char fragmentSource[]=R"(
         #version 300 es
         precision highp float;
@@ -364,7 +364,7 @@ GLuint createProgram() {
             vec3 sky=vec3(0.48,0.64,0.72);
             color=mix(sky,color,fog);
             outColor=vec4(color,1.0);
-        })";
+        }";
     GLuint vs=compileShader(GL_VERTEX_SHADER,vertexSource);
     if (!vs) return 0;
     GLuint fs=compileShader(GL_FRAGMENT_SHADER,fragmentSource);
