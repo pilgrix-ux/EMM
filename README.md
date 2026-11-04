@@ -1,6 +1,6 @@
-# EMM Ads
+# EMM Ads Creator
 
-**EMM Ads** is an Android-first AI advertising studio prototype. The product is designed around a video workspace, not a general-purpose chatbot.
+**EMM Ads Creator** is an Android-first AI advertising studio prototype. The product is designed around a video workspace, not a general-purpose chatbot.
 
 ## Current prototype
 
