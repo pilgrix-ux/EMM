@@ -17,7 +17,6 @@ public final class MainActivity extends Activity {
     private GLSurfaceView glView;
     private float lastTouchX;
     private float lastTouchY;
-    private long startNanos;
 
     private native void nativeOnSurfaceCreated();
     private native void nativeOnSurfaceChanged(int width, int height);
@@ -28,8 +27,6 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         enterImmersiveMode();
-
-        startNanos = System.nanoTime();
 
         FrameLayout root = new FrameLayout(this);
         glView = new GLSurfaceView(this);
@@ -50,8 +47,7 @@ public final class MainActivity extends Activity {
 
             @Override
             public void onDrawFrame(javax.microedition.khronos.opengles.GL10 gl) {
-                float elapsed = (System.nanoTime() - startNanos) / 1_000_000_000.0f;
-                nativeOnDrawFrame(elapsed);
+                nativeOnDrawFrame(0.0f);
             }
         });
         glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
@@ -63,7 +59,7 @@ public final class MainActivity extends Activity {
                 FrameLayout.LayoutParams.MATCH_PARENT));
 
         TextView status = new TextView(this);
-        status.setText("EMM  /  NATIVE 3D FOUNDATION\\nDrag to rotate  •  Diagnostic geometry, not final game art");
+        status.setText("EMM  /  INDUSTRIAL YARD\nDrag to orbit the environment");
         status.setTextColor(0xFFEAF1F8);
         status.setTextSize(12.0f);
         status.setGravity(Gravity.CENTER);
