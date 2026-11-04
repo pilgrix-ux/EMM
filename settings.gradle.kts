@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "EMM Ads"
+rootProject.name = "EMM Ads Creator"
 include(":app")
