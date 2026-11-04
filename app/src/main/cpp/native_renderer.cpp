@@ -40,8 +40,8 @@ std::vector<Vertex> gVertices;
 std::vector<std::uint32_t> gIndices;
 
 void logGlError(const char* stage) {
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
         __android_log_print(ANDROID_LOG_ERROR, kLogTag,
             "OpenGL error 0x%x at %s", error, stage);
     }
@@ -522,7 +522,8 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_pilgrix_emm_MainActivity_nativeOnDrawFrame(
     JNIEnv*,jobject,jfloat) {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    if (!gFrameLogged) {
+    const bool firstFrame = !gFrameLogged;
+    if (firstFrame) {
         __android_log_print(ANDROID_LOG_INFO,kLogTag,
             "First frame: program=%u vao=%u indices=%d viewport=%dx%d",
             gProgram,gVertexArray,gIndexCount,gWidth,gHeight);
@@ -547,7 +548,7 @@ Java_com_pilgrix_emm_MainActivity_nativeOnDrawFrame(
     glBindVertexArray(gVertexArray);
     glDrawElements(GL_TRIANGLES,gIndexCount,GL_UNSIGNED_INT,nullptr);
     glBindVertexArray(0);
-    if (!gFrameLogged) logGlError("first draw");
+    if (firstFrame) logGlError("first draw");
 }
 extern "C" JNIEXPORT void JNICALL
 Java_com_pilgrix_emm_MainActivity_nativeAddTouch(
