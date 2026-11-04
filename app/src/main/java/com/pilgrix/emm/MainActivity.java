@@ -31,6 +31,8 @@ public final class MainActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         glView = new GLSurfaceView(this);
         glView.setEGLContextClientVersion(3);
+        // Request a real depth buffer so the 3D world can render correctly.
+        glView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
         glView.setPreserveEGLContextOnPause(true);
         glView.setRenderer(new GLSurfaceView.Renderer() {
             @Override
