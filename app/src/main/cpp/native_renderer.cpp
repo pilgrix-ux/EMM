@@ -97,9 +97,9 @@ void cylinder(float cx, float y0, float cz, float radius, float height,
         const Vec3 p0{cx+std::cos(a0)*radius,y0,cz+std::sin(a0)*radius};
         const Vec3 p1{cx+std::cos(a1)*radius,y0,cz+std::sin(a1)*radius};
         const Vec3 p2{p1.x,y1,p1.z}, p3{p0.x,y1,p0.z};
-        quad(p0,p1,p2,p3,tint(color,0.92f+0.12f*std::sin(a0)));
-        triangle({cx,y1,cz},p3,p2,tint(color,1.15f));
-        triangle({cx,y0,cz},p1,p0,tint(color,0.62f));
+        quad(p0,p3,p2,p1,tint(color,0.92f+0.12f*std::sin(a0)));
+        triangle({cx,y1,cz},p2,p3,tint(color,1.15f));
+        triangle({cx,y0,cz},p0,p1,tint(color,0.62f));
     }
 }
 
@@ -115,7 +115,7 @@ void sphere(Vec3 center, Vec3 radii, Color color, int rings=8, int segments=12) 
                             center.y+radii.y*std::sin(p),
                             center.z+radii.z*std::cos(p)*std::sin(t)};
             };
-            quad(point(p0,t0),point(p0,t1),point(p1,t1),point(p1,t0),color);
+            quad(point(p0,t0),point(p1,t0),point(p1,t1),point(p0,t1),color);
         }
     }
 }
