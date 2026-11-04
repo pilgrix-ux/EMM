@@ -330,7 +330,7 @@ private fun Header() {
             }
             Spacer(Modifier.width(10.dp))
             Column {
-                Text("EMM Ads", fontSize = 17.sp, color = Ink, fontWeight = FontWeight.ExtraBold)
+                Text("EMM Ads Creator", fontSize = 17.sp, color = Ink, fontWeight = FontWeight.ExtraBold)
                 Text("AI AD STUDIO", fontSize = 9.sp, color = Muted, letterSpacing = 1.7.sp, fontWeight = FontWeight.Bold)
             }
         }
