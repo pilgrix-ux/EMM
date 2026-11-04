@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.emm.ads"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.emm.ads"
