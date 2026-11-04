@@ -36,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -134,6 +135,7 @@ private val starterConcepts = listOf(
 
 private data class ChatMessage(val text: String, val fromUser: Boolean)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EmmAdsApp() {
     val context = LocalContext.current
