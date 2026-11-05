@@ -261,18 +261,21 @@ function buildEdit(project, sourceUrl, environment) {
     });
   });
 
+  if (sceneClips.length) tracks.push({ clips: sceneClips });
+
   const callToAction = cleanText(plan.callToAction, 180);
   if (callToAction) {
     const ctaLength = Math.min(4, duration);
-    sceneClips.push({
-      asset: buildTextAsset(callToAction, 46),
-      start: Number((duration - ctaLength).toFixed(2)),
-      length: Number(ctaLength.toFixed(2)),
-      position: "bottom",
-      offset: { y: 0.1 },
+    tracks.push({
+      clips: [{
+        asset: buildTextAsset(callToAction, 46),
+        start: Number((duration - ctaLength).toFixed(2)),
+        length: Number(ctaLength.toFixed(2)),
+        position: "bottom",
+        offset: { y: 0.1 },
+      }],
     });
   }
-  if (sceneClips.length) tracks.push({ clips: sceneClips });
 
   if (wantsVoiceover && voiceoverText) {
     const voice = voiceoverMode === "Energetic voiceover"
@@ -378,7 +381,9 @@ async function getRenderStatus(renderId, provider) {
     message: cleanText(attributes.error, 300) || friendlyStatus(status),
     owner: cleanText(attributes.owner, 80),
     temporaryUrl: cleanText(attributes.url, 2000),
-    credits: Number.isFinite(Number(attributes.credits)) ? Number(attributes.credits) : null,
+    credits: attributes.credits !== undefined && attributes.credits !== null && Number.isFinite(Number(attributes.credits))
+      ? Number(attributes.credits)
+      : null,
   };
 }
 
