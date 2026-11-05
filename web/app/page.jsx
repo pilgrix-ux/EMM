@@ -68,6 +68,7 @@ export default function HomePage() {
   const [videoPreviewError, setVideoPreviewError] = useState("");
   const [previewErrorCode, setPreviewErrorCode] = useState(null);
   const [compatiblePreviewUrl, setCompatiblePreviewUrl] = useState("");
+  const [compatiblePreviewPath, setCompatiblePreviewPath] = useState("");
   const [previewConverting, setPreviewConverting] = useState(false);
   const [previewConversionMessage, setPreviewConversionMessage] = useState("");
   const [generationMessage, setGenerationMessage] = useState("");
@@ -326,6 +327,10 @@ export default function HomePage() {
       setVideoPreviewError("");
       setPreviewErrorCode(null);
       setCompatiblePreviewUrl("");
+      if (compatiblePreviewPath && supabase) {
+        void supabase.storage.from("emm-source-videos").remove([compatiblePreviewPath]);
+      }
+      setCompatiblePreviewPath("");
       setPreviewConversionMessage("");
       previewAutoAttemptRef.current = false;
       setSavedProjectId("");
@@ -355,6 +360,10 @@ export default function HomePage() {
     setVideoPreviewError("");
     setPreviewErrorCode(null);
     setCompatiblePreviewUrl("");
+    if (compatiblePreviewPath && supabase) {
+      void supabase.storage.from("emm-source-videos").remove([compatiblePreviewPath]);
+    }
+    setCompatiblePreviewPath("");
     setPreviewConversionMessage("");
     previewAutoAttemptRef.current = false;
     setSavedProjectId("");
@@ -508,9 +517,10 @@ export default function HomePage() {
         }
         if (statusResult.status === "ready" && statusResult.url) {
           setCompatiblePreviewUrl(statusResult.url);
+          setCompatiblePreviewPath(statusResult.storagePath || "");
           setVideoPreviewError("");
           setPreviewErrorCode(null);
-          setPreviewConversionMessage("Compatible MP4 ready. Your original source video is unchanged.");
+          setPreviewConversionMessage("Compatible MP4 ready in your private EMM workspace. Your original video is unchanged.");
           return;
         }
         setPreviewConversionMessage(statusResult.message || "Converting your clip…");
@@ -912,7 +922,7 @@ export default function HomePage() {
             </div>
 
             <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Original stays on this device; compatible preview uses a temporary private upload.</span>
+              <span><Icon name="shield" size={14} /> Unsupported clips are temporarily converted by Shotstack; the MP4 is saved privately in your EMM workspace.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
