@@ -329,6 +329,7 @@ export default function HomePage() {
       await ffmpeg.load({
         coreURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.js", "text/javascript"),
         wasmURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.wasm", "application/wasm"),
+        classWorkerURL: window.location.origin + "/ffmpeg/worker.js",
       });
       ffmpegRef.current = ffmpeg;
       return ffmpeg;
