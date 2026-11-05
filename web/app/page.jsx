@@ -225,7 +225,7 @@ export default function HomePage() {
         throw insertError;
       }
       setSavedProjectId(data.id);
-      setSavedProjects((current) => [{ id: data.id, title: brief.productName.trim(), status: "draft", source_video_name: videoFile.name, created_at: new Date().toISOString() }, ...current].slice(0, 6));
+      setSavedProjects((current) => [{ id: data.id, title: brief.productName.trim(), status: adPlan ? "plan_ready" : "draft", source_video_name: videoFile.name, created_at: new Date().toISOString() }, ...current].slice(0, 6));
       setSaveMessage("Saved securely to your EMM workspace.");
     } catch (error) {
       setSaveMessage(error.message || "Could not save this project. Please try again.");
@@ -576,7 +576,7 @@ export default function HomePage() {
                       <strong>{project.title}</strong>
                       <small>{project.source_video_name || "Source video"} · {new Date(project.created_at).toLocaleDateString()}</small>
                     </span>
-                    <span className="saved-project-status">{project.status}</span>
+                    <span className="saved-project-status">{(project.status || "draft").replaceAll("_", " ")}</span>
                   </div>
                 ))}
               </div>
