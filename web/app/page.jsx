@@ -518,7 +518,7 @@ export default function HomePage() {
     setRenderMessage("");
     setRenderStatus("Saving your approved ad and source video…");
     try {
-      const projectId = savedProjectId || await saveDraft();
+      const projectId = await saveDraft();
       if (!projectId) throw new Error("Save your approved ad plan before starting the render.");
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
