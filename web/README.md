@@ -34,12 +34,15 @@ Required browser-safe environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `GEMINI_API_KEY` (server-only; required for AI ad-plan generation)
+- `GEMINI_MODEL` (optional; defaults to `gemini-3.8-flash`)
 
-Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
+Add `GEMINI_API_KEY` to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Do not prefix it with `NEXT_PUBLIC_`, commit its value, or place it in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
 
 ### Database and storage
 
-- `public.ad_projects` stores a user's product brief and private source-video object path.
+- `public.ad_projects` stores a user's product brief, private source-video object path, creative settings, and editable AI ad plan.
+- The `ad_plan`, `creative_settings`, and `ad_plan_approved_at` columns were added by migration `20261105020640_add_ad_plan_and_creative_settings.sql`.
 - Row Level Security is enabled. Signed-in users can only access rows whose `user_id` matches `auth.uid()`.
 - `emm-source-videos` is a private Storage bucket. Object paths must begin with the authenticated user's ID.
 - The bucket currently allows supported MP4, MOV, WebM, M4V and 3GPP video MIME types up to 100 MB.
@@ -67,4 +70,4 @@ Add the two Supabase variables above to Vercel **Preview** and **Production** en
 
 The browser can select a video, create a local preview, remove the selected clip, collect the product brief, and review it. When signed in and configured, Save draft uploads the clip to the private bucket and inserts the brief into `ad_projects`.
 
-AI ad planning, cloud rendering, completed-video export, and a saved-project dashboard are not connected yet. The local review dialog is not an AI result.
+The Generate Ads workflow opens an editable brief, collects creative settings, calls the authenticated `/api/ad-plan` endpoint, and uses Gemini to create an editable hook, script, scene plan, captions, and call to action. The source video's actual frames are not sent to Gemini yet, so the plan does not claim to have visually analysed the clip. Video rendering, finished MP4 export, and a saved-project reopen/edit screen still require separate integrations.
