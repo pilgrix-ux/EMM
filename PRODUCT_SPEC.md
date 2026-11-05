@@ -365,15 +365,22 @@ Design rules:
 
 ## 14. Current implementation status
 
-The repository currently contains an Android UI prototype.
+The repository currently contains a refined Android UI prototype.
 
 Already implemented:
 - Android video document picker.
 - Local video playback and removal.
-- Creative-direction cards.
-- Voiceover, music, captions, format, and style selection dialogs.
-- Local demo conversation.
-- Generate Ad action with a message explaining that the rendering service is not connected.
+- Structured product/service, benefit, audience, and goal fields.
+- Output settings for platform, duration, visual style, and captions.
+- A fixed Build ad plan action that validates the source clip and required brief fields.
+- A local ad-brief review dialog.
+- Clear prototype labeling for services that are not connected.
+
+Removed from the main workspace:
+- Horizontal starter-direction cards.
+- The old creative-tools strip.
+- The local demo chat panel.
+- The bottom message composer.
 
 Not implemented or connected:
 - Live AI planning.
@@ -382,7 +389,7 @@ Not implemented or connected:
 - User authentication.
 - Remote output storage and completed-video sharing flow.
 
-The local demo conversation is not a real AI conversation. The Generate Ad action is not a real renderer. The interface must continue to communicate these limitations until the services are implemented and tested.
+The ad-brief review is a local validation step, not an AI-generated script. The Build ad plan action does not render a video. The interface must continue to communicate these limitations until the services are implemented and tested.
 
 ## 15. Delivery milestones
 
