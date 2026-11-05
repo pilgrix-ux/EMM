@@ -30,7 +30,7 @@ Open http://localhost:3000.
 
 Project: `EMM` (`kjncppfwujuedesyyswk`) in the `EMM Ai` organization.
 
-Required browser-safe environment variables:
+Environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -64,7 +64,7 @@ This repository also contains the original Android prototype under `app/`. When 
 - **Output Directory:** default (`.next`)
 - **Install Command:** default (`npm install`)
 
-Add the two Supabase variables above to Vercel **Preview** and **Production** environments before testing sign-up and saving projects. No server-side service key is required for the current browser/RLS flow.
+Add both Supabase variables to Vercel **Preview** and **Production** before testing sign-up and private saves. Also add the server-only `GEMINI_API_KEY` in both environments to enable the Generate ad plan step. The app does not need a Supabase service-role key for this flow.
 
 ## Current feature boundary
 
