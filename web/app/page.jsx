@@ -753,7 +753,7 @@ export default function HomePage() {
                     <textarea value={adPlan.script || ""} onChange={(event) => updatePlan("script", event.target.value)} rows={6} maxLength={4000} />
                   </label>
                   <div className="scene-editor-list">
-                    <div className="scene-editor-heading"><strong>SCENE-BY-SCENE DIRECTION</strong><span>{adPlan.scenes.length} scenes</span></div>
+                    <div className="scene-editor-heading"><strong>SCENE-BY-SCENE DIRECTION</strong></div>
                     {adPlan.scenes.map((scene, index) => (
                       <div className="scene-editor-card" key={index}>
                         <div className="scene-editor-title">{scene.time && <strong>{scene.time}</strong>}</div>
