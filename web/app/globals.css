@@ -3181,3 +3181,27 @@ a:focus-visible {
     gap: 3px 10px;
   }
 }
+
+
+.render-feedback {
+  margin: 11px 0 0;
+  padding: 11px 13px;
+  color: #415a45;
+  background: #f0f5ef;
+  border: 1px solid #dbe7d9;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.render-feedback-error {
+  color: #8b3434;
+  background: #fff0ef;
+  border-color: #f2d6d4;
+}
+
+.render-feedback + .render-feedback-error,
+.render-feedback-error + .save-feedback {
+  margin-top: 8px;
+}
