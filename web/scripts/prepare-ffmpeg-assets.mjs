@@ -7,14 +7,14 @@ const ffmpegPackage = resolve(projectRoot, "node_modules/@ffmpeg/ffmpeg/dist/esm
 const publicWorkerDirectory = resolve(projectRoot, "public/ffmpeg");
 const ffmpegClassesFile = resolve(projectRoot, "node_modules/@ffmpeg/ffmpeg/dist/esm/classes.js");
 let ffmpegClasses = await readFile(ffmpegClassesFile, "utf8");
-const dynamicWorkerUrl = /new URL\\(classWorkerURL,\\s*import\\.meta\\.url\\)/g;
-const fallbackWorkerUrl = /new URL\\((["'])\\.\\/worker\\.js\\1,\\s*import\\.meta\\.url\\)/g;
-if (!dynamicWorkerUrl.test(ffmpegClasses) || !fallbackWorkerUrl.test(ffmpegClasses)) {
+const dynamicWorkerUrl = "new URL(classWorkerURL, import.meta.url)";
+const fallbackWorkerUrl = 'new URL("./worker.js", import.meta.url)';
+if (!ffmpegClasses.includes(dynamicWorkerUrl) || !ffmpegClasses.includes(fallbackWorkerUrl)) {
   throw new Error("The FFmpeg worker bootstrap changed; update the EMM worker compatibility patch.");
 }
 ffmpegClasses = ffmpegClasses
-  .replace(dynamicWorkerUrl, "classWorkerURL")
-  .replace(fallbackWorkerUrl, '"/ffmpeg/worker.js"');
+  .replaceAll(dynamicWorkerUrl, "classWorkerURL")
+  .replaceAll(fallbackWorkerUrl, '"/ffmpeg/worker.js"');
 await writeFile(ffmpegClassesFile, ffmpegClasses);
 
 await mkdir(dirname(publicWorkerDirectory), { recursive: true });
