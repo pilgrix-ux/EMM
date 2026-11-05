@@ -7,7 +7,11 @@ const initialBrief = {
   productName: "",
   benefit: "",
   audience: "",
-  goal: "",
+  goal: "Get more enquiries",
+  platform: "Instagram Reels",
+  aspectRatio: "9:16",
+  targetDuration: "30",
+  language: "English",
 };
 
 function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
@@ -42,19 +46,6 @@ function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
   return <svg {...common}>{paths[name] || paths.sparkle}</svg>;
 }
 
-function formatBytes(bytes) {
-  if (!bytes) return "0 KB";
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDuration(seconds) {
-  if (!Number.isFinite(seconds)) return "";
-  const minutes = Math.floor(seconds / 60);
-  const remaining = Math.floor(seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remaining}`;
-}
-
 export default function HomePage() {
   const fileInputRef = useRef(null);
   const videoSectionRef = useRef(null);
@@ -64,10 +55,11 @@ export default function HomePage() {
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  const [videoDuration, setVideoDuration] = useState("");
   const [brief, setBrief] = useState(initialBrief);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const [videoPreviewError, setVideoPreviewError] = useState("");
+  const [generationMessage, setGenerationMessage] = useState("");
   const [supabase, setSupabase] = useState(null);
   const [supabaseConfigured, setSupabaseConfigured] = useState(false);
   const [user, setUser] = useState(null);
@@ -181,7 +173,7 @@ export default function HomePage() {
       setAuthOpen(true);
       return;
     }
-    if (videoFile && videoFile.size > 104857600) { setSaveMessage("This video exceeds the 100 MB upload limit. Choose a smaller clip for this first release."); return; }
+    if (videoFile && videoFile.size > 104857600) { setSaveMessage("This video is too large for the current upload limit. Choose a smaller clip."); return; }
     if (!videoFile || !brief.productName.trim() || !brief.benefit.trim()) {
       setSaveMessage("Choose a source video and complete the required product details before saving.");
       return;
@@ -206,6 +198,8 @@ export default function HomePage() {
         source_video_mime_type: videoFile.type || null, source_video_size_bytes: videoFile.size,
         product_name: brief.productName.trim(), product_benefit: brief.benefit.trim(),
         audience: brief.audience.trim() || null, ad_goal: brief.goal.trim() || null,
+        platform: brief.platform, aspect_ratio: brief.aspectRatio,
+        target_duration_seconds: Number(brief.targetDuration), language: brief.language,
       }).select("id").single();
 
       if (insertError) {
@@ -232,26 +226,39 @@ export default function HomePage() {
   }
 
   function handleVideoChange(event) {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file) return;
 
-    if (!file.type.startsWith("video/")) {
-      setFormError("Choose a video file to continue.");
-      event.target.value = "";
+    const supportedVideo = file.type.startsWith("video/") || /\\.(mp4|mov|webm|m4v|3gp)$/i.test(file.name);
+    if (!supportedVideo) {
+      setFormError("Choose a supported video file to continue.");
       return;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-    setVideoFile(file);
-    setVideoUrl(nextUrl);
-    setVideoDuration("");
-    setFormError("");
+    try {
+      const nextUrl = URL.createObjectURL(file);
+      setVideoFile(file);
+      setVideoUrl(nextUrl);
+      setVideoPreviewError("");
+      setFormError("");
+      setGenerationMessage("");
+    } catch {
+      setFormError("This video could not be opened on your device. Try another clip.");
+    }
   }
 
   function removeVideo() {
+    if (videoElementRef.current) {
+      videoElementRef.current.pause();
+      videoElementRef.current.removeAttribute("src");
+      videoElementRef.current.load();
+    }
     setVideoFile(null);
     setVideoUrl("");
-    setVideoDuration("");
+    setVideoPreviewError("");
+    setFormError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -282,7 +289,12 @@ export default function HomePage() {
       return;
     }
     setFormError("");
+    setGenerationMessage("");
     setReviewOpen(true);
+  }
+
+  function handleGenerateAds() {
+    setGenerationMessage("AI ad planning and video rendering are not connected in this deployment yet. Your brief is ready, but EMM has not generated an ad. Save this draft so you can continue when generation is connected.");
   }
 
   return (
@@ -374,29 +386,34 @@ export default function HomePage() {
               {videoUrl ? (
                 <>
                   <video
+                    key={videoUrl}
                     ref={videoElementRef}
                     className="video-player"
                     src={videoUrl}
                     controls
                     playsInline
-                    onLoadedMetadata={(event) => setVideoDuration(formatDuration(event.currentTarget.duration))}
+                    preload="metadata"
+                    aria-label={`Preview of ${videoFile?.name || "selected video"}`}
+                    onCanPlay={() => setVideoPreviewError("")}
+                    onError={() => setVideoPreviewError("This video could not be previewed by your browser. Try an MP4 or WEBM video.")}
                   />
                   <div className="video-meta">
                     <div className="video-file-icon"><Icon name="film" size={15} /></div>
                     <div className="video-file-copy">
-                      <strong title={videoFile.name}>{videoFile.name}</strong>
-                      <span>{formatBytes(videoFile.size)}{videoDuration ? ` · ${videoDuration}` : ""}</span>
+                      <strong title={videoFile?.name}>{videoFile?.name}</strong>
+                      <span>Ready to use in your ad</span>
                     </div>
                     <button className="remove-button" type="button" onClick={removeVideo}>
                       <Icon name="close" size={14} /> Remove
                     </button>
                   </div>
+                  {videoPreviewError && <p className="video-preview-error" role="alert">{videoPreviewError}</p>}
                 </>
               ) : (
                 <div className="video-empty">
                   <div className="video-empty-icon"><Icon name="play" size={22} /></div>
-                  <strong>Your video will appear here</strong>
-                  <p>Select a product or service clip from your device to see it in the preview.</p>
+                  <strong>Your video preview will appear here</strong>
+                  <p>Choose a clip from your device. You can watch it here before building your ad.</p>
                   <button className="button button-lime upload-button" type="button" onClick={openVideoPicker}>
                     <Icon name="plus" size={16} /> Choose video
                   </button>
@@ -465,14 +482,55 @@ export default function HomePage() {
 
               <label className="field-group">
                 <span className="field-label">WHAT SHOULD THE AD DO?</span>
-                <input
-                  value={brief.goal}
-                  onChange={(event) => updateBrief("goal", event.target.value)}
-                  placeholder="e.g. Get more enquiries"
-                  autoComplete="off"
-                  maxLength={160}
-                />
+                <select value={brief.goal} onChange={(event) => updateBrief("goal", event.target.value)}>
+                  <option>Build awareness</option>
+                  <option>Explain the product or service</option>
+                  <option>Promote an offer</option>
+                  <option>Get more enquiries</option>
+                  <option>Drive website visits or sales</option>
+                </select>
               </label>
+
+              <div className="field-grid">
+                <label className="field-group">
+                  <span className="field-label">WHERE WILL YOU SHARE THIS AD?</span>
+                  <select value={brief.platform} onChange={(event) => updateBrief("platform", event.target.value)}>
+                    <option>Instagram Reels</option>
+                    <option>TikTok</option>
+                    <option>YouTube Shorts</option>
+                    <option>Facebook</option>
+                    <option>YouTube (landscape)</option>
+                    <option>Custom</option>
+                  </select>
+                </label>
+                <label className="field-group">
+                  <span className="field-label">VIDEO FORMAT</span>
+                  <select value={brief.aspectRatio} onChange={(event) => updateBrief("aspectRatio", event.target.value)}>
+                    <option value="9:16">Vertical · 9:16</option>
+                    <option value="1:1">Square · 1:1</option>
+                    <option value="16:9">Landscape · 16:9</option>
+                  </select>
+                </label>
+                <label className="field-group">
+                  <span className="field-label">TARGET AD LENGTH</span>
+                  <select value={brief.targetDuration} onChange={(event) => updateBrief("targetDuration", event.target.value)}>
+                    <option value="15">15 seconds</option>
+                    <option value="30">30 seconds</option>
+                    <option value="60">60 seconds</option>
+                  </select>
+                </label>
+                <label className="field-group">
+                  <span className="field-label">AD LANGUAGE</span>
+                  <select value={brief.language} onChange={(event) => updateBrief("language", event.target.value)}>
+                    <option>English</option>
+                    <option>Nigerian Pidgin</option>
+                    <option>Yoruba</option>
+                    <option>Hausa</option>
+                    <option>Igbo</option>
+                    <option>French</option>
+                  </select>
+                </label>
+              </div>
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
 
@@ -548,32 +606,34 @@ export default function HomePage() {
               </button>
             </div>
             <div className="modal-success-icon"><Icon name="check" size={21} /></div>
-            <h2 id="review-title">Your starting brief is ready.</h2>
-            <p className="modal-intro">Here’s the information you’ve provided for this ad.</p>
+            <h2 id="review-title">Review your ad brief.</h2>
+            <p className="modal-intro">Check the message and publishing details before moving to ad generation.</p>
             <div className="review-list">
-              <div><span>Source video</span><strong>{videoFile?.name}</strong></div>
+              <div><span>Source video</span><strong>{videoFile?.name || "No video selected"}</strong></div>
               <div><span>Product or service</span><strong>{brief.productName}</strong></div>
-              <div><span>Main benefit</span><strong>{brief.benefit}</strong></div>
-              <div><span>Audience</span><strong>{brief.audience || "Not specified"}</strong></div>
-              <div><span>Ad objective</span><strong>{brief.goal || "Introduce the product or service"}</strong></div>
+              <div><span>Main benefit and message</span><strong>{brief.benefit}</strong></div>
+              <div><span>Who the ad is for</span><strong>{brief.audience || "Audience not specified"}</strong></div>
+              <div><span>Campaign objective</span><strong>{brief.goal}</strong></div>
+              <div><span>Publishing platform</span><strong>{brief.platform}</strong></div>
+              <div><span>Video format</span><strong>{brief.aspectRatio} · {brief.aspectRatio === "9:16" ? "Vertical" : brief.aspectRatio === "1:1" ? "Square" : "Landscape"}</strong></div>
+              <div><span>Target ad length</span><strong>{brief.targetDuration} seconds</strong></div>
+              <div><span>Language</span><strong>{brief.language}</strong></div>
             </div>
             <div className="modal-honesty">
               <Icon name="sparkle" size={15} />
-              <span>Save a private copy of this brief and source video to your EMM workspace. AI planning and rendering are separate next steps.</span>
+              <span>Next, EMM will use this brief to plan the hook, script, scenes, captions and call to action. You will review the plan before any video is rendered.</span>
             </div>
+            {generationMessage && <p className="generation-feedback" role="status">{generationMessage}</p>}
             {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
-            {savedProjectId ? (
-              <button className="button button-dark review-button" type="button" onClick={() => setReviewOpen(false)}>
-                Done <Icon name="check" size={16} />
+            <div className="modal-actions">
+              <button className="button button-lime review-button" type="button" onClick={handleGenerateAds}>
+                Generate Ads <Icon name="sparkle" size={16} />
               </button>
-            ) : (
-              <div className="modal-actions">
-                <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving}>
-                  {saving ? "Saving securely…" : "Save draft to EMM"} <Icon name="arrow" size={16} />
-                </button>
-                <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Back to workspace</button>
-              </div>
-            )}
+              <button className="button button-dark review-button" type="button" onClick={saveDraft} disabled={saving || Boolean(savedProjectId)}>
+                {saving ? "Saving securely…" : savedProjectId ? "Draft saved to EMM" : "Save draft to EMM"} <Icon name={savedProjectId ? "check" : "arrow"} size={16} />
+              </button>
+              <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Back to workspace</button>
+            </div>
           </section>
         </div>
       )}
