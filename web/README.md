@@ -77,9 +77,10 @@ The Generate Ads workflow calls the authenticated `/api/ad-plan` endpoint and us
 After approving a plan, a signed-in user can save it without rendering, or choose **Render final video**. EMM then:
 
 1. Creates a short-lived signed URL for the private source clip.
-2. Sends an edit timeline to Shotstack's cloud renderer. Video assets use Shotstack's `transcode: true` preprocessing option to normalize source formats/codecs before editing.
-3. Adds the scene text, call to action and, when selected, word-synchronised captions. English and French voiceovers use Shotstack's current native text-to-speech asset. The provider currently documents support for English and French voice choices in this integration; turn voiceover off for Nigerian Pidgin, Yoruba, Hausa or Igbo.
-4. Polls the asynchronous render job and lets the signed-in project owner download the finished MP4 through the authenticated EMM API.
+2. Uses Shotstack's media-probe endpoint to inspect the actual video stream and duration, then limits the output timeline to the shorter of the requested duration and the source clip duration. This avoids rendering a long blank tail when a short clip is selected.
+3. Sends an edit timeline to Shotstack's cloud renderer. Video assets use Shotstack's `transcode: true` preprocessing option to normalize source formats/codecs before editing.
+4. Adds the scene text, call to action and, when selected, word-synchronised captions. English and French voiceovers use Shotstack's current native text-to-speech asset. The provider currently documents support for English and French voice choices in this integration; turn voiceover off for Nigerian Pidgin, Yoruba, Hausa or Igbo.
+5. Polls the asynchronous render job and lets the signed-in project owner download the finished MP4 through the authenticated EMM API. The download fallback accepts the temporary S3 output URL returned by the render-status endpoint while the permanent CDN asset is being published.
 
 The local preview is intentionally lightweight and does not encode large source files inside the browser. Some phone/browser combinations cannot preview every MOV or HEVC codec; in that case EMM displays a compatibility message while the original upload can still be sent to cloud preprocessing.
 
