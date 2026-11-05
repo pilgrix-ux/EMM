@@ -60,7 +60,7 @@ This repository also contains the original Android prototype under `app/`. When 
 
 - **Framework Preset:** Next.js
 - **Root Directory:** `web`
-- **Build Command:** default (`next build`)
+- **Build Command:** `npm run build` (also enforced by `vercel.json`)
 - **Output Directory:** default (`.next`)
 - **Install Command:** default (`npm install`)
 
