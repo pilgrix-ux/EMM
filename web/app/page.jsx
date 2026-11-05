@@ -57,11 +57,6 @@ export default function HomePage() {
   const briefSectionRef = useRef(null);
   const videoElementRef = useRef(null);
   const videoObjectUrlRef = useRef("");
-  const ffmpegRef = useRef(null);
-  const ffmpegLoadPromiseRef = useRef(null);
-  const ffmpegLogRef = useRef("");
-  const conversionInProgressRef = useRef(false);
-  const hasAttemptedTranscodeRef = useRef(false);
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -70,8 +65,6 @@ export default function HomePage() {
   const [builderStep, setBuilderStep] = useState(1);
   const [formError, setFormError] = useState("");
   const [videoPreviewError, setVideoPreviewError] = useState("");
-  const [videoConversionStatus, setVideoConversionStatus] = useState("");
-  const [videoConversionProgress, setVideoConversionProgress] = useState(0);
   const [generationMessage, setGenerationMessage] = useState("");
   const [generatingPlan, setGeneratingPlan] = useState(false);
   const [adPlan, setAdPlan] = useState(null);
@@ -181,61 +174,103 @@ export default function HomePage() {
   async function saveDraft() {
     if (!supabaseConfigured || !supabase) {
       setSaveMessage("Supabase is not connected to this deployment yet. Add the public URL and publishable key in Vercel.");
-      return;
+      return null;
     }
     if (!user) {
       setAuthMode("sign-in");
       setAuthMessage("Sign in or create an account to save this ad and its source video privately.");
       setAuthOpen(true);
-      return;
+      return null;
     }
-    if (videoFile && videoFile.size > 104857600) { setSaveMessage("This video is too large for the current upload limit. Choose a smaller clip."); return; }
-    if (!videoFile || !brief.productName.trim() || !brief.benefit.trim()) {
+    if (videoFile && videoFile.size > 104857600) {
+      setSaveMessage("This video is too large for the current 100 MB upload limit. Choose a smaller clip.");
+      return null;
+    }
+    if ((!videoFile && !savedProjectId) || !brief.productName.trim() || !brief.benefit.trim()) {
       setSaveMessage("Choose a source video and complete the required product details before saving.");
-      return;
+      return null;
     }
 
     setSaving(true);
     setSaveMessage("");
-    setSavedProjectId("");
-    const projectId = crypto.randomUUID();
-    const safeName = videoFile.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-120) || "source-video";
-    const storagePath = user.id + "/" + projectId + "/" + safeName;
+    const projectFields = {
+      title: brief.productName.trim(),
+      product_name: brief.productName.trim(),
+      product_benefit: brief.benefit.trim(),
+      audience: brief.audience.trim() || null,
+      ad_goal: brief.goal.trim() || null,
+      platform: brief.platform,
+      aspect_ratio: brief.aspectRatio,
+      target_duration_seconds: Number(brief.targetDuration),
+      language: brief.language,
+      creative_settings: {
+        visualStyle: brief.visualStyle,
+        captions: brief.captions,
+        voiceover: brief.voiceover,
+        music: brief.music,
+      },
+      ad_plan: adPlan,
+      ad_plan_approved_at: planApproved ? new Date().toISOString() : null,
+      status: adPlan ? "plan_ready" : "draft",
+    };
 
     try {
+      if (savedProjectId) {
+        const { error } = await supabase.from("ad_projects")
+          .update(projectFields)
+          .eq("id", savedProjectId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+        setSavedProjects((current) => current.map((project) => project.id === savedProjectId
+          ? { ...project, title: brief.productName.trim(), status: adPlan ? "plan_ready" : "draft" }
+          : project));
+        setSaveMessage("Updated your EMM project.");
+        return savedProjectId;
+      }
+
+      if (!videoFile) {
+        setSaveMessage("Choose your source video before saving this project.");
+        return null;
+      }
+
+      const projectId = crypto.randomUUID();
+      const safeName = videoFile.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-120) || "source-video";
+      const storagePath = user.id + "/" + projectId + "/" + safeName;
       const { error: uploadError } = await supabase.storage.from("emm-source-videos").upload(storagePath, videoFile, {
-        cacheControl: "3600", contentType: videoFile.type || "application/octet-stream", upsert: false,
+        cacheControl: "3600",
+        contentType: videoFile.type || "application/octet-stream",
+        upsert: false,
       });
       if (uploadError) throw uploadError;
 
       const { data, error: insertError } = await supabase.from("ad_projects").insert({
-        id: projectId, user_id: user.id, title: brief.productName.trim(),
-        source_video_path: storagePath, source_video_name: videoFile.name,
-        source_video_mime_type: videoFile.type || null, source_video_size_bytes: videoFile.size,
-        product_name: brief.productName.trim(), product_benefit: brief.benefit.trim(),
-        audience: brief.audience.trim() || null, ad_goal: brief.goal.trim() || null,
-        platform: brief.platform, aspect_ratio: brief.aspectRatio,
-        target_duration_seconds: Number(brief.targetDuration), language: brief.language,
-        creative_settings: {
-          visualStyle: brief.visualStyle,
-          captions: brief.captions,
-          voiceover: brief.voiceover,
-          music: brief.music,
-        },
-        ad_plan: adPlan,
-        ad_plan_approved_at: planApproved ? new Date().toISOString() : null,
-        status: adPlan ? "plan_ready" : "draft",
+        id: projectId,
+        user_id: user.id,
+        ...projectFields,
+        source_video_path: storagePath,
+        source_video_name: videoFile.name,
+        source_video_mime_type: videoFile.type || null,
+        source_video_size_bytes: videoFile.size,
       }).select("id").single();
 
       if (insertError) {
         await supabase.storage.from("emm-source-videos").remove([storagePath]);
         throw insertError;
       }
+
       setSavedProjectId(data.id);
-      setSavedProjects((current) => [{ id: data.id, title: brief.productName.trim(), status: adPlan ? "plan_ready" : "draft", source_video_name: videoFile.name, created_at: new Date().toISOString() }, ...current].slice(0, 6));
+      setSavedProjects((current) => [{
+        id: data.id,
+        title: brief.productName.trim(),
+        status: adPlan ? "plan_ready" : "draft",
+        source_video_name: videoFile.name,
+        created_at: new Date().toISOString(),
+      }, ...current].slice(0, 6));
       setSaveMessage("Saved securely to your EMM workspace.");
+      return data.id;
     } catch (error) {
       setSaveMessage(error.message || "Could not save this project. Please try again.");
+      return null;
     } finally {
       setSaving(false);
     }
@@ -275,13 +310,9 @@ export default function HomePage() {
 
       videoObjectUrlRef.current = nextUrl;
       if (previousUrl) URL.revokeObjectURL(previousUrl);
-      hasAttemptedTranscodeRef.current = false;
-
       setVideoFile(file);
       setVideoUrl(nextUrl);
       setVideoPreviewError("");
-      setVideoConversionStatus("");
-      setVideoConversionProgress(0);
       setFormError("");
       setGenerationMessage("");
     } catch {
@@ -302,140 +333,15 @@ export default function HomePage() {
     setVideoFile(null);
     setVideoUrl("");
     setVideoPreviewError("");
-    setVideoConversionStatus("");
-    setVideoConversionProgress(0);
-    hasAttemptedTranscodeRef.current = false;
     setFormError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function getVideoTranscoder() {
-    if (ffmpegRef.current) return ffmpegRef.current;
-    if (ffmpegLoadPromiseRef.current) return ffmpegLoadPromiseRef.current;
-
-    ffmpegLoadPromiseRef.current = (async () => {
-      const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
-        import("@ffmpeg/ffmpeg"),
-        import("@ffmpeg/util"),
-      ]);
-      const ffmpeg = new FFmpeg();
-      ffmpeg.on("log", ({ message }) => {
-        const entry = String(message || "").trim();
-        if (entry) ffmpegLogRef.current = (ffmpegLogRef.current + "\n" + entry).slice(-2400);
-      });
-      ffmpeg.on("progress", ({ progress }) => {
-        if (Number.isFinite(progress)) {
-          setVideoConversionProgress(Math.max(0, Math.min(100, Math.round(progress * 100))));
-        }
-      });
-
-      const coreBaseUrl = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-      await ffmpeg.load({
-        coreURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.js", "text/javascript"),
-        wasmURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.wasm", "application/wasm"),
-        classWorkerURL: window.location.origin + "/ffmpeg/worker.js",
-      });
-      ffmpegRef.current = ffmpeg;
-      return ffmpeg;
-    })();
-
-    try {
-      return await ffmpegLoadPromiseRef.current;
-    } finally {
-      ffmpegLoadPromiseRef.current = null;
-    }
-  }
-
-  async function convertVideoForPlayback(file) {
-    if (!file || conversionInProgressRef.current || hasAttemptedTranscodeRef.current) return;
-
-    hasAttemptedTranscodeRef.current = true;
-    conversionInProgressRef.current = true;
-    setVideoPreviewError("");
-    ffmpegLogRef.current = "";
-    setVideoConversionStatus("Preparing the video converter…");
-    setVideoConversionProgress(0);
-
-    try {
-      if (file.size > 104857600) {
-        throw new Error("This clip is larger than the current 100 MB limit for on-device conversion. Choose a smaller video.");
-      }
-
-      const ffmpeg = await getVideoTranscoder();
-      setVideoConversionStatus("Converting this video for playback…");
-
-      const extension = file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase() || "mp4";
-      const inputName = "emm-source." + extension;
-      try { await ffmpeg.deleteFile(inputName); } catch {}
-      try { await ffmpeg.deleteFile("emm-compatible.mp4"); } catch {}
-
-      await ffmpeg.writeFile(inputName, new Uint8Array(await file.arrayBuffer()));
-      const exitCode = await ffmpeg.exec([
-        "-i", inputName,
-        "-map", "0:v:0",
-        "-map", "0:a:0?",
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "23",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-movflags", "+faststart",
-        "-y", "emm-compatible.mp4",
-      ]);
-      if (exitCode !== 0) {
-        const diagnostic = ffmpegLogRef.current.split("\n").filter(Boolean).slice(-4).join(" ");
-        throw new Error(diagnostic || "The video converter stopped before finishing the file.");
-      }
-
-      const output = await ffmpeg.readFile("emm-compatible.mp4");
-      if (!(output instanceof Uint8Array) || output.byteLength === 0) {
-        throw new Error("The converter did not create a playable video.");
-      }
-
-      const compatibleBlob = new Blob([output], { type: "video/mp4" });
-      const compatibleUrl = URL.createObjectURL(compatibleBlob);
-      const previousUrl = videoObjectUrlRef.current;
-
-      if (videoElementRef.current) {
-        videoElementRef.current.pause();
-        videoElementRef.current.removeAttribute("src");
-        videoElementRef.current.load();
-      }
-
-      videoObjectUrlRef.current = compatibleUrl;
-      if (previousUrl) URL.revokeObjectURL(previousUrl);
-
-      setVideoUrl(compatibleUrl);
-      setVideoPreviewError("");
-      setVideoConversionStatus("Compatible preview ready. Your original file is unchanged.");
-      setVideoConversionProgress(100);
-    } catch (error) {
-      const detail = String(error?.message || error || "Unknown conversion error").replace(/\s+/g, " ").trim();
-      setVideoPreviewError(
-        detail.includes("100 MB")
-          ? detail
-          : "Video conversion failed: " + detail.slice(0, 220)
-      );
-      setVideoConversionStatus("");
-    } finally {
-      conversionInProgressRef.current = false;
-    }
-  }
-
   function handleVideoPlaybackError(event) {
     const errorCode = event.currentTarget.error?.code;
-    if ((errorCode === 3 || errorCode === 4) && videoFile && !hasAttemptedTranscodeRef.current) {
-      void convertVideoForPlayback(videoFile);
-      return;
-    }
-
-    const message = errorCode === 3
-      ? "Playback stopped because this video could not be decoded. EMM has already tried to prepare a compatible preview."
-      : errorCode === 4
-        ? "This video format is not supported by this browser, and automatic conversion was unsuccessful."
-        : "Playback was interrupted. Try selecting the clip again.";
+    const message = errorCode === 3 || errorCode === 4
+      ? "This clip uses a codec your browser cannot preview. You can still continue: EMM will convert the source into a compatible MP4 during cloud rendering."
+      : "The browser could not load this video preview. Try selecting the clip again or use an H.264 MP4 for the local preview.";
     setVideoPreviewError(message);
   }
 
@@ -542,6 +448,10 @@ export default function HomePage() {
   function updatePlan(field, value) {
     setAdPlan((current) => current ? { ...current, [field]: value } : current);
     setPlanApproved(false);
+    setRenderId("");
+    setRenderStatus("");
+    setRenderMessage("");
+    setRenderReady(false);
   }
 
   function approvePlan() {
@@ -549,6 +459,125 @@ export default function HomePage() {
     setPlanApproved(true);
     setBuilderStep(4);
     setSaveMessage("");
+    setRenderMessage("");
+  }
+
+  async function pollVideoRender(projectId, accessToken) {
+    for (let attempt = 0; attempt < 36; attempt += 1) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 5000));
+      const response = await fetch("/api/render?projectId=" + encodeURIComponent(projectId), {
+        headers: { Authorization: "Bearer " + accessToken, Accept: "application/json" },
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not check the video render.");
+      setRenderStatus(result.message || "Your video is being rendered.");
+      if (result.status === "done") {
+        setRenderReady(true);
+        setRenderStatus("Your finished MP4 is ready to download.");
+        return true;
+      }
+      if (result.status === "failed") {
+        setRenderId("");
+        throw new Error(result.message || "The render failed. Review the ad plan and try again.");
+      }
+    }
+    setRenderStatus("Your render is still processing. Check the status again in a moment.");
+    return false;
+  }
+
+  async function renderFinalVideo() {
+    if (!adPlan || !planApproved) {
+      setRenderMessage("Approve your ad plan before rendering the final video.");
+      return;
+    }
+    if (!supabase || !user) {
+      setAuthMode("sign-in");
+      setAuthMessage("Sign in to save your source video and render the final ad.");
+      setAuthOpen(true);
+      return;
+    }
+
+    setRenderingVideo(true);
+    setRenderMessage("");
+    setRenderStatus("Saving your approved ad and source video…");
+    try {
+      const projectId = savedProjectId || await saveDraft();
+      if (!projectId) throw new Error("Save your approved ad plan before starting the render.");
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session?.access_token) throw new Error("Your session has expired. Sign in again to render the video.");
+
+      const response = await fetch("/api/render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + session.access_token,
+        },
+        body: JSON.stringify({ projectId }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "EMM could not start the video render.");
+      setRenderId(result.renderId);
+      setRenderReady(false);
+      setRenderStatus(result.message || "Your video is queued for rendering.");
+      await pollVideoRender(projectId, session.access_token);
+    } catch (error) {
+      setRenderMessage(error.message || "The video could not be rendered. Please try again.");
+    } finally {
+      setRenderingVideo(false);
+    }
+  }
+
+  async function checkVideoRenderStatus() {
+    if (!savedProjectId || !renderId || !supabase) return;
+    setRenderingVideo(true);
+    setRenderMessage("");
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!session?.access_token) throw new Error("Your session has expired. Sign in again to check the render.");
+      await pollVideoRender(savedProjectId, session.access_token);
+    } catch (error) {
+      setRenderMessage(error.message || "Could not check the render status.");
+    } finally {
+      setRenderingVideo(false);
+    }
+  }
+
+  async function downloadRenderedVideo() {
+    if (!savedProjectId || !supabase) return;
+    setDownloadingVideo(true);
+    setRenderMessage("");
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!session?.access_token) throw new Error("Sign in again to download your rendered video.");
+
+      const response = await fetch("/api/render?projectId=" + encodeURIComponent(savedProjectId) + "&download=1", {
+        headers: { Authorization: "Bearer " + session.access_token },
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "The finished MP4 could not be downloaded.");
+      }
+      const videoBlob = await response.blob();
+      const downloadUrl = URL.createObjectURL(videoBlob);
+      const link = document.createElement("a");
+      const safeName = (brief.productName || "emm-ad").trim().replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "emm-ad";
+      link.href = downloadUrl;
+      link.download = safeName + ".mp4";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 30000);
+    } catch (error) {
+      setRenderMessage(error.message || "The MP4 download failed. Please try again.");
+    } finally {
+      setDownloadingVideo(false);
+    }
   }
 
   return (
@@ -642,11 +671,10 @@ export default function HomePage() {
                     src={videoUrl}
                     controls
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
                     onCanPlay={() => {
                       setVideoPreviewError("");
-                      if (videoConversionStatus) setVideoConversionStatus("");
                     }}
                     onError={handleVideoPlaybackError}
                   />
@@ -654,12 +682,6 @@ export default function HomePage() {
                     <Icon name="close" size={19} />
                   </button>
                   {videoPreviewError && <p className="video-preview-error" role="alert">{videoPreviewError}</p>}
-                  {videoConversionStatus && (
-                    <p className="video-conversion-status" role="status">
-                      {videoConversionStatus}
-                      {videoConversionStatus.startsWith("Converting") && videoConversionProgress > 0 ? " " + videoConversionProgress + "%" : ""}
-                    </p>
-                  )}
                 </>
               ) : (
                 <div className="video-empty">
@@ -746,7 +768,7 @@ export default function HomePage() {
           <span className="prototype-pulse" />
           <span>EMM ADS WORKSPACE</span>
           <i />
-          <span>AI ad planning is connected; video rendering is the next integration</span>
+          <span>AI ad planning and cloud video rendering are connected</span>
         </div>
         <footer className="footer-line">
           <span>EMM ADS STUDIO</span>
@@ -864,7 +886,7 @@ export default function HomePage() {
                   <label className="field-group">
                     <span className="field-label">AUDIO</span>
                     <select value={brief.music} onChange={(event) => updateBrief("music", event.target.value)}>
-                      <option>Keep original audio</option><option>Music under original audio</option><option>Music only</option><option>Mute audio</option>
+                      <option>Keep original audio</option><option>Lower original audio</option><option>Mute original audio</option>
                     </select>
                   </label>
                 </div>
@@ -948,20 +970,26 @@ export default function HomePage() {
                   <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
                   <div><span>CREATIVE STRUCTURE</span><strong>Scene-by-scene direction</strong></div>
                 </div>
-                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Your creative plan is approved and can be saved. Video rendering and MP4 export are not connected yet.</span></div>
+                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>EMM sends your saved source clip to Shotstack for cloud rendering. Sandbox exports carry a watermark; production renders consume credits. Voice generation and automatic captions may use additional AI credits. Only render when you are ready to submit this video for processing.</span></div>
+                {renderStatus && <p className="render-feedback" role="status">{renderStatus}</p>}
+                {renderMessage && <p className="render-feedback render-feedback-error" role="alert">{renderMessage}</p>}
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
                 <div className="modal-actions builder-actions">
-                  <button className="button button-dark review-button render-disabled-button" type="button" disabled title="Connect a video-rendering provider to enable export">
-                    Render final video <Icon name="film" size={16} />
+                  <button className="button button-dark review-button" type="button" onClick={renderFinalVideo} disabled={renderingVideo || saving || downloadingVideo || (Boolean(renderId) && !renderReady)}>
+                    {renderingVideo ? "Rendering your video…" : renderReady ? "Render another version" : "Render final video"} <Icon name="film" size={16} />
                   </button>
-                  {savedProjectId ? (
-                    <button className="button button-lime review-button" type="button" onClick={() => setReviewOpen(false)}>Saved to your workspace <Icon name="check" size={16} /></button>
-                  ) : (
-                    <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving}>
-                      {saving ? "Saving your ad plan…" : "Save approved ad plan"} <Icon name="arrow" size={16} />
+                  {renderId && !renderReady && (
+                    <button className="button button-quiet review-button" type="button" onClick={checkVideoRenderStatus} disabled={renderingVideo || downloadingVideo}>
+                      {renderingVideo ? "Checking render…" : "Check render status"}
+                    </button>
+                  )}
+                  {renderReady && (
+                    <button className="button button-lime review-button" type="button" onClick={downloadRenderedVideo} disabled={downloadingVideo}>
+                      {downloadingVideo ? "Preparing download…" : "Download finished MP4"} <Icon name="arrow" size={16} />
                     </button>
                   )}
                   <button className="button button-quiet review-button" type="button" onClick={() => { setBuilderStep(3); setPlanApproved(false); }}>Back to edit plan</button>
+                  <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Close</button>
                 </div>
               </>
             )}
