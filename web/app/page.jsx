@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "../lib/supabase/client";
 
 const initialBrief = {
   productName: "",
@@ -67,6 +68,136 @@ export default function HomePage() {
   const [brief, setBrief] = useState(initialBrief);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const [supabase, setSupabase] = useState(null);
+  const [supabaseConfigured, setSupabaseConfigured] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("sign-in");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [savedProjectId, setSavedProjectId] = useState("");
+
+  useEffect(() => {
+    const configured = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    );
+    setSupabaseConfigured(configured);
+    if (!configured) return undefined;
+
+    let client;
+    try {
+      client = createClient();
+      setSupabase(client);
+    } catch (error) {
+      setAuthMessage(error.message);
+      return undefined;
+    }
+
+    client.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+    });
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    if (!supabase) {
+      setAuthMessage("Supabase is not configured. Add the project URL and publishable key in Vercel.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      if (authMode === "sign-up") {
+        const { data, error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword });
+        if (error) throw error;
+        if (data.session) {
+          setUser(data.user);
+          setAuthOpen(false);
+          setAuthPassword("");
+        } else {
+          setAuthMessage("Check your email for the confirmation link, then come back here to sign in.");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
+        if (error) throw error;
+        setUser(data.user);
+        setAuthOpen(false);
+        setAuthPassword("");
+      }
+    } catch (error) {
+      setAuthMessage(error.message || "Authentication failed. Please try again.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleSignOut() {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) { setAuthMessage(error.message); return; }
+    setUser(null);
+    setSavedProjectId("");
+    setSaveMessage("");
+  }
+
+  async function saveDraft() {
+    if (!supabaseConfigured || !supabase) {
+      setSaveMessage("Supabase is not connected to this deployment yet. Add the public URL and publishable key in Vercel.");
+      return;
+    }
+    if (!user) {
+      setAuthMode("sign-in");
+      setAuthMessage("Sign in or create an account to save this ad and its source video privately.");
+      setAuthOpen(true);
+      return;
+    }
+    if (!videoFile || !brief.productName.trim() || !brief.benefit.trim()) {
+      setSaveMessage("Choose a source video and complete the required product details before saving.");
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage("");
+    setSavedProjectId("");
+    const projectId = crypto.randomUUID();
+    const safeName = videoFile.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-120) || "source-video";
+    const storagePath = user.id + "/" + projectId + "/" + safeName;
+
+    try {
+      const { error: uploadError } = await supabase.storage.from("emm-source-videos").upload(storagePath, videoFile, {
+        cacheControl: "3600", contentType: videoFile.type || "application/octet-stream", upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      const { data, error: insertError } = await supabase.from("ad_projects").insert({
+        id: projectId, user_id: user.id, title: brief.productName.trim(), status: "draft",
+        source_video_path: storagePath, source_video_name: videoFile.name,
+        source_video_mime_type: videoFile.type || null, source_video_size_bytes: videoFile.size,
+        product_name: brief.productName.trim(), product_benefit: brief.benefit.trim(),
+        audience: brief.audience.trim() || null, ad_goal: brief.goal.trim() || null,
+      }).select("id").single();
+
+      if (insertError) {
+        await supabase.storage.from("emm-source-videos").remove([storagePath]);
+        throw insertError;
+      }
+      setSavedProjectId(data.id);
+      setSaveMessage("Saved securely to your EMM workspace.");
+    } catch (error) {
+      setSaveMessage(error.message || "Could not save this project. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!videoUrl) return undefined;
@@ -145,10 +276,16 @@ export default function HomePage() {
               <small>AI ADVERTISING WORKSPACE</small>
             </span>
           </a>
-          <button className="button button-dark topbar-action" type="button" onClick={() => jumpTo(videoSectionRef)}>
-            <Icon name="plus" size={15} />
-            <span>New ad</span>
-          </button>
+          <div className="topbar-actions">
+            <button className="button button-dark topbar-action" type="button" onClick={user ? handleSignOut : () => { setAuthMode("sign-in"); setAuthMessage(""); setAuthOpen(true); }}>
+              <Icon name={user ? "close" : "edit"} size={14} />
+              <span>{user ? "Sign out" : "Sign in"}</span>
+            </button>
+            <button className="button button-lime topbar-action topbar-new-ad" type="button" onClick={() => jumpTo(videoSectionRef)}>
+              <Icon name="plus" size={14} />
+              <span>New ad</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -366,14 +503,61 @@ export default function HomePage() {
             </div>
             <div className="modal-honesty">
               <Icon name="sparkle" size={15} />
-              <span>This is a local brief review. AI planning and video rendering are not connected yet.</span>
+              <span>Save a private copy of this brief and source video to your EMM workspace. AI planning and rendering are separate next steps.</span>
             </div>
-            <button className="button button-dark review-button" type="button" onClick={() => setReviewOpen(false)}>
-              Back to workspace <Icon name="arrow" size={16} />
-            </button>
+            {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
+            {savedProjectId ? (
+              <button className="button button-dark review-button" type="button" onClick={() => setReviewOpen(false)}>
+                Done <Icon name="check" size={16} />
+              </button>
+            ) : (
+              <div className="modal-actions">
+                <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving}>
+                  {saving ? "Saving securely…" : "Save draft to EMM"} <Icon name="arrow" size={16} />
+                </button>
+                <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Back to workspace</button>
+              </div>
+            )}
           </section>
         </div>
       )}
-    </main>
+
+      {authOpen && (
+        <div className="modal-backdrop auth-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !authBusy) setAuthOpen(false);
+        }}>
+          <section className="review-modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+            <div className="modal-topline">
+              <span className="section-kicker">YOUR EMM WORKSPACE</span>
+              <button className="modal-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)} disabled={authBusy}><Icon name="close" size={18} /></button>
+            </div>
+            <div className="modal-success-icon"><Icon name="shield" size={20} /></div>
+            <h2 id="auth-title">{authMode === "sign-up" ? "Create your workspace access." : "Welcome back."}</h2>
+            <p className="modal-intro">Sign in to save your ad briefs and private source videos.</p>
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              <label className="field-group">
+                <span className="field-label">EMAIL ADDRESS</span>
+                <input type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" />
+              </label>
+              <label className="field-group">
+                <span className="field-label">PASSWORD</span>
+                <input type="password" autoComplete={authMode === "sign-up" ? "new-password" : "current-password"} minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="At least 8 characters" />
+              </label>
+              {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
+              <button className="button button-dark review-button" type="submit" disabled={authBusy || !supabaseConfigured}>
+                {authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in"} <Icon name="arrow" size={16} />
+              </button>
+            </form>
+            <p className="auth-switch">
+              {authMode === "sign-up" ? "Already have an account?" : "New to EMM?"}{" "}
+              <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthMessage(""); }}>
+                {authMode === "sign-up" ? "Sign in" : "Create account"}
+              </button>
+            </p>
+            {!supabaseConfigured && <p className="auth-config-note">Supabase environment variables still need to be added to the Vercel project.</p>}
+          </section>
+        </div>
+      )}
+          </main>
   );
 }
