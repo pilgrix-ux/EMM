@@ -7,9 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
-    "start": "next start",
-    "prebuild": "node scripts/prepare-ffmpeg-assets.mjs"
+    "build": "node scripts/prepare-ffmpeg-assets.mjs && next build --webpack",
+    "start": "next start"
   },
   "dependencies": {
     "next": "16.4.5",
