@@ -353,12 +353,41 @@ export default function HomePage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  function retryVideoPreview() {
+    const player = videoElementRef.current;
+    if (!player || !videoUrl) return;
+
+    setVideoPreviewError("");
+    try {
+      player.pause();
+      player.currentTime = 0;
+    } catch {
+      // Some mobile browsers do not allow seeking until metadata is ready.
+    }
+    player.load();
+  }
+
   function handleVideoPlaybackError(event) {
-    const errorCode = event.currentTarget.error?.code;
-    const message = errorCode === 3 || errorCode === 4
-      ? "This clip uses a codec your browser cannot preview. You can still continue: EMM will convert the source into a compatible MP4 during cloud rendering."
-      : "The browser could not load this video preview. Try selecting the clip again or use an H.264 MP4 for the local preview.";
-    setVideoPreviewError(message);
+    const player = event.currentTarget;
+    const mediaError = player.error;
+    const errorCode = mediaError?.code;
+    const messages = {
+      1: "The browser interrupted playback before the clip finished. Retry the preview. If it stops at the same point again, the source file may be incomplete.",
+      2: "The browser stopped reading the selected video before it finished. Retry the preview. If it stops at the same point, the file may be damaged or the phone may not be reading its format reliably.",
+      3: "The clip started playing, but this device could not decode a later part of it. The video may use a codec or encoding profile this browser cannot play reliably.",
+      4: "This browser does not support the video's container or codec. An H.264 MP4 is the most compatible local preview format.",
+    };
+    const fallback = "The browser could not continue playing this local video.";
+    const detail = mediaError?.message
+      ? " Browser detail: " + String(mediaError.message).slice(0, 160)
+      : Number.isFinite(errorCode)
+        ? " Media error code: " + errorCode + "."
+        : " The browser did not provide a media error code.";
+    setVideoPreviewError(
+      (messages[errorCode] || fallback) +
+      detail +
+      " You can still continue: EMM's cloud renderer can convert supported source videos when creating the final MP4."
+    );
   }
 
   function updateBrief(field, value) {
@@ -687,8 +716,11 @@ export default function HomePage() {
                     src={videoUrl}
                     controls
                     playsInline
-                    preload="metadata"
+                    preload={videoFile?.size <= 104857600 ? "auto" : "metadata"}
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
+                    onLoadedMetadata={() => {
+                      setVideoPreviewError("");
+                    }}
                     onCanPlay={() => {
                       setVideoPreviewError("");
                     }}
@@ -697,7 +729,14 @@ export default function HomePage() {
                   <button className="video-remove-overlay" type="button" onClick={removeVideo} aria-label="Remove selected video" title="Remove video">
                     <Icon name="close" size={19} />
                   </button>
-                  {videoPreviewError && <p className="video-preview-error" role="alert">{videoPreviewError}</p>}
+                  {videoPreviewError && (
+                    <div className="video-preview-feedback" role="alert">
+                      <p className="video-preview-error">{videoPreviewError}</p>
+                      <button className="video-preview-retry" type="button" onClick={retryVideoPreview}>
+                        Retry preview
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="video-empty">
