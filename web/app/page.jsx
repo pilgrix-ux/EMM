@@ -300,10 +300,12 @@ export default function HomePage() {
             </span>
           </a>
           <div className="topbar-actions">
-            <button className="button button-dark topbar-action" type="button" onClick={user ? handleSignOut : () => { setAuthMode("sign-in"); setAuthMessage(""); setAuthOpen(true); }}>
-              <Icon name={user ? "close" : "edit"} size={14} />
-              <span>{user ? "Sign out" : "Sign in"}</span>
-            </button>
+            {user && (
+              <button className="button button-dark topbar-action" type="button" onClick={handleSignOut}>
+                <Icon name="close" size={14} />
+                <span>Sign out</span>
+              </button>
+            )}
             <button className="button button-lime topbar-action topbar-new-ad" type="button" onClick={() => jumpTo(videoSectionRef)}>
               <Icon name="plus" size={14} />
               <span>New ad</span>
