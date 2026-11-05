@@ -347,21 +347,23 @@ Security:
 
 | Token | Value | Usage |
 |---|---|---|
-| Primary blue | #4566E8 | Primary actions and selected states |
-| App background | #F7F8FC | Main screen background |
-| Surface | #FFFFFF | Cards and panels |
-| Main text | #17213D | Headings and important labels |
-| Muted text | #78829A | Supporting text |
-| Success | #25865A | Completed and valid states |
-| Border | #E7EAF2 | Card outlines and dividers |
+| Canvas | #EEF0F4 | Main page background |
+| Primary accent | #C8EF00 | Primary actions, active Home item, highlights |
+| Dark accent | #121316 | High-contrast actions, hero surfaces, text |
+| Surface | #FFFFFF / translucent white | Glossy cards and frosted panels |
+| Recessed field | #EFF1F5 | Inputs and pressed surfaces |
+| Main text | #121316 | Headings and important labels |
+| Muted text | #78808E | Supporting text |
+| Border | rgba(255,255,255,0.8) | Soft card edges and frosted surfaces |
 
 Design rules:
 - One obvious primary action per screen.
 - Essential labels must remain readable.
-- Use consistent spacing, rounded cards, and clear section titles.
-- Display selected settings visibly.
+- Use consistent spacing, generous rounded cards, and clear section titles.
+- Use raised glassy cards sparingly and inset shadows on form controls.
+- Use lime as a deliberate highlight rather than filling every surface.
 - Include empty, loading, disabled, success, and error states.
-- Support small mobile screens, desktop layouts, scrolling, keyboard visibility, and accessibility text scaling.
+- Support small mobile screens, desktop layouts, keyboard visibility, and accessibility text scaling.
 
 ## 14. Current implementation status
 
