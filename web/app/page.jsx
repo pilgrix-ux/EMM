@@ -552,7 +552,6 @@ export default function HomePage() {
               <p className="launch-footnote">You can edit your brief and creative settings before generating the plan.</p>
             </div>
           </section>
-          </section>
         </section>
 
         {user && (
