@@ -199,10 +199,11 @@ function buildTextAsset(text, size = 48) {
   };
 }
 
-function buildEdit(project, sourceUrl, environment) {
+function buildEdit(project, sourceUrl, sourceDuration) {
   const brief = project.creative_settings || {};
   const plan = project.ad_plan || {};
-  const duration = Math.min(60, Math.max(10, Number(project.target_duration_seconds) || 30));
+  const requestedDuration = Math.min(60, Math.max(10, Number(project.target_duration_seconds) || 30));
+  const duration = Math.min(requestedDuration, Math.max(2, Number(sourceDuration) || requestedDuration));
   const aspectRatio = ["9:16", "16:9", "1:1", "4:5", "4:3"].includes(project.aspect_ratio)
     ? project.aspect_ratio
     : "9:16";
@@ -351,6 +352,30 @@ function buildEdit(project, sourceUrl, environment) {
   };
 }
 
+async function probeSourceDuration(sourceUrl, provider) {
+  const result = await shotstackFetch(
+    `${provider.editBaseUrl}/probe/${encodeURIComponent(sourceUrl)}`,
+    provider.apiKey
+  );
+  if (result?.success === false) {
+    throw new ApiError(cleanText(result.message, 240) || "The video service could not inspect this source clip.", 422);
+  }
+
+  const probe = result?.response || {};
+  const formatDuration = Number(probe?.format?.duration);
+  const streamDurations = Array.isArray(probe?.streams)
+    ? probe.streams.map((stream) => Number(stream?.duration)).filter((value) => Number.isFinite(value) && value > 0)
+    : [];
+  const sourceDuration = Number.isFinite(formatDuration) && formatDuration > 0
+    ? formatDuration
+    : Math.max(0, ...streamDurations);
+  if (!Number.isFinite(sourceDuration) || sourceDuration < 2) {
+    throw new ApiError("The uploaded video is too short or its duration could not be read. Choose a clip of at least 2 seconds and try again.", 422);
+  }
+
+  return Math.round(sourceDuration * 100) / 100;
+}
+
 async function shotstackFetch(url, apiKey, options = {}) {
   const response = await fetch(url, {
     ...options,
@@ -433,9 +458,10 @@ async function getHostedVideoUrl(renderId, status, provider) {
 
   if (status.temporaryUrl) {
     const parsed = new URL(status.temporaryUrl);
-    if (parsed.protocol === "https:" && parsed.hostname.endsWith("shotstack.io")) {
-      return status.temporaryUrl;
-    }
+    const isShotstackOutput = parsed.protocol === "https:"
+      && parsed.hostname.endsWith(".amazonaws.com")
+      && parsed.hostname.includes("shotstack-api-v1-output");
+    if (isShotstackOutput) return status.temporaryUrl;
   }
   throw new ApiError("The MP4 is ready, but the video host has not finished publishing it. Check again in a few seconds.", 409);
 }
@@ -446,7 +472,8 @@ async function handlePost(request) {
   const body = await request.json().catch(() => ({}));
   const project = await getProject(body?.projectId, auth);
   const sourceUrl = await createSourceUrl(project, auth);
-  const edit = buildEdit(project, sourceUrl, provider.environment);
+  const sourceDuration = await probeSourceDuration(sourceUrl, provider);
+  const edit = buildEdit(project, sourceUrl, sourceDuration);
 
   const queued = await shotstackFetch(`${provider.editBaseUrl}/render`, provider.apiKey, {
     method: "POST",
@@ -463,6 +490,8 @@ async function handlePost(request) {
     shotstackRenderStartedAt: new Date().toISOString(),
     shotstackRenderCompletedAt: null,
     shotstackRenderError: null,
+    shotstackSourceDurationSeconds: sourceDuration,
+    shotstackOutputDurationSeconds: edit.output.range.length,
   }, "render_queued");
 
   return json({
