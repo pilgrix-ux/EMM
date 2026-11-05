@@ -363,9 +363,13 @@ async function probeSourceDuration(sourceUrl, provider) {
 
   const probe = result?.response || {};
   const formatDuration = Number(probe?.format?.duration);
-  const streamDurations = Array.isArray(probe?.streams)
-    ? probe.streams.map((stream) => Number(stream?.duration)).filter((value) => Number.isFinite(value) && value > 0)
-    : [];
+  const streams = Array.isArray(probe?.streams) ? probe.streams : [];
+  if (!streams.some((stream) => stream?.codec_type === "video")) {
+    throw new ApiError("The selected file does not contain a readable video track. Choose a video file and try again.", 422);
+  }
+  const streamDurations = streams
+    .map((stream) => Number(stream?.duration))
+    .filter((value) => Number.isFinite(value) && value > 0);
   const sourceDuration = Number.isFinite(formatDuration) && formatDuration > 0
     ? formatDuration
     : Math.max(0, ...streamDurations);
@@ -459,8 +463,7 @@ async function getHostedVideoUrl(renderId, status, provider) {
   if (status.temporaryUrl) {
     const parsed = new URL(status.temporaryUrl);
     const isShotstackOutput = parsed.protocol === "https:"
-      && parsed.hostname.endsWith(".amazonaws.com")
-      && parsed.hostname.includes("shotstack-api-v1-output");
+      && parsed.hostname.endsWith(".amazonaws.com");
     if (isShotstackOutput) return status.temporaryUrl;
   }
   throw new ApiError("The MP4 is ready, but the video host has not finished publishing it. Check again in a few seconds.", 409);
