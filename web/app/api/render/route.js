@@ -30,11 +30,15 @@ function cleanText(value, max = 500) {
 }
 
 function getProviderConfig() {
-  const apiKey = process.env.SHOTSTACK_API_KEY;
   const environment = process.env.SHOTSTACK_ENV === "v1" ? "v1" : "stage";
+  const isProduction = environment === "v1";
+  const apiKey = isProduction
+    ? process.env.SHOTSTACK_PRODUCTION_API_KEY || process.env.SHOTSTACK_API_KEY
+    : process.env.SHOTSTACK_SANDBOX_API_KEY || process.env.SHOTSTACK_API_KEY;
   if (!apiKey) {
+    const requiredKey = isProduction ? "SHOTSTACK_PRODUCTION_API_KEY" : "SHOTSTACK_SANDBOX_API_KEY";
     throw new ApiError(
-      "Cloud video rendering is not configured. Add SHOTSTACK_API_KEY to the Vercel environment variables, then redeploy.",
+      `Cloud video rendering is not configured for the ${isProduction ? "production" : "sandbox"} environment. Add ${requiredKey} to the Vercel environment variables, then redeploy.`,
       503
     );
   }
