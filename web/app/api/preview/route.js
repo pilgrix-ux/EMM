@@ -257,11 +257,86 @@ async function handleGet(request) {
     if (!validHost) {
       throw new ApiError("The converted preview returned an untrusted video host.", 502);
     }
+
+    // Store the rendition in the user's private bucket before deleting the
+    // link-accessible Shotstack source and its generated renditions.
+    const mediaResponse = await fetch(previewUrl.toString(), { cache: "no-store" });
+    if (!mediaResponse.ok || !mediaResponse.body) {
+      throw new ApiError("The converted MP4 could not be retrieved from the video service.", 502);
+    }
+    const contentLength = Number(mediaResponse.headers.get("content-length") || 0);
+    if (contentLength > 104857600) {
+      throw new ApiError("The compatible preview is larger than EMM's 100 MB private storage limit.", 413);
+    }
+    const mediaBuffer = Buffer.from(await mediaResponse.arrayBuffer());
+    if (!mediaBuffer.length || mediaBuffer.length > 104857600) {
+      throw new ApiError("The compatible preview is empty or exceeds EMM's 100 MB private storage limit.", 413);
+    }
+
+    const storagePath = `${auth.user.id}/preview-output/${preview.sourceId}.mp4`;
+    const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
+    const uploadResponse = await fetch(
+      `${auth.supabaseUrl}/storage/v1/object/${BUCKET}/${encodedPath}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: auth.publishableKey,
+          Authorization: auth.authorization,
+          "Content-Type": "video/mp4",
+          "Cache-Control": "3600",
+          "x-upsert": "true",
+        },
+        body: mediaBuffer,
+        cache: "no-store",
+      }
+    );
+    if (!uploadResponse.ok) {
+      const uploadError = await readResponse(uploadResponse);
+      throw new ApiError(
+        cleanText(uploadError?.message || uploadError?.error, 240)
+          || "EMM could not save the compatible preview to your private workspace.",
+        502
+      );
+    }
+
+    const signResponse = await fetch(
+      `${auth.supabaseUrl}/storage/v1/object/sign/${BUCKET}/${encodedPath}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: auth.publishableKey,
+          Authorization: auth.authorization,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ expiresIn: 86400 }),
+        cache: "no-store",
+      }
+    );
+    const signed = await readResponse(signResponse);
+    if (!signResponse.ok || !signed?.signedURL) {
+      throw new ApiError("EMM saved the preview but could not create its private playback link.", 502);
+    }
+
+    const signedPath = String(signed.signedURL);
+    const privateUrl = /^https:\/\//i.test(signedPath)
+      ? signedPath
+      : signedPath.startsWith("/storage/v1/")
+        ? auth.supabaseUrl + signedPath
+        : auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
+
+    // Shotstack's DELETE /sources/{id} also deletes generated renditions.
+    await shotstackFetch(
+      `${provider.ingestBaseUrl}/sources/${encodeURIComponent(preview.sourceId)}`,
+      provider.apiKey,
+      { method: "DELETE" }
+    );
+
     return json({
       status: "ready",
       sourceIngested: true,
-      url: previewUrl.toString(),
-      message: "Compatible MP4 ready. Your original source video is unchanged.",
+      url: privateUrl,
+      storagePath,
+      message: "Compatible MP4 ready in your private EMM workspace. Temporary Shotstack media has been deleted.",
     });
   }
 
