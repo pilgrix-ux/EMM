@@ -60,6 +60,7 @@ export default function HomePage() {
   const videoObjectUrlRef = useRef("");
   const ffmpegRef = useRef(null);
   const ffmpegLoadPromiseRef = useRef(null);
+  const ffmpegLogRef = useRef("");
   const conversionInProgressRef = useRef(false);
   const hasAttemptedTranscodeRef = useRef(false);
 
@@ -319,6 +320,10 @@ export default function HomePage() {
         import("@ffmpeg/util"),
       ]);
       const ffmpeg = new FFmpeg();
+      ffmpeg.on("log", ({ message }) => {
+        const entry = String(message || "").trim();
+        if (entry) ffmpegLogRef.current = (ffmpegLogRef.current + "\\n" + entry).slice(-2400);
+      });
       ffmpeg.on("progress", ({ progress }) => {
         if (Number.isFinite(progress)) {
           setVideoConversionProgress(Math.max(0, Math.min(100, Math.round(progress * 100))));
@@ -348,6 +353,7 @@ export default function HomePage() {
     hasAttemptedTranscodeRef.current = true;
     conversionInProgressRef.current = true;
     setVideoPreviewError("");
+    ffmpegLogRef.current = "";
     setVideoConversionStatus("Preparing the video converter…");
     setVideoConversionProgress(0);
 
@@ -379,7 +385,10 @@ export default function HomePage() {
         "-movflags", "+faststart",
         "-y", "emm-compatible.mp4",
       ]);
-      if (exitCode !== 0) throw new Error("The converter could not read this video.");
+      if (exitCode !== 0) {
+        const diagnostic = ffmpegLogRef.current.split("\\n").filter(Boolean).slice(-4).join(" ");
+        throw new Error(diagnostic || "The video converter stopped before finishing the file.");
+      }
 
       const output = await ffmpeg.readFile("emm-compatible.mp4");
       if (!(output instanceof Uint8Array) || output.byteLength === 0) {
@@ -404,10 +413,11 @@ export default function HomePage() {
       setVideoConversionStatus("Compatible preview ready. Your original file is unchanged.");
       setVideoConversionProgress(100);
     } catch (error) {
+      const detail = String(error?.message || error || "Unknown conversion error").replace(/\\s+/g, " ").trim();
       setVideoPreviewError(
-        error?.message?.includes("100 MB")
-          ? error.message
-          : "EMM couldn't convert this video on this device. Try a smaller clip or a common MP4/MOV video."
+        detail.includes("100 MB")
+          ? detail
+          : "Video conversion failed: " + detail.slice(0, 220)
       );
       setVideoConversionStatus("");
     } finally {
@@ -417,7 +427,7 @@ export default function HomePage() {
 
   function handleVideoPlaybackError(event) {
     const errorCode = event.currentTarget.error?.code;
-    if (errorCode === 4 && videoFile && !hasAttemptedTranscodeRef.current) {
+    if ((errorCode === 3 || errorCode === 4) && videoFile && !hasAttemptedTranscodeRef.current) {
       void convertVideoForPlayback(videoFile);
       return;
     }
@@ -640,13 +650,13 @@ export default function HomePage() {
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
                     onCanPlay={() => {
                       setVideoPreviewError("");
-                      if (videoUrl === videoObjectUrlRef.current && videoConversionStatus.startsWith("Converting")) {
-                        setVideoConversionStatus("");
-                      }
+                      if (videoConversionStatus) setVideoConversionStatus("");
                     }}
                     onError={handleVideoPlaybackError}
                   />
-                  <div className="video-player-actions"><button className="remove-button" type="button" onClick={removeVideo}><Icon name="close" size={14} /> Remove video</button></div>
+                  <button className="video-remove-overlay" type="button" onClick={removeVideo} aria-label="Remove selected video" title="Remove video">
+                    <Icon name="close" size={19} />
+                  </button>
                   {videoPreviewError && <p className="video-preview-error" role="alert">{videoPreviewError}</p>}
                   {videoConversionStatus && (
                     <p className="video-conversion-status" role="status">
