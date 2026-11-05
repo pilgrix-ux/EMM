@@ -57,6 +57,7 @@ export default function HomePage() {
   const briefSectionRef = useRef(null);
   const videoElementRef = useRef(null);
   const videoObjectUrlRef = useRef("");
+  const previewAutoAttemptRef = useRef(false);
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -326,6 +327,7 @@ export default function HomePage() {
       setPreviewErrorCode(null);
       setCompatiblePreviewUrl("");
       setPreviewConversionMessage("");
+      previewAutoAttemptRef.current = false;
       setSavedProjectId("");
       setRenderId("");
       setRenderStatus("");
@@ -354,6 +356,7 @@ export default function HomePage() {
     setPreviewErrorCode(null);
     setCompatiblePreviewUrl("");
     setPreviewConversionMessage("");
+    previewAutoAttemptRef.current = false;
     setSavedProjectId("");
     setRenderId("");
     setRenderStatus("");
@@ -398,6 +401,12 @@ export default function HomePage() {
       (messages[errorCode] || fallback) +
       detail
     );
+
+    // Automatically recover from unsupported format/codec errors for signed-in users.
+    if ((errorCode === 3 || errorCode === 4) && user && supabase && !previewAutoAttemptRef.current) {
+      previewAutoAttemptRef.current = true;
+      void prepareCompatiblePreview();
+    }
   }
 
   async function prepareCompatiblePreview() {
@@ -423,6 +432,7 @@ export default function HomePage() {
     setPreviewConverting(true);
     setPreviewConversionMessage("Preparing a temporary private copy of your video…");
     let storagePath = "";
+    let providerAcceptedSource = false;
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -463,8 +473,11 @@ export default function HomePage() {
       if (!startResponse.ok || !startResult.token) {
         throw new Error(startResult.error || "EMM could not start the compatible preview conversion.");
       }
+      providerAcceptedSource = true;
 
-      for (let attempt = 0; attempt < 40; attempt += 1) {
+      // Shotstack fetches the signed source URL asynchronously. Keep the private
+      // upload until its source status confirms that ingestion has completed.
+      for (let attempt = 0; attempt < 60; attempt += 1) {
         if (attempt > 0) {
           setPreviewConversionMessage("Converting your clip into a browser-friendly MP4…");
           await new Promise((resolve) => window.setTimeout(resolve, 3000));
@@ -478,21 +491,35 @@ export default function HomePage() {
         if (!statusResponse.ok) {
           throw new Error(statusResult.error || "The compatible preview conversion failed.");
         }
+
+        if (statusResult.sourceIngested && storagePath) {
+          const { error: cleanupError } = await supabase.storage.from("emm-source-videos").remove([storagePath]);
+          if (cleanupError) {
+            setPreviewConversionMessage("The source was converted. EMM could not remove the temporary upload automatically.");
+          }
+          storagePath = "";
+        }
+
+        if (statusResult.status === "failed") {
+          throw new Error(statusResult.message || "The compatible preview conversion failed.");
+        }
         if (statusResult.status === "ready" && statusResult.url) {
           setCompatiblePreviewUrl(statusResult.url);
           setVideoPreviewError("");
           setPreviewErrorCode(null);
-          setPreviewConversionMessage("Compatible preview ready. Your original video is unchanged.");
+          setPreviewConversionMessage("Compatible MP4 ready. Your original source video is unchanged.");
           return;
         }
         setPreviewConversionMessage(statusResult.message || "Converting your clip…");
       }
 
-      throw new Error("The preview conversion is taking longer than expected. Try again in a moment.");
+      throw new Error("The preview conversion is taking longer than expected. The private upload has been kept while Shotstack finishes fetching it. Try again in a moment.");
     } catch (error) {
       setPreviewConversionMessage(error.message || "EMM could not prepare a compatible preview.");
     } finally {
-      if (storagePath) {
+      // Clean up only when the provider never accepted the source. Once queued,
+      // deleting it before ingestion finishes would break the provider fetch.
+      if (storagePath && !providerAcceptedSource) {
         const { error: cleanupError } = await supabase.storage.from("emm-source-videos").remove([storagePath]);
         if (cleanupError) {
           // The source remains private in the user's own storage folder.
