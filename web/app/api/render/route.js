@@ -112,10 +112,14 @@ async function getProject(projectId, auth) {
   return project;
 }
 
-async function updateCreativeSettings(project, auth, patch) {
+async function updateCreativeSettings(project, auth, patch, projectStatus = null) {
   const settings = project.creative_settings && typeof project.creative_settings === "object"
     ? project.creative_settings
     : {};
+  const update = {
+    creative_settings: { ...settings, ...patch },
+    ...(projectStatus ? { status: projectStatus } : {}),
+  };
   const response = await fetch(
     `${auth.supabaseUrl}/rest/v1/ad_projects?id=eq.${project.id}&user_id=eq.${auth.user.id}`,
     {
@@ -126,9 +130,7 @@ async function updateCreativeSettings(project, auth, patch) {
         "Content-Type": "application/json",
         Prefer: "return=minimal",
       },
-      body: JSON.stringify({
-        creative_settings: { ...settings, ...patch },
-      }),
+      body: JSON.stringify(update),
       cache: "no-store",
     }
   );
@@ -278,19 +280,36 @@ function buildEdit(project, sourceUrl, environment) {
   }
 
   if (wantsVoiceover && voiceoverText) {
-    const voice = voiceoverMode === "Energetic voiceover"
-      ? "Charlie"
-      : voiceoverMode === "Warm conversational voiceover"
-        ? "Laura"
-        : "Rachel";
+    const speechSettings = {
+      English: {
+        language: "en-US",
+        voice: voiceoverMode === "Energetic voiceover"
+          ? "Matthew"
+          : voiceoverMode === "Warm conversational voiceover"
+            ? "Kendra"
+            : "Joanna",
+      },
+      French: {
+        language: "fr-FR",
+        voice: voiceoverMode === "Energetic voiceover" ? "Rémi" : "Léa",
+      },
+    }[cleanText(brief.language, 60)];
+
+    if (!speechSettings) {
+      throw new ApiError(
+        "Cloud voiceover currently supports English and French. For Nigerian Pidgin, Yoruba, Hausa or Igbo, turn voiceover off and keep captions enabled; the caption service can transcribe supported speech.",
+        400
+      );
+    }
+
     tracks.push({
       clips: [{
         alias: "emm-voiceover",
         asset: {
-          type: "audio",
-          prompt: voiceoverText,
-          model: "elevenlabs-multilingual-v2",
-          options: { voice },
+          type: "text-to-speech",
+          text: voiceoverText,
+          voice: speechSettings.voice,
+          language: speechSettings.language,
         },
         start: 0,
         length: "auto",
@@ -439,7 +458,8 @@ async function handlePost(request) {
     shotstackRenderEnvironment: provider.environment,
     shotstackRenderStartedAt: new Date().toISOString(),
     shotstackRenderCompletedAt: null,
-  });
+    shotstackRenderError: null,
+  }, "render_queued");
 
   return json({
     renderId,
@@ -468,7 +488,14 @@ async function handleGet(request) {
     if (status.credits !== null) patch.shotstackRenderCredits = status.credits;
   }
   if (status.status === "failed" && status.message) patch.shotstackRenderError = status.message;
-  await updateCreativeSettings(project, auth, patch);
+  const projectStatus = status.status === "done"
+    ? "complete"
+    : status.status === "failed"
+      ? "failed"
+      : ["queued", "fetching"].includes(status.status)
+        ? "render_queued"
+        : "rendering";
+  await updateCreativeSettings(project, auth, patch, projectStatus);
 
   if (url.searchParams.get("download") === "1") {
     if (status.status !== "done") {
