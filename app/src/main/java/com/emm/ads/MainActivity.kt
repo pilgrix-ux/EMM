@@ -11,187 +11,102 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.MediaController
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.VideoView
-import android.text.Editable
-import android.text.TextWatcher
 
 class MainActivity : Activity() {
 
-    private data class StudioTool(
+    private data class StudioSetting(
         val title: String,
         val symbol: String,
         val options: List<String>,
-        val initialChoice: String,
+        val defaultValue: String,
         val description: String
     )
 
-    private data class AdConcept(
-        val title: String,
-        val subtitle: String,
-        val prompt: String
-    )
-
-    private data class ChatMessage(val text: String, val fromUser: Boolean)
-
-    private val tools = listOf(
-        StudioTool(
-            "Voiceover", "◖",
-            listOf("Off", "Female · warm and friendly", "Male · confident", "Natural storyteller"),
-            "Off", "Choose the voice that brings your message to life."
+    private val settings = listOf(
+        StudioSetting(
+            "Platform",
+            "▣",
+            listOf(
+                "Instagram Reels · 9:16",
+                "TikTok · 9:16",
+                "YouTube Shorts · 9:16",
+                "Instagram Feed · 1:1",
+                "YouTube · 16:9"
+            ),
+            "Instagram Reels · 9:16",
+            "Choose where your advertisement will be published."
         ),
-        StudioTool(
-            "Music", "♫",
-            listOf("No music", "Bright and upbeat", "Cinematic", "Soft and elegant", "Modern electronic"),
-            "No music", "Set the mood for your advertisement."
+        StudioSetting(
+            "Ad length",
+            "◷",
+            listOf("15 seconds", "30 seconds", "60 seconds"),
+            "15 seconds",
+            "Choose the target length for your advertisement."
         ),
-        StudioTool(
-            "Captions", "Aa",
-            listOf("Off", "Clean subtitles", "Bold animated captions", "Minimal lower thirds"),
-            "Clean subtitles", "Choose how spoken words appear on screen."
+        StudioSetting(
+            "Visual style",
+            "✦",
+            listOf(
+                "Clean and modern",
+                "Premium and elegant",
+                "Bright and energetic",
+                "Playful and bold",
+                "Cinematic"
+            ),
+            "Clean and modern",
+            "Choose the visual personality of your advertisement."
         ),
-        StudioTool(
-            "Format", "▣",
-            listOf("9:16 · Reels / TikTok", "1:1 · Square", "16:9 · YouTube"),
-            "9:16 · Reels / TikTok", "Pick where your finished ad will be shown."
-        ),
-        StudioTool(
-            "Style", "✳",
-            listOf("Premium and elegant", "Bright and energetic", "Minimal and clean", "Playful and bold", "Cinematic"),
-            "Premium and elegant", "Choose the visual personality of your ad."
+        StudioSetting(
+            "Captions",
+            "Aa",
+            listOf("Clean subtitles", "Bold animated captions", "No captions"),
+            "Clean subtitles",
+            "Choose how spoken words should appear on screen."
         )
     )
 
-    private val concepts = listOf(
-        AdConcept(
-            "Product spotlight",
-            "Make the product the hero",
-            "Create a premium product spotlight: open with the strongest product shot, highlight the main benefit, and finish with a clear call to action."
-        ),
-        AdConcept(
-            "Problem → solution",
-            "Show the value clearly",
-            "Build a problem-to-solution ad: show the customer's problem, reveal the product as the solution, and finish with the result they can expect."
-        ),
-        AdConcept(
-            "Lifestyle story",
-            "Let viewers picture it",
-            "Create a lifestyle-led ad: show the product naturally in use, help viewers imagine the result, and close with a memorable line."
-        )
-    )
-
-    private val chosenOptions = mutableMapOf<String, String>()
-    private val messages = mutableListOf(
-        ChatMessage(
-            "Upload a clip, then tell me what kind of ad you have in mind. Mention the audience, mood and the message you want people to remember.",
-            false
-        )
-    )
+    private val chosenSettings = mutableMapOf<String, String>()
 
     private lateinit var videoFrame: FrameLayout
     private lateinit var videoPlaceholderGroup: LinearLayout
     private lateinit var clipStatus: TextView
     private lateinit var sourceHint: TextView
-    private lateinit var suggestionSection: LinearLayout
-    private lateinit var conceptContainer: LinearLayout
-    private lateinit var toolsContainer: LinearLayout
-    private lateinit var chatContainer: LinearLayout
+    private lateinit var settingsContainer: LinearLayout
     private lateinit var productNameInput: EditText
     private lateinit var productDescriptionInput: EditText
     private lateinit var audienceInput: EditText
     private lateinit var adGoalInput: EditText
-    private lateinit var promptInput: EditText
-    private lateinit var sendButton: Button
     private lateinit var generateButton: Button
 
     private var selectedVideo: Uri? = null
-    private var selectedConcept: String? = null
     private var videoView: VideoView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(247, 248, 252)
-        window.navigationBarColor = Color.rgb(247, 248, 252)
+
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
 
         setContentView(R.layout.activity_main)
         bindViews()
-        setupConcepts()
-        setupTools()
-        renderChat()
+        setupSettings()
 
-        findViewById<Button>(R.id.uploadClipButton).setOnClickListener { openVideoPicker() }
-        findViewById<Button>(R.id.attachButton).setOnClickListener { openVideoPicker() }
-
-        sendButton.setOnClickListener { sendDirection() }
-        promptInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                sendButton.isEnabled = !s.isNullOrBlank()
-            }
-            override fun afterTextChanged(s: Editable?) = Unit
-        })
-        promptInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) {
-                sendDirection()
-                true
-            } else {
-                false
-            }
+        findViewById<Button>(R.id.uploadClipButton).setOnClickListener {
+            openVideoPicker()
         }
 
         generateButton.setOnClickListener {
-            val productName = productNameInput.text?.toString()?.trim().orEmpty()
-            val productDescription = productDescriptionInput.text?.toString()?.trim().orEmpty()
-
-            if (productName.isBlank() || productDescription.isBlank()) {
-                Toast.makeText(
-                    this,
-                    "Add the product name and a short description to complete your ad brief.",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
-            }
-
-            val audience = audienceInput.text?.toString()?.trim().orEmpty()
-                .ifBlank { "Not specified" }
-            val goal = adGoalInput.text?.toString()?.trim().orEmpty()
-                .ifBlank { "Introduce the product or service" }
-            val selectedStyle = chosenOptions["Style"] ?: "Premium and elegant"
-            val selectedFormat = chosenOptions["Format"] ?: "9:16 · Reels / TikTok"
-
-            messages.add(
-                ChatMessage(
-                    "AD BRIEF\nProduct: $productName\nDetails: $productDescription\nAudience: $audience\nGoal: $goal\nStyle: $selectedStyle\nFormat: $selectedFormat",
-                    true
-                )
-            )
-            messages.add(
-                ChatMessage(
-                    "Your brief is ready in this prototype. Live AI planning and video rendering are not connected yet, so no finished ad has been created.",
-                    false
-                )
-            )
-            renderChat()
-
-            Toast.makeText(
-                this,
-                "Brief checked. AI planning is not connected yet.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            findViewById<ScrollView>(R.id.contentScroll).post {
-                findViewById<ScrollView>(R.id.contentScroll).fullScroll(View.FOCUS_DOWN)
-            }
+            buildAdBrief()
         }
     }
 
@@ -200,108 +115,130 @@ class MainActivity : Activity() {
         videoPlaceholderGroup = findViewById(R.id.videoPlaceholderGroup)
         clipStatus = findViewById(R.id.clipStatus)
         sourceHint = findViewById(R.id.sourceHint)
-        suggestionSection = findViewById(R.id.suggestionSection)
-        conceptContainer = findViewById(R.id.conceptContainer)
-        toolsContainer = findViewById(R.id.toolsContainer)
-        chatContainer = findViewById(R.id.chatContainer)
+        settingsContainer = findViewById(R.id.settingsContainer)
         productNameInput = findViewById(R.id.productNameInput)
         productDescriptionInput = findViewById(R.id.productDescriptionInput)
         audienceInput = findViewById(R.id.audienceInput)
         adGoalInput = findViewById(R.id.adGoalInput)
-        promptInput = findViewById(R.id.promptInput)
-        sendButton = findViewById(R.id.sendButton)
         generateButton = findViewById(R.id.generateButton)
     }
 
-    private fun setupConcepts() {
-        conceptContainer.removeAllViews()
-        concepts.forEach { concept ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(13), dp(13), dp(13), dp(13))
-                background = rounded(Color.WHITE, 18f, 0xFFE7EAF2.toInt())
-                isClickable = true
-                isFocusable = true
+    private fun setupSettings() {
+        settingsContainer.removeAllViews()
+
+        settings.chunked(2).forEach { rowSettings ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                weightSum = 2f
             }
 
-            card.addView(label(concept.title, 12f, 0xFF17213D.toInt(), true))
-            val subtitle = label(concept.subtitle, 10f, 0xFF78829A.toInt())
-            val subtitleParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(5) }
-            card.addView(subtitle, subtitleParams)
-
-            val action = label(
-                if (selectedConcept == concept.title) "SELECTED ✓" else "USE THIS DIRECTION  →",
-                8f,
-                0xFF4566E8.toInt(),
-                true
-            )
-            val actionParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(10) }
-            card.addView(action, actionParams)
-
-            card.setOnClickListener {
-                selectedConcept = concept.title
-                promptInput.setText(concept.prompt)
-                setupConcepts()
+            rowSettings.forEachIndexed { index, setting ->
+                val tile = createSettingTile(setting)
+                val params = LinearLayout.LayoutParams(
+                    0,
+                    dp(104),
+                    1f
+                ).apply {
+                    if (index == 0) marginEnd = dp(6) else marginStart = dp(6)
+                }
+                row.addView(tile, params)
             }
 
-            val params = LinearLayout.LayoutParams(dp(205), ViewGroup.LayoutParams.WRAP_CONTENT)
-            params.marginEnd = dp(9)
-            conceptContainer.addView(card, params)
-        }
-    }
-
-    private fun setupTools() {
-        toolsContainer.removeAllViews()
-        tools.forEach { tool ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(10), dp(11), dp(10), dp(11))
-                background = rounded(Color.WHITE, 17f, 0xFFE7EAF2.toInt())
-                isClickable = true
-                isFocusable = true
-            }
-
-            val symbol = label(tool.symbol, 17f, 0xFF4566E8.toInt(), true).apply {
-                gravity = Gravity.CENTER
-                background = rounded(0xFFEDF1FF.toInt(), 11f)
-                setPadding(dp(8), dp(5), dp(8), dp(5))
-            }
-            card.addView(symbol, LinearLayout.LayoutParams(dp(32), dp(32)))
-            card.addView(label(tool.title, 11f, 0xFF17213D.toInt(), true).apply {
-                val p = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+            if (rowSettings.size == 1) {
+                row.addView(
+                    View(this),
+                    LinearLayout.LayoutParams(0, dp(104), 1f).apply {
+                        marginStart = dp(6)
+                    }
                 )
-                p.topMargin = dp(8)
-                layoutParams = p
-            })
-            val choice = label(chosenOptions[tool.title] ?: tool.initialChoice, 9f, 0xFF78829A.toInt())
-            choice.maxLines = 1
-            card.addView(choice)
-            card.setOnClickListener { showToolOptions(tool) }
+            }
 
-            val params = LinearLayout.LayoutParams(dp(100), dp(104))
-            params.marginEnd = dp(9)
-            toolsContainer.addView(card, params)
+            val rowParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                if (settingsContainer.childCount > 0) topMargin = dp(10)
+            }
+            settingsContainer.addView(row, rowParams)
         }
     }
 
-    private fun showToolOptions(tool: StudioTool) {
-        val current = chosenOptions[tool.title] ?: tool.initialChoice
-        val selectedIndex = tool.options.indexOf(current).coerceAtLeast(0)
+    private fun createSettingTile(setting: StudioSetting): View {
+        val tile = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(11), dp(12), dp(11))
+            background = rounded(Color.rgb(248, 249, 253), 15f, 0xFFE7EAF2.toInt())
+            isClickable = true
+            isFocusable = true
+            contentDescription = setting.title
+        }
+
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val icon = TextView(this).apply {
+            text = setting.symbol
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(0xFF4566E8.toInt())
+            typeface = Typeface.DEFAULT_BOLD
+            background = rounded(0xFFEEF1FF.toInt(), 10f)
+            setPadding(dp(7), dp(5), dp(7), dp(5))
+        }
+        topRow.addView(icon, LinearLayout.LayoutParams(dp(30), dp(30)))
+
+        val title = TextView(this).apply {
+            text = setting.title
+            textSize = 11f
+            setTextColor(0xFF58647E.toInt())
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
+        }
+        topRow.addView(
+            title,
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(8)
+            }
+        )
+
+        val arrow = TextView(this).apply {
+            text = "⌄"
+            textSize = 16f
+            setTextColor(0xFF98A1B3.toInt())
+        }
+        topRow.addView(arrow)
+        tile.addView(topRow)
+
+        val selectedValue = TextView(this).apply {
+            text = chosenSettings[setting.title] ?: setting.defaultValue
+            textSize = 10f
+            setTextColor(0xFF17213D.toInt())
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 2
+            setPadding(0, dp(8), 0, 0)
+        }
+        tile.addView(selectedValue)
+
+        tile.setOnClickListener {
+            showSettingOptions(setting)
+        }
+
+        return tile
+    }
+
+    private fun showSettingOptions(setting: StudioSetting) {
+        val currentValue = chosenSettings[setting.title] ?: setting.defaultValue
+        val selectedIndex = setting.options.indexOf(currentValue).coerceAtLeast(0)
 
         AlertDialog.Builder(this)
-            .setTitle(tool.title)
-            .setMessage(tool.description)
-            .setSingleChoiceItems(tool.options.toTypedArray(), selectedIndex) { dialog, which ->
-                chosenOptions[tool.title] = tool.options[which]
-                setupTools()
+            .setTitle(setting.title)
+            .setMessage(setting.description)
+            .setSingleChoiceItems(setting.options.toTypedArray(), selectedIndex) { dialog, which ->
+                chosenSettings[setting.title] = setting.options[which]
+                setupSettings()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
@@ -317,7 +254,11 @@ class MainActivity : Activity() {
         try {
             startActivityForResult(intent, VIDEO_PICKER_REQUEST)
         } catch (_: Exception) {
-            Toast.makeText(this, "No file picker is available on this device.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "No video picker is available on this device.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -327,6 +268,7 @@ class MainActivity : Activity() {
 
         if (requestCode == VIDEO_PICKER_REQUEST && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
+
             try {
                 contentResolver.takePersistableUriPermission(
                     uri,
@@ -335,6 +277,7 @@ class MainActivity : Activity() {
             } catch (_: SecurityException) {
                 // Some document providers grant access only for the current session.
             }
+
             showVideo(uri)
         }
     }
@@ -344,18 +287,24 @@ class MainActivity : Activity() {
         videoView?.stopPlayback()
         videoFrame.removeAllViews()
 
-        val player = VideoView(this)
+        val player = VideoView(this).apply {
+            setVideoURI(uri)
+            setMediaController(MediaController(this@MainActivity))
+            setOnPreparedListener { mediaPlayer ->
+                mediaPlayer.isLooping = true
+                start()
+            }
+            setOnErrorListener { _, _, _ ->
+                Toast.makeText(
+                    this@MainActivity,
+                    "This video could not be previewed on this device.",
+                    Toast.LENGTH_LONG
+                ).show()
+                true
+            }
+        }
         videoView = player
-        player.setVideoURI(uri)
-        player.setMediaController(MediaController(this))
-        player.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.isLooping = true
-            player.start()
-        }
-        player.setOnErrorListener { _, _, _ ->
-            Toast.makeText(this, "This video could not be previewed on this device.", Toast.LENGTH_LONG).show()
-            true
-        }
+
         videoFrame.addView(
             player,
             FrameLayout.LayoutParams(
@@ -365,11 +314,12 @@ class MainActivity : Activity() {
         )
 
         val removeButton = TextView(this).apply {
-            text = "Remove  ×"
+            text = "Remove video  ×"
             textSize = 10f
+            typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
-            setPadding(dp(10), dp(7), dp(10), dp(7))
-            background = rounded(0x99000000.toInt(), 20f)
+            setPadding(dp(11), dp(8), dp(11), dp(8))
+            background = rounded(0xCC17213D.toInt(), 18f)
             setOnClickListener { clearVideo() }
         }
         val removeParams = FrameLayout.LayoutParams(
@@ -377,15 +327,15 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.TOP or Gravity.END
         ).apply {
-            topMargin = dp(9)
-            marginEnd = dp(9)
+            topMargin = dp(10)
+            marginEnd = dp(10)
         }
         videoFrame.addView(removeButton, removeParams)
 
-        clipStatus.text = "CLIP ADDED"
+        clipStatus.text = "VIDEO ADDED"
         clipStatus.setTextColor(0xFF25865A.toInt())
-        sourceHint.text = "Your source footage is ready"
-        suggestionSection.visibility = View.VISIBLE
+        clipStatus.background = rounded(0xFFEAF7F0.toInt(), 14f)
+        sourceHint.text = "Your source footage is ready to use."
         generateButton.isEnabled = true
     }
 
@@ -393,6 +343,7 @@ class MainActivity : Activity() {
         videoView?.stopPlayback()
         videoView = null
         selectedVideo = null
+
         videoFrame.removeAllViews()
         videoFrame.addView(
             videoPlaceholderGroup,
@@ -401,85 +352,62 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         )
-        clipStatus.text = "NO CLIP YET"
-        clipStatus.setTextColor(0xFF78829A.toInt())
-        sourceHint.text = "Upload a detailed product or service clip"
-        suggestionSection.visibility = View.GONE
+
+        clipStatus.text = "NOT ADDED"
+        clipStatus.setTextColor(0xFF8490A8.toInt())
+        clipStatus.background = rounded(0xFFF0F2F7.toInt(), 14f)
+        sourceHint.text = "MP4 and other Android-supported video formats"
         generateButton.isEnabled = false
     }
 
-    private fun sendDirection() {
-        val direction = promptInput.text?.toString()?.trim().orEmpty()
-        if (direction.isEmpty()) return
+    private fun buildAdBrief() {
+        val productName = productNameInput.text?.toString()?.trim().orEmpty()
+        val description = productDescriptionInput.text?.toString()?.trim().orEmpty()
 
-        messages.add(ChatMessage(direction, true))
-        messages.add(
-            ChatMessage(
-                "Direction added to this demo workspace. Live AI editing and video rendering still need to be connected.",
-                false
-            )
-        )
-        promptInput.setText("")
-        renderChat()
-
-        val scroll = findViewById<ScrollView>(R.id.contentScroll)
-        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-    }
-
-    private fun renderChat() {
-        chatContainer.removeAllViews()
-        messages.takeLast(5).forEach { message ->
-            val messageColumn = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = if (message.fromUser) Gravity.END else Gravity.START
-            }
-
-            val sender = label(
-                if (message.fromUser) "YOU" else "EMM CREATIVE ASSISTANT",
-                8f,
-                0xFF78829A.toInt(),
-                true
-            )
-            sender.setPadding(dp(5), dp(3), dp(5), dp(3))
-            messageColumn.addView(sender)
-
-            val bubble = TextView(this).apply {
-                text = message.text
-                textSize = 12f
-                setTextColor(if (message.fromUser) Color.WHITE else 0xFF4E5B76.toInt())
-                setPadding(dp(13), dp(11), dp(13), dp(11))
-                background = rounded(
-                    if (message.fromUser) 0xFF4566E8.toInt() else Color.WHITE,
-                    17f,
-                    if (message.fromUser) null else 0xFFE7EAF2.toInt()
-                )
-            }
-            val bubbleParams = LinearLayout.LayoutParams(
-                if (message.fromUser) dp(280) else dp(300),
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                if (message.fromUser) marginStart = dp(42) else marginEnd = dp(28)
-            }
-            messageColumn.addView(bubble, bubbleParams)
-
-            val itemParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(10) }
-            chatContainer.addView(messageColumn, itemParams)
+        if (selectedVideo == null) {
+            Toast.makeText(this, "Choose a source video first.", Toast.LENGTH_SHORT).show()
+            return
         }
-    }
 
-    private fun label(text: String, sizeSp: Float, color: Int, bold: Boolean = false): TextView {
-        return TextView(this).apply {
-            this.text = text
-            textSize = sizeSp
-            setTextColor(color)
-            if (bold) setTypeface(typeface, Typeface.BOLD)
+        if (productName.isBlank() || description.isBlank()) {
+            Toast.makeText(
+                this,
+                "Add the product name and its main benefit to continue.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
         }
+
+        val audience = audienceInput.text?.toString()?.trim().orEmpty()
+            .ifBlank { "Not specified" }
+        val goal = adGoalInput.text?.toString()?.trim().orEmpty()
+            .ifBlank { "Introduce the product or service" }
+
+        val summary = buildString {
+            append("Product: ").append(productName).append("\n\n")
+            append("Description: ").append(description).append("\n\n")
+            append("Audience: ").append(audience).append("\n\n")
+            append("Goal: ").append(goal).append("\n\n")
+            settings.forEach { setting ->
+                append(setting.title).append(": ")
+                    .append(chosenSettings[setting.title] ?: setting.defaultValue)
+                    .append("\n")
+            }
+            append("\nYour brief is complete. Live AI planning and video rendering are not connected in this prototype yet.")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Your ad brief")
+            .setMessage(summary)
+            .setPositiveButton("Done", null)
+            .show()
     }
 
-    private fun rounded(color: Int, radiusDp: Float, strokeColor: Int? = null): GradientDrawable {
+    private fun rounded(
+        color: Int,
+        radiusDp: Float,
+        strokeColor: Int? = null
+    ): GradientDrawable {
         return GradientDrawable().apply {
             setColor(color)
             cornerRadius = dp(radiusDp.toInt()).toFloat()
