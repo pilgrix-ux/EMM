@@ -36,8 +36,12 @@ Environment variables:
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `GEMINI_API_KEY` (server-only; required for AI ad-plan generation)
 - `GEMINI_MODEL` (optional; defaults to `gemini-3.8-flash`)
+- `SHOTSTACK_API_KEY` (server-only; required for cloud video rendering)
+- `SHOTSTACK_ENV` (optional; defaults to `stage`; set to `v1` for paid production renders)
 
-Add `GEMINI_API_KEY` to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Do not prefix it with `NEXT_PUBLIC_`, commit its value, or place it in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
+Add `GEMINI_API_KEY` and `SHOTSTACK_API_KEY` to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Keep both keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
+
+Shotstack's `stage` environment is for watermarked sandbox renders. The `v1` environment produces production renders and uses the credits on your Shotstack account. Review the Shotstack usage page before switching to production. Voiceover and automated captions are provider-generated assets and may have separate usage charges.
 
 ### Database and storage
 
@@ -66,8 +70,17 @@ This repository also contains the original Android prototype under `app/`. When 
 
 Add both Supabase variables to Vercel **Preview** and **Production** before testing sign-up and private saves. Also add the server-only `GEMINI_API_KEY` in both environments to enable the Generate ad plan step. The app does not need a Supabase service-role key for this flow.
 
-## Current feature boundary
+## Video rendering
 
-The browser can select a video, create a local preview, remove the selected clip, collect the product brief, and review it. When signed in and configured, Save draft uploads the clip to the private bucket and inserts the brief into `ad_projects`.
+The Generate Ads workflow calls the authenticated `/api/ad-plan` endpoint and uses Gemini to create an editable hook, script, scene plan, captions, and call to action. The source video's actual frames are not sent to Gemini yet, so the plan does not claim to have visually analysed the clip.
 
-The Generate Ads workflow opens an editable brief, collects creative settings, calls the authenticated `/api/ad-plan` endpoint, and uses Gemini to create an editable hook, script, scene plan, captions, and call to action. The source video's actual frames are not sent to Gemini yet, so the plan does not claim to have visually analysed the clip. Video rendering, finished MP4 export, and a saved-project reopen/edit screen still require separate integrations.
+After approving a plan, a signed-in user can save it without rendering, or choose **Render final video**. EMM then:
+
+1. Creates a short-lived signed URL for the private source clip.
+2. Sends an edit timeline to Shotstack's cloud renderer. Video assets use Shotstack's `transcode: true` preprocessing option to normalize source formats/codecs before editing.
+3. Adds the scene text, call to action and, when selected, word-synchronised captions. English and French voiceovers use Shotstack's current native text-to-speech asset. The provider currently documents support for English and French voice choices in this integration; turn voiceover off for Nigerian Pidgin, Yoruba, Hausa or Igbo.
+4. Polls the asynchronous render job and lets the signed-in project owner download the finished MP4 through the authenticated EMM API.
+
+The local preview is intentionally lightweight and does not encode large source files inside the browser. Some phone/browser combinations cannot preview every MOV or HEVC codec; in that case EMM displays a compatibility message while the original upload can still be sent to cloud preprocessing.
+
+The renderer requires `SHOTSTACK_API_KEY` in Vercel. Keep `SHOTSTACK_ENV=stage` for watermarked sandbox testing; set it to `v1` only when paid production renders are intended. Rendering, generated speech and automated captions consume provider resources/credits according to the provider account. The EMM application does not currently provide a licensed background-music library, automatic visual scene analysis, or a saved-project reopen/edit screen.
