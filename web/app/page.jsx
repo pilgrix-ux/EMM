@@ -65,6 +65,10 @@ export default function HomePage() {
   const [builderStep, setBuilderStep] = useState(1);
   const [formError, setFormError] = useState("");
   const [videoPreviewError, setVideoPreviewError] = useState("");
+  const [previewErrorCode, setPreviewErrorCode] = useState(null);
+  const [compatiblePreviewUrl, setCompatiblePreviewUrl] = useState("");
+  const [previewConverting, setPreviewConverting] = useState(false);
+  const [previewConversionMessage, setPreviewConversionMessage] = useState("");
   const [generationMessage, setGenerationMessage] = useState("");
   const [generatingPlan, setGeneratingPlan] = useState(false);
   const [adPlan, setAdPlan] = useState(null);
@@ -319,6 +323,9 @@ export default function HomePage() {
       setVideoFile(file);
       setVideoUrl(nextUrl);
       setVideoPreviewError("");
+      setPreviewErrorCode(null);
+      setCompatiblePreviewUrl("");
+      setPreviewConversionMessage("");
       setSavedProjectId("");
       setRenderId("");
       setRenderStatus("");
@@ -344,6 +351,9 @@ export default function HomePage() {
     setVideoFile(null);
     setVideoUrl("");
     setVideoPreviewError("");
+    setPreviewErrorCode(null);
+    setCompatiblePreviewUrl("");
+    setPreviewConversionMessage("");
     setSavedProjectId("");
     setRenderId("");
     setRenderStatus("");
@@ -383,11 +393,113 @@ export default function HomePage() {
       : Number.isFinite(errorCode)
         ? " Media error code: " + errorCode + "."
         : " The browser did not provide a media error code.";
+    setPreviewErrorCode(errorCode ?? null);
     setVideoPreviewError(
       (messages[errorCode] || fallback) +
-      detail +
-      " You can still continue: EMM's cloud renderer can convert supported source videos when creating the final MP4."
+      detail
     );
+  }
+
+  async function prepareCompatiblePreview() {
+    if (!videoFile || !supabaseConfigured || !supabase) {
+      setPreviewConversionMessage("Sign in to your EMM workspace to prepare a compatible cloud preview.");
+      setAuthMode("sign-in");
+      setAuthMessage("Sign in to convert this clip into a browser-friendly MP4 preview.");
+      setAuthOpen(true);
+      return;
+    }
+    if (!user) {
+      setAuthMode("sign-in");
+      setAuthMessage("Sign in to convert this clip into a browser-friendly MP4 preview.");
+      setAuthOpen(true);
+      return;
+    }
+    if (videoFile.size > 104857600) {
+      setPreviewConversionMessage("This clip is larger than EMM's current 100 MB upload limit. Choose a smaller video.");
+      return;
+    }
+    if (compatiblePreviewUrl) return;
+
+    setPreviewConverting(true);
+    setPreviewConversionMessage("Preparing a temporary private copy of your video…");
+    let storagePath = "";
+
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session?.access_token) throw new Error("Your session has expired. Sign in again and retry.");
+
+      const extension = (videoFile.name.split(".").pop() || "mp4").toLowerCase();
+      const inferredMime = ({
+        mp4: "video/mp4",
+        mov: "video/quicktime",
+        webm: "video/webm",
+        m4v: "video/x-m4v",
+        "3gp": "video/3gpp",
+      })[extension] || "video/mp4";
+      const safeName = videoFile.name.normalize("NFKD")
+        .replace(/[^a-zA-Z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(-100) || "source-video";
+      storagePath = user.id + "/preview/" + crypto.randomUUID() + "-" + safeName;
+
+      const { error: uploadError } = await supabase.storage.from("emm-source-videos").upload(storagePath, videoFile, {
+        cacheControl: "3600",
+        contentType: videoFile.type || inferredMime,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      setPreviewConversionMessage("Sending the clip to the cloud converter…");
+      const startResponse = await fetch("/api/preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + session.access_token,
+        },
+        body: JSON.stringify({ storagePath }),
+      });
+      const startResult = await startResponse.json().catch(() => ({}));
+      if (!startResponse.ok || !startResult.token) {
+        throw new Error(startResult.error || "EMM could not start the compatible preview conversion.");
+      }
+
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        if (attempt > 0) {
+          setPreviewConversionMessage("Converting your clip into a browser-friendly MP4…");
+          await new Promise((resolve) => window.setTimeout(resolve, 3000));
+        }
+
+        const statusResponse = await fetch("/api/preview?token=" + encodeURIComponent(startResult.token), {
+          headers: { Authorization: "Bearer " + session.access_token, Accept: "application/json" },
+          cache: "no-store",
+        });
+        const statusResult = await statusResponse.json().catch(() => ({}));
+        if (!statusResponse.ok) {
+          throw new Error(statusResult.error || "The compatible preview conversion failed.");
+        }
+        if (statusResult.status === "ready" && statusResult.url) {
+          setCompatiblePreviewUrl(statusResult.url);
+          setVideoPreviewError("");
+          setPreviewErrorCode(null);
+          setPreviewConversionMessage("Compatible preview ready. Your original video is unchanged.");
+          return;
+        }
+        setPreviewConversionMessage(statusResult.message || "Converting your clip…");
+      }
+
+      throw new Error("The preview conversion is taking longer than expected. Try again in a moment.");
+    } catch (error) {
+      setPreviewConversionMessage(error.message || "EMM could not prepare a compatible preview.");
+    } finally {
+      if (storagePath) {
+        const { error: cleanupError } = await supabase.storage.from("emm-source-videos").remove([storagePath]);
+        if (cleanupError) {
+          // The source remains private in the user's own storage folder.
+        }
+      }
+      setPreviewConverting(false);
+    }
   }
 
   function updateBrief(field, value) {
@@ -710,19 +822,21 @@ export default function HomePage() {
               {videoUrl ? (
                 <>
                   <video
-                    key={videoUrl}
+                    key={compatiblePreviewUrl || videoUrl}
                     ref={videoElementRef}
                     className="video-player"
-                    src={videoUrl}
+                    src={compatiblePreviewUrl || videoUrl}
                     controls
                     playsInline
                     preload={videoFile?.size <= 104857600 ? "auto" : "metadata"}
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
                     onLoadedMetadata={() => {
                       setVideoPreviewError("");
+                      setPreviewErrorCode(null);
                     }}
                     onCanPlay={() => {
                       setVideoPreviewError("");
+                      setPreviewErrorCode(null);
                     }}
                     onError={handleVideoPlaybackError}
                   />
@@ -732,10 +846,27 @@ export default function HomePage() {
                   {videoPreviewError && (
                     <div className="video-preview-feedback" role="alert">
                       <p className="video-preview-error">{videoPreviewError}</p>
-                      <button className="video-preview-retry" type="button" onClick={retryVideoPreview}>
-                        Retry preview
-                      </button>
+                      <div className="video-preview-actions">
+                        <button className="video-preview-retry" type="button" onClick={retryVideoPreview}>
+                          Retry preview
+                        </button>
+                        {(previewErrorCode === 3 || previewErrorCode === 4) && !compatiblePreviewUrl && (
+                          <button
+                            className="video-preview-convert"
+                            type="button"
+                            onClick={prepareCompatiblePreview}
+                            disabled={previewConverting}
+                          >
+                            {previewConverting ? "Preparing MP4…" : "Prepare compatible preview"}
+                          </button>
+                        )}
+                      </div>
                     </div>
+                  )}
+                  {previewConversionMessage && (
+                    <p className="video-preview-conversion-status" role="status">
+                      {previewConversionMessage}
+                    </p>
                   )}
                 </>
               ) : (
@@ -751,7 +882,7 @@ export default function HomePage() {
             </div>
 
             <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Video preview stays on this device until you save your project.</span>
+              <span><Icon name="shield" size={14} /> Original stays on this device; compatible preview uses a temporary private upload.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
