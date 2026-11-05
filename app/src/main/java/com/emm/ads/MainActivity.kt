@@ -84,7 +84,6 @@ class MainActivity : Activity() {
     private lateinit var productDescriptionInput: EditText
     private lateinit var audienceInput: EditText
     private lateinit var adGoalInput: EditText
-    private lateinit var generateButton: Button
 
     private var selectedVideo: Uri? = null
     private var videoView: VideoView? = null
@@ -105,10 +104,7 @@ class MainActivity : Activity() {
             openVideoPicker()
         }
 
-        generateButton.setOnClickListener {
-            buildAdBrief()
-        }
-    }
+}
 
     private fun bindViews() {
         videoFrame = findViewById(R.id.videoFrame)
@@ -120,7 +116,6 @@ class MainActivity : Activity() {
         productDescriptionInput = findViewById(R.id.productDescriptionInput)
         audienceInput = findViewById(R.id.audienceInput)
         adGoalInput = findViewById(R.id.adGoalInput)
-        generateButton = findViewById(R.id.generateButton)
     }
 
     private fun setupSettings() {
@@ -336,7 +331,6 @@ class MainActivity : Activity() {
         clipStatus.setTextColor(0xFF25865A.toInt())
         clipStatus.background = rounded(0xFFEAF7F0.toInt(), 14f)
         sourceHint.text = "Your source footage is ready to use."
-        generateButton.isEnabled = true
     }
 
     private fun clearVideo() {
@@ -357,7 +351,6 @@ class MainActivity : Activity() {
         clipStatus.setTextColor(0xFF8490A8.toInt())
         clipStatus.background = rounded(0xFFF0F2F7.toInt(), 14f)
         sourceHint.text = "MP4 and other Android-supported video formats"
-        generateButton.isEnabled = false
     }
 
     private fun buildAdBrief() {
