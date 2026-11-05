@@ -443,7 +443,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Previewed locally on this device                          MP4 · MOV · WebM"
+                        android:text="Previewed locally on this device  ·  MP4 · MOV · WebM"
                         android:textColor="#929AA7"
                         android:textSize="8sp"
                         android:textStyle="bold" />
