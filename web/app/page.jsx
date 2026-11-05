@@ -57,6 +57,7 @@ export default function HomePage() {
   const briefSectionRef = useRef(null);
   const homeRef = useRef(null);
   const videoElementRef = useRef(null);
+  const videoObjectUrlRef = useRef("");
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -234,10 +235,11 @@ export default function HomePage() {
     }
   }
 
-  useEffect(() => {
-    if (!videoUrl) return undefined;
-    return () => URL.revokeObjectURL(videoUrl);
-  }, [videoUrl]);
+  useEffect(() => () => {
+    const activeUrl = videoObjectUrlRef.current;
+    videoObjectUrlRef.current = "";
+    if (activeUrl) URL.revokeObjectURL(activeUrl);
+  }, []);
 
   function openVideoPicker() {
     fileInputRef.current?.click();
@@ -257,6 +259,17 @@ export default function HomePage() {
 
     try {
       const nextUrl = URL.createObjectURL(file);
+      const previousUrl = videoObjectUrlRef.current;
+
+      if (videoElementRef.current) {
+        videoElementRef.current.pause();
+        videoElementRef.current.removeAttribute("src");
+        videoElementRef.current.load();
+      }
+
+      videoObjectUrlRef.current = nextUrl;
+      if (previousUrl) URL.revokeObjectURL(previousUrl);
+
       setVideoFile(file);
       setVideoUrl(nextUrl);
       setVideoPreviewError("");
@@ -273,6 +286,10 @@ export default function HomePage() {
       videoElementRef.current.removeAttribute("src");
       videoElementRef.current.load();
     }
+    const activeUrl = videoObjectUrlRef.current;
+    videoObjectUrlRef.current = "";
+    if (activeUrl) URL.revokeObjectURL(activeUrl);
+
     setVideoFile(null);
     setVideoUrl("");
     setVideoPreviewError("");
@@ -486,10 +503,18 @@ export default function HomePage() {
                     src={videoUrl}
                     controls
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
                     onCanPlay={() => setVideoPreviewError("")}
-                    onError={() => setVideoPreviewError("This video could not be previewed by your browser. Try an MP4 or WEBM video.")}
+                    onError={(event) => {
+                      const errorCode = event.currentTarget.error?.code;
+                      const message = errorCode === 3
+                        ? "Playback stopped because this video could not be decoded completely. Export it as MP4 with H.264 video and AAC audio, then try again."
+                        : errorCode === 4
+                          ? "This video uses a codec your browser does not support. Export it as MP4 with H.264 video and AAC audio."
+                          : "Playback was interrupted. Try selecting the clip again, or export a fresh MP4 with H.264 video and AAC audio.";
+                      setVideoPreviewError(message);
+                    }}
                   />
                   <div className="video-meta">
                     <div className="video-file-icon"><Icon name="film" size={15} /></div>
