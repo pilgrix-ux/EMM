@@ -36,13 +36,13 @@ Environment variables:
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `GEMINI_API_KEY` (server-only; required for AI ad-plan generation)
 - `GEMINI_MODEL` (optional; defaults to `gemini-3.8-flash`)
-- `SHOTSTACK_API_KEY` (server-only; required for cloud video rendering)
-- `SHOTSTACK_ENV` (optional; defaults to `stage`; set to `v1` for paid production renders)
+- `SHOTSTACK_SANDBOX_API_KEY` (server-only; use for sandbox test renders)
+- `SHOTSTACK_PRODUCTION_API_KEY` (server-only; use for watermark-free production renders)
+- `SHOTSTACK_ENV` (optional; defaults to `stage`; set to `v1` for production renders)
 
-Add `GEMINI_API_KEY` and `SHOTSTACK_API_KEY` to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Keep both keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
+Add `GEMINI_API_KEY` and the matching Shotstack key to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. EMM selects `SHOTSTACK_SANDBOX_API_KEY` with `SHOTSTACK_ENV=stage` and `SHOTSTACK_PRODUCTION_API_KEY` with `SHOTSTACK_ENV=v1`. The legacy `SHOTSTACK_API_KEY` is accepted as a fallback, but its value must match the selected environment. Keep all keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
 
-Shotstack's `stage` environment is for watermarked sandbox renders. The `v1` environment produces production renders and uses the credits on your Shotstack account. Review the Shotstack usage page before switching to production. Voiceover and automated captions are provider-generated assets and may have separate usage charges.
-
+Shotstack's `stage` environment is for watermarked sandbox testing. Ordinary sandbox renders are free, but the account must have at least one active credit and AI-generated assets such as narration or automatic captions can still consume credits. The `v1` environment produces watermark-free production renders and uses the credits on your Shotstack account. Review the Shotstack usage page before switching to production.
 ### Database and storage
 
 - `public.ad_projects` stores a user's product brief, private source-video object path, creative settings, and editable AI ad plan.
