@@ -1,7 +1,7 @@
 package com.emm.ads
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
+import android.os.Build
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -63,32 +63,28 @@ class MainActivity : Activity() {
     }
 
     private fun openVideoPicker() {
-        // Ask Android to open the phone's video gallery first.
-        val galleryIntent = Intent(
-            Intent.ACTION_PICK,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).apply {
-            type = "video/*"
-        }
-
-        try {
-            startActivityForResult(galleryIntent, VIDEO_PICKER_REQUEST)
-        } catch (_: ActivityNotFoundException) {
-            // Some devices do not expose a separate Gallery app. Use Android's media picker.
-            val fallbackIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+        // Android 13+ shows the system Photo Picker inside the app flow,
+        // without launching the device's separate Gallery application.
+        val pickerIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "video/*"
+            }
+        } else {
+            // Compatibility path for older Android versions.
+            Intent(Intent.ACTION_GET_CONTENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = "video/*"
             }
+        }
 
-            try {
-                startActivityForResult(fallbackIntent, VIDEO_PICKER_REQUEST)
-            } catch (_: ActivityNotFoundException) {
-                Toast.makeText(
-                    this,
-                    "No video gallery or media picker is available on this device.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+        try {
+            startActivityForResult(pickerIntent, VIDEO_PICKER_REQUEST)
+        } catch (_: Exception) {
+            Toast.makeText(
+                this,
+                "The system video picker is not available on this device.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
