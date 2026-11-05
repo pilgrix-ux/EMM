@@ -13,7 +13,7 @@ This folder is the web-first EMM Ads Studio application.
 
 ## Local development
 
-Requirements: Node.js 20.9 or newer.
+Requirements: Node.js 22 or newer.
 
 1. Copy `.env.example` to `.env.local`.
 2. Set `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key from Supabase **Settings → API Keys**.
