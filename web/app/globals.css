@@ -2528,3 +2528,29 @@ button, input, textarea, select {
     max-height: 68vh;
   }
 }
+
+
+/* Clean player controls and in-browser compatibility conversion feedback */
+.video-player-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 9px 12px;
+  background: #1b222d;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.video-conversion-status {
+  margin: 0;
+  padding: 10px 13px;
+  color: #dce8b5;
+  background: #202a31;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.video-preview-error {
+  margin: 0;
+  padding: 10px 13px;
+  color: #ffe4e1;
+  background: #512a30;
+  font-size: 12px;
+  line-height: 1.5;
+}
