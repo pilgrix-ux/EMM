@@ -2,12 +2,14 @@ package com.emm.ads
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -24,7 +26,6 @@ class MainActivity : Activity() {
 
     private data class StudioSetting(
         val title: String,
-        val symbol: String,
         val options: List<String>,
         val defaultValue: String,
         val description: String
@@ -32,8 +33,7 @@ class MainActivity : Activity() {
 
     private val settings = listOf(
         StudioSetting(
-            "Platform",
-            "▣",
+            "Placement",
             listOf(
                 "Instagram Reels · 9:16",
                 "TikTok · 9:16",
@@ -45,15 +45,13 @@ class MainActivity : Activity() {
             "Choose where your advertisement will be published."
         ),
         StudioSetting(
-            "Ad length",
-            "◷",
+            "Duration",
             listOf("15 seconds", "30 seconds", "60 seconds"),
             "15 seconds",
             "Choose the target length for your advertisement."
         ),
         StudioSetting(
             "Visual style",
-            "✦",
             listOf(
                 "Clean and modern",
                 "Premium and elegant",
@@ -66,7 +64,6 @@ class MainActivity : Activity() {
         ),
         StudioSetting(
             "Captions",
-            "Aa",
             listOf("Clean subtitles", "Bold animated captions", "No captions"),
             "Clean subtitles",
             "Choose how spoken words should appear on screen."
@@ -103,8 +100,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.uploadClipButton).setOnClickListener {
             openVideoPicker()
         }
-
-}
+    }
 
     private fun bindViews() {
         videoFrame = findViewById(R.id.videoFrame)
@@ -121,139 +117,129 @@ class MainActivity : Activity() {
     private fun setupSettings() {
         settingsContainer.removeAllViews()
 
-        settings.chunked(2).forEach { rowSettings ->
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                weightSum = 2f
-            }
-
-            rowSettings.forEachIndexed { index, setting ->
-                val tile = createSettingTile(setting)
-                val params = LinearLayout.LayoutParams(
-                    0,
-                    dp(104),
-                    1f
-                ).apply {
-                    if (index == 0) marginEnd = dp(6) else marginStart = dp(6)
-                }
-                row.addView(tile, params)
-            }
-
-            if (rowSettings.size == 1) {
-                row.addView(
-                    View(this),
-                    LinearLayout.LayoutParams(0, dp(104), 1f).apply {
-                        marginStart = dp(6)
-                    }
-                )
-            }
-
-            val rowParams = LinearLayout.LayoutParams(
+        settings.forEachIndexed { index, setting ->
+            val params = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                dp(68)
             ).apply {
-                if (settingsContainer.childCount > 0) topMargin = dp(10)
+                if (index > 0) topMargin = dp(8)
             }
-            settingsContainer.addView(row, rowParams)
+            settingsContainer.addView(createSettingRow(setting), params)
         }
     }
 
-    private fun createSettingTile(setting: StudioSetting): View {
-        val tile = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(12), dp(11), dp(12), dp(11))
-            background = rounded(Color.rgb(248, 249, 253), 15f, 0xFFE7EAF2.toInt())
-            isClickable = true
-            isFocusable = true
-            contentDescription = setting.title
-        }
-
-        val topRow = LinearLayout(this).apply {
+    private fun createSettingRow(setting: StudioSetting): View {
+        val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            background = rounded(
+                0xFFFFFFFF.toInt(),
+                12f,
+                0xFFE4E8F0.toInt()
+            )
+            isClickable = true
+            isFocusable = true
+            contentDescription = "${setting.title}, ${chosenSettings[setting.title] ?: setting.defaultValue}"
         }
 
-        val icon = TextView(this).apply {
-            text = setting.symbol
-            textSize = 15f
-            gravity = Gravity.CENTER
-            setTextColor(0xFF4566E8.toInt())
-            typeface = Typeface.DEFAULT_BOLD
-            background = rounded(0xFFEEF1FF.toInt(), 10f)
-            setPadding(dp(7), dp(5), dp(7), dp(5))
+        val textColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
         }
-        topRow.addView(icon, LinearLayout.LayoutParams(dp(30), dp(30)))
 
         val title = TextView(this).apply {
             text = setting.title
             textSize = 11f
-            setTextColor(0xFF58647E.toInt())
+            setTextColor(0xFF78839A.toInt())
             typeface = Typeface.DEFAULT_BOLD
             maxLines = 1
         }
-        topRow.addView(
-            title,
-            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(8)
-            }
-        )
-
-        val arrow = TextView(this).apply {
-            text = "⌄"
-            textSize = 16f
-            setTextColor(0xFF98A1B3.toInt())
-        }
-        topRow.addView(arrow)
-        tile.addView(topRow)
+        textColumn.addView(title)
 
         val selectedValue = TextView(this).apply {
             text = chosenSettings[setting.title] ?: setting.defaultValue
-            textSize = 10f
+            textSize = 13f
             setTextColor(0xFF17213D.toInt())
             typeface = Typeface.DEFAULT_BOLD
-            maxLines = 2
-            setPadding(0, dp(8), 0, 0)
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(0, dp(3), 0, 0)
         }
-        tile.addView(selectedValue)
+        textColumn.addView(selectedValue)
 
-        tile.setOnClickListener {
+        row.addView(
+            textColumn,
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        )
+
+        val arrow = TextView(this).apply {
+            text = "›"
+            textSize = 25f
+            setTextColor(0xFF9AA4B7.toInt())
+            gravity = Gravity.CENTER
+        }
+        row.addView(
+            arrow,
+            LinearLayout.LayoutParams(dp(24), ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+
+        row.setOnClickListener {
             showSettingOptions(setting)
         }
 
-        return tile
+        return row
     }
 
     private fun showSettingOptions(setting: StudioSetting) {
         val currentValue = chosenSettings[setting.title] ?: setting.defaultValue
         val selectedIndex = setting.options.indexOf(currentValue).coerceAtLeast(0)
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(setting.title)
             .setMessage(setting.description)
-            .setSingleChoiceItems(setting.options.toTypedArray(), selectedIndex) { dialog, which ->
+            .setSingleChoiceItems(setting.options.toTypedArray(), selectedIndex) { dialogInterface, which ->
                 chosenSettings[setting.title] = setting.options[which]
                 setupSettings()
-                dialog.dismiss()
+                dialogInterface.dismiss()
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                ?.setTextColor(0xFF4566E8.toInt())
+        }
+        dialog.show()
     }
 
     private fun openVideoPicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
+        // Ask Android to open the phone's video gallery first.
+        val galleryIntent = Intent(
+            Intent.ACTION_PICK,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ).apply {
             type = "video/*"
         }
 
         try {
-            startActivityForResult(intent, VIDEO_PICKER_REQUEST)
-        } catch (_: Exception) {
-            Toast.makeText(
-                this,
-                "No video picker is available on this device.",
-                Toast.LENGTH_LONG
-            ).show()
+            startActivityForResult(galleryIntent, VIDEO_PICKER_REQUEST)
+        } catch (_: ActivityNotFoundException) {
+            // Some devices do not expose a separate Gallery app. Use Android's media picker.
+            val fallbackIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "video/*"
+            }
+
+            try {
+                startActivityForResult(fallbackIntent, VIDEO_PICKER_REQUEST)
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(
+                    this,
+                    "No video gallery or media picker is available on this device.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
@@ -263,16 +249,6 @@ class MainActivity : Activity() {
 
         if (requestCode == VIDEO_PICKER_REQUEST && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
-
-            try {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: SecurityException) {
-                // Some document providers grant access only for the current session.
-            }
-
             showVideo(uri)
         }
     }
@@ -309,7 +285,7 @@ class MainActivity : Activity() {
         )
 
         val removeButton = TextView(this).apply {
-            text = "Remove video  ×"
+            text = "Remove clip  ×"
             textSize = 10f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
@@ -327,10 +303,10 @@ class MainActivity : Activity() {
         }
         videoFrame.addView(removeButton, removeParams)
 
-        clipStatus.text = "VIDEO ADDED"
-        clipStatus.setTextColor(0xFF25865A.toInt())
-        clipStatus.background = rounded(0xFFEAF7F0.toInt(), 14f)
-        sourceHint.text = "Your source footage is ready to use."
+        clipStatus.text = "READY"
+        clipStatus.setTextColor(0xFF247A52.toInt())
+        clipStatus.background = rounded(0xFFEAF6EF.toInt(), 14f)
+        sourceHint.text = "Your source video is selected and ready for the brief."
     }
 
     private fun clearVideo() {
@@ -347,53 +323,10 @@ class MainActivity : Activity() {
             )
         )
 
-        clipStatus.text = "NOT ADDED"
-        clipStatus.setTextColor(0xFF8490A8.toInt())
-        clipStatus.background = rounded(0xFFF0F2F7.toInt(), 14f)
-        sourceHint.text = "MP4 and other Android-supported video formats"
-    }
-
-    private fun buildAdBrief() {
-        val productName = productNameInput.text?.toString()?.trim().orEmpty()
-        val description = productDescriptionInput.text?.toString()?.trim().orEmpty()
-
-        if (selectedVideo == null) {
-            Toast.makeText(this, "Choose a source video first.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (productName.isBlank() || description.isBlank()) {
-            Toast.makeText(
-                this,
-                "Add the product name and its main benefit to continue.",
-                Toast.LENGTH_LONG
-            ).show()
-            return
-        }
-
-        val audience = audienceInput.text?.toString()?.trim().orEmpty()
-            .ifBlank { "Not specified" }
-        val goal = adGoalInput.text?.toString()?.trim().orEmpty()
-            .ifBlank { "Introduce the product or service" }
-
-        val summary = buildString {
-            append("Product: ").append(productName).append("\n\n")
-            append("Description: ").append(description).append("\n\n")
-            append("Audience: ").append(audience).append("\n\n")
-            append("Goal: ").append(goal).append("\n\n")
-            settings.forEach { setting ->
-                append(setting.title).append(": ")
-                    .append(chosenSettings[setting.title] ?: setting.defaultValue)
-                    .append("\n")
-            }
-            append("\nYour brief is complete. Live AI planning and video rendering are not connected in this prototype yet.")
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Your ad brief")
-            .setMessage(summary)
-            .setPositiveButton("Done", null)
-            .show()
+        clipStatus.text = "REQUIRED"
+        clipStatus.setTextColor(0xFF78839A.toInt())
+        clipStatus.background = rounded(0xFFF0F2F6.toInt(), 14f)
+        sourceHint.text = "MP4, MOV and other supported video formats"
     }
 
     private fun rounded(
