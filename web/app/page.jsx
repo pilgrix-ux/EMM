@@ -430,15 +430,14 @@ export default function HomePage() {
               <span className="headline-second">into <span className="headline-highlight">great ads.</span></span>
             </h1>
             <p className="hero-description">
-              Start with your video. Tell us what makes your product worth choosing.
-              EMM helps you shape a story people remember.
+              Upload your footage, define what you are advertising, and build a clear creative plan for your next campaign.
             </p>
             <div className="hero-actions">
               <button className="button button-lime" type="button" onClick={openVideoPicker}>
-                Start with a video <Icon name="arrow" size={16} />
+                Choose a video <Icon name="arrow" size={16} />
               </button>
               <button className="text-action" type="button" onClick={openAdBuilder}>
-                Open ad builder <span aria-hidden="true">↗</span>
+                Create an ad <span aria-hidden="true">↗</span>
               </button>
             </div>
             <div className="hero-footnote">
@@ -449,15 +448,15 @@ export default function HomePage() {
 
           <aside className="manifesto-card">
             <div className="manifesto-top">
-              <span>THE EMM APPROACH</span>
+              <span>THE EMM WORKFLOW</span>
               <span className="manifesto-icon"><Icon name="sparkle" size={18} /></span>
             </div>
             <div className="manifesto-content">
-              <span className="lime-kicker">FOOTAGE IN. STORY OUT.</span>
-              <h2>Make every second of your ad count.</h2>
+              <span className="lime-kicker">FROM FOOTAGE TO AD PLAN</span>
+              <h2>Build a stronger ad, step by step.</h2>
             </div>
             <div className="manifesto-bottom">
-              <span>FROM PRODUCT TO IMPACT</span>
+              <span>FROM BRIEF TO APPROVED PLAN</span>
               <span>EMM STUDIO <span className="manifesto-arrow">↗</span></span>
             </div>
           </aside>
@@ -468,8 +467,8 @@ export default function HomePage() {
             <div className="section-heading">
               <div>
                 <div className="section-kicker">01 / SOURCE VIDEO</div>
-                <h2>Start with your footage</h2>
-                <p>Choose the clip you want to turn into an ad.</p>
+                <h2>Select your source video</h2>
+                <p>Upload the footage you want EMM to use as the starting point.</p>
               </div>
               <span className={`status-chip ${videoFile ? "status-ready" : ""}`}>
                 <span className="status-dot" />
@@ -507,8 +506,8 @@ export default function HomePage() {
               ) : (
                 <div className="video-empty">
                   <div className="video-empty-icon"><Icon name="play" size={22} /></div>
-                  <strong>Your video preview will appear here</strong>
-                  <p>Choose a clip from your device. You can watch it here before building your ad.</p>
+                  <strong>No video selected</strong>
+                  <p>Select a video from your device. Your preview will appear here before you continue.</p>
                   <button className="button button-lime upload-button" type="button" onClick={openVideoPicker}>
                     <Icon name="plus" size={16} /> Choose video
                   </button>
@@ -517,7 +516,7 @@ export default function HomePage() {
             </div>
 
             <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Previewed locally on this device</span>
+              <span><Icon name="shield" size={14} /> Video preview stays on this device until you save your project.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
@@ -534,22 +533,22 @@ export default function HomePage() {
             <div className="section-heading brief-heading">
               <div>
                 <div className="section-kicker">02 / CREATE YOUR AD</div>
-                <h2>Ready to make something people remember?</h2>
-                <p>Your clip is the starting point. EMM will guide you through the brief, creative choices and ad plan.</p>
+                <h2>Create your next ad.</h2>
+                <p>Start with your video, complete the product brief, then choose how the advertisement should look and sound.</p>
               </div>
               <span className="brief-icon"><Icon name="sparkle" size={18} /></span>
             </div>
             <div className="generate-launch-content">
               <div className="launch-step-list">
-                <div><span>01</span><strong>Edit your brief</strong><small>Tell EMM what you are promoting and who it is for.</small></div>
-                <div><span>02</span><strong>Choose your creative direction</strong><small>Set the platform, format, style, captions and voice.</small></div>
-                <div><span>03</span><strong>Generate and approve the plan</strong><small>Review the hook, script, scenes and call to action.</small></div>
+                <div><span>01</span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
+                <div><span>02</span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
+                <div><span>03</span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
               </div>
               <button className="button button-lime generate-launch-button" type="button" onClick={openAdBuilder}>
                 <Icon name="sparkle" size={17} /> Generate Ads <Icon name="arrow" size={16} />
               </button>
               {formError && <p className="form-error" role="alert">{formError}</p>}
-              <p className="launch-footnote">You can edit your brief and creative settings before generating the plan.</p>
+              <p className="launch-footnote">Your settings remain editable until you approve the ad plan.</p>
             </div>
           </section>
         </section>
@@ -587,13 +586,13 @@ export default function HomePage() {
 
         <div className="prototype-note">
           <span className="prototype-pulse" />
-          <span>WEB WORKSPACE PREVIEW</span>
+          <span>EMM ADS WORKSPACE</span>
           <i />
           <span>AI ad planning is connected; video rendering is the next integration</span>
         </div>
         <footer className="footer-line">
           <span>EMM ADS STUDIO</span>
-          <span>CREATIVE STARTS HERE</span>
+          <span>CREATE. REVIEW. APPROVE.</span>
         </footer>
       </div>
 
@@ -623,8 +622,8 @@ export default function HomePage() {
             {builderStep === 1 && (
               <>
                 <div className="builder-step-kicker"><Icon name="edit" size={14} /> STEP 1 · YOUR BRIEF</div>
-                <h2 id="builder-title">Let’s get your message right.</h2>
-                <p className="modal-intro">This is your brief. Edit anything below before we plan the ad.</p>
+                <h2 id="builder-title">Review your product brief.</h2>
+                <p className="modal-intro">Confirm the product information and campaign objective. You can edit these details.</p>
                 <div className="builder-video-chip">
                   <Icon name="film" size={15} />
                   <span>{videoFile?.name || "No video selected"}</span>
@@ -665,8 +664,8 @@ export default function HomePage() {
             {builderStep === 2 && (
               <>
                 <div className="builder-step-kicker"><Icon name="sparkle" size={14} /> STEP 2 · CREATIVE SETTINGS</div>
-                <h2 id="builder-title">Shape the feel of your ad.</h2>
-                <p className="modal-intro">Choose where it will run and the style you want. You can change these later.</p>
+                <h2 id="builder-title">Choose your ad format and style.</h2>
+                <p className="modal-intro">Set the destination platform, video format, language and creative treatment.</p>
                 <div className="builder-fields builder-fields-grid">
                   <label className="field-group">
                     <span className="field-label">PLATFORM</span>
@@ -731,8 +730,8 @@ export default function HomePage() {
             {builderStep === 3 && adPlan && (
               <>
                 <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 3 · REVIEW YOUR AD PLAN</div>
-                <h2 id="builder-title">Your ad plan is ready to edit.</h2>
-                <p className="modal-intro">Adjust the hook, script, scenes and call to action. Nothing is final until you approve it.</p>
+                <h2 id="builder-title">Review and refine your ad plan.</h2>
+                <p className="modal-intro">Edit the opening hook, script, scene directions, captions and call to action before approval.</p>
                 <div className="plan-editor">
                   <label className="field-group">
                     <span className="field-label">AD TITLE</span>
@@ -788,16 +787,16 @@ export default function HomePage() {
 
             {builderStep === 4 && adPlan && (
               <>
-                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 4 · NEXT: CREATE THE VIDEO</div>
-                <h2 id="builder-title">Your plan is approved.</h2>
-                <p className="modal-intro">Your script and scene direction are ready. Save them to your private EMM workspace.</p>
+                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 4 · APPROVAL & SAVE</div>
+                <h2 id="builder-title">Your ad plan is approved.</h2>
+                <p className="modal-intro">Your approved creative plan is ready. Save it to your private EMM workspace.</p>
                 <div className="approved-plan-summary">
                   <div><span>AD</span><strong>{adPlan.projectTitle}</strong></div>
                   <div><span>PLATFORM</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
                   <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
                   <div><span>SCENES</span><strong>{adPlan.scenes.length}</strong></div>
                 </div>
-                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>The video rendering service is not connected yet. EMM has generated and approved the ad plan, but it cannot export the finished video at this stage.</span></div>
+                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Your creative plan is approved and can be saved. Video rendering and MP4 export are not connected yet.</span></div>
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
                 <div className="modal-actions builder-actions">
                   <button className="button button-dark review-button render-disabled-button" type="button" disabled title="Connect a video-rendering provider to enable export">
