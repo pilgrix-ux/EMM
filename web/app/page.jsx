@@ -405,17 +405,20 @@ export default function HomePage() {
       : Number.isFinite(errorCode)
         ? " Media error code: " + errorCode + "."
         : " The browser did not provide a media error code.";
+    // Automatically recover from unsupported format/codec errors for signed-in users.
+    if ((errorCode === 3 || errorCode === 4) && user && supabase && !previewAutoAttemptRef.current) {
+      previewAutoAttemptRef.current = true;
+      setPreviewErrorCode(errorCode);
+      setVideoPreviewError("");
+      void prepareCompatiblePreview();
+      return;
+    }
+
     setPreviewErrorCode(errorCode ?? null);
     setVideoPreviewError(
       (messages[errorCode] || fallback) +
       detail
     );
-
-    // Automatically recover from unsupported format/codec errors for signed-in users.
-    if ((errorCode === 3 || errorCode === 4) && user && supabase && !previewAutoAttemptRef.current) {
-      previewAutoAttemptRef.current = true;
-      void prepareCompatiblePreview();
-    }
   }
 
   async function prepareCompatiblePreview() {
@@ -439,7 +442,7 @@ export default function HomePage() {
     if (compatiblePreviewUrl) return;
 
     setPreviewConverting(true);
-    setPreviewConversionMessage("Preparing a temporary private copy of your video…");
+    setPreviewConversionMessage("Preparing a temporary copy for Shotstack compatibility conversion…");
     let storagePath = "";
     let providerAcceptedSource = false;
 
@@ -528,7 +531,9 @@ export default function HomePage() {
 
       throw new Error("The preview conversion is taking longer than expected. The private upload has been kept while Shotstack finishes fetching it. Try again in a moment.");
     } catch (error) {
-      setPreviewConversionMessage(error.message || "EMM could not prepare a compatible preview.");
+      const message = error.message || "EMM could not prepare a compatible preview.";
+      setPreviewConversionMessage(message);
+      setVideoPreviewError((current) => current || "This browser cannot play the original video. " + message);
     } finally {
       // Clean up only when the provider never accepted the source. Once queued,
       // deleting it before ingestion finishes would break the provider fetch.
