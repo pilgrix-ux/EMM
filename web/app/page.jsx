@@ -466,7 +466,7 @@ export default function HomePage() {
           <section className="surface-card video-card" ref={videoSectionRef} id="source-video">
             <div className="section-heading">
               <div>
-                <div className="section-kicker">01 / SOURCE VIDEO</div>
+                <div className="section-kicker">SOURCE VIDEO</div>
                 <h2>Select your source video</h2>
                 <p>Upload the footage you want EMM to use as the starting point.</p>
               </div>
@@ -494,7 +494,7 @@ export default function HomePage() {
                   <div className="video-meta">
                     <div className="video-file-icon"><Icon name="film" size={15} /></div>
                     <div className="video-file-copy">
-                      <strong title={videoFile?.name}>{videoFile?.name}</strong>
+                      <strong>Source video selected</strong>
                       <span>Ready to use in your ad</span>
                     </div>
                     <button className="remove-button" type="button" onClick={removeVideo}>
@@ -532,7 +532,7 @@ export default function HomePage() {
           <section className="surface-card brief-card generate-launch-card" ref={briefSectionRef} id="product-brief">
             <div className="section-heading brief-heading">
               <div>
-                <div className="section-kicker">02 / CREATE YOUR AD</div>
+                <div className="section-kicker">CREATE YOUR AD</div>
                 <h2>Create your next ad.</h2>
                 <p>Start with your video, complete the product brief, then choose how the advertisement should look and sound.</p>
               </div>
@@ -540,9 +540,9 @@ export default function HomePage() {
             </div>
             <div className="generate-launch-content">
               <div className="launch-step-list">
-                <div><span>01</span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
-                <div><span>02</span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
-                <div><span>03</span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
+                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="edit" size={16} /></span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
+                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="sparkle" size={16} /></span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
+                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="check" size={16} /></span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
               </div>
               <button className="button button-lime generate-launch-button" type="button" onClick={openAdBuilder}>
                 <Icon name="sparkle" size={17} /> Generate Ads <Icon name="arrow" size={16} />
@@ -572,7 +572,7 @@ export default function HomePage() {
                     <span className="saved-project-icon"><Icon name="film" size={16} /></span>
                     <span className="saved-project-copy">
                       <strong>{project.title}</strong>
-                      <small>{project.source_video_name || "Source video"} · {new Date(project.created_at).toLocaleDateString()}</small>
+                      <small>{"Source video attached"} · {new Date(project.created_at).toLocaleDateString()}</small>
                     </span>
                     <span className="saved-project-status">{(project.status || "draft").replaceAll("_", " ")}</span>
                   </div>
@@ -609,8 +609,8 @@ export default function HomePage() {
           <section className="review-modal builder-modal" role="dialog" aria-modal="true" aria-labelledby="builder-title">
             <div className="modal-topline builder-topline">
               <div>
-                <span className="section-kicker">CREATE YOUR AD · STEP {builderStep} OF 4</span>
-                <div className="builder-progress" aria-label={`Step ${builderStep} of 4`}>
+                <span className="section-kicker">CREATE YOUR AD</span>
+                <div className="builder-progress" role="progressbar" aria-label="Ad creation progress" aria-valuemin={1} aria-valuemax={4} aria-valuenow={builderStep}>
                   {[1, 2, 3, 4].map((step) => <span key={step} className={builderStep >= step ? "builder-progress-active" : ""} />)}
                 </div>
               </div>
@@ -621,12 +621,12 @@ export default function HomePage() {
 
             {builderStep === 1 && (
               <>
-                <div className="builder-step-kicker"><Icon name="edit" size={14} /> STEP 1 · YOUR BRIEF</div>
+                <div className="builder-step-kicker"><Icon name="edit" size={14} /> YOUR BRIEF</div>
                 <h2 id="builder-title">Review your product brief.</h2>
                 <p className="modal-intro">Confirm the product information and campaign objective. You can edit these details.</p>
                 <div className="builder-video-chip">
                   <Icon name="film" size={15} />
-                  <span>{videoFile?.name || "No video selected"}</span>
+                  <span>Selected source video</span>
                   <button type="button" onClick={() => { setReviewOpen(false); jumpTo(videoSectionRef); }}>Change video</button>
                 </div>
                 <div className="builder-fields">
@@ -663,7 +663,7 @@ export default function HomePage() {
 
             {builderStep === 2 && (
               <>
-                <div className="builder-step-kicker"><Icon name="sparkle" size={14} /> STEP 2 · CREATIVE SETTINGS</div>
+                <div className="builder-step-kicker"><Icon name="sparkle" size={14} /> CREATIVE SETTINGS</div>
                 <h2 id="builder-title">Choose your ad format and style.</h2>
                 <p className="modal-intro">Set the destination platform, video format, language and creative treatment.</p>
                 <div className="builder-fields builder-fields-grid">
@@ -729,7 +729,7 @@ export default function HomePage() {
 
             {builderStep === 3 && adPlan && (
               <>
-                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 3 · REVIEW YOUR AD PLAN</div>
+                <div className="builder-step-kicker"><Icon name="check" size={14} /> REVIEW YOUR AD PLAN</div>
                 <h2 id="builder-title">Review and refine your ad plan.</h2>
                 <p className="modal-intro">Edit the opening hook, script, scene directions, captions and call to action before approval.</p>
                 <div className="plan-editor">
@@ -742,7 +742,7 @@ export default function HomePage() {
                     <div className="hook-options">
                       {(adPlan.hooks || []).map((hook, index) => (
                         <button key={index} type="button" className={adPlan.selectedHook === hook ? "hook-option hook-option-active" : "hook-option"} onClick={() => updatePlan("selectedHook", hook)}>
-                          <span>HOOK {index + 1}</span>{hook}
+                          {hook}
                         </button>
                       ))}
                     </div>
@@ -756,7 +756,7 @@ export default function HomePage() {
                     <div className="scene-editor-heading"><strong>SCENE-BY-SCENE DIRECTION</strong><span>{adPlan.scenes.length} scenes</span></div>
                     {adPlan.scenes.map((scene, index) => (
                       <div className="scene-editor-card" key={index}>
-                        <div className="scene-editor-title"><span>SCENE {index + 1}</span><strong>{scene.time || ""}</strong></div>
+                        <div className="scene-editor-title">{scene.time && <strong>{scene.time}</strong>}</div>
                         <label className="field-group"><span className="field-label">VISUAL DIRECTION</span><textarea rows={2} value={scene.visualDirection || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, visualDirection: event.target.value } : item))} /></label>
                         <label className="field-group"><span className="field-label">VOICEOVER / SPOKEN LINE</span><textarea rows={2} value={scene.voiceover || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, voiceover: event.target.value } : item))} /></label>
                         <label className="field-group"><span className="field-label">ON-SCREEN TEXT</span><input value={scene.onScreenText || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, onScreenText: event.target.value } : item))} /></label>
@@ -787,14 +787,14 @@ export default function HomePage() {
 
             {builderStep === 4 && adPlan && (
               <>
-                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 4 · APPROVAL & SAVE</div>
+                <div className="builder-step-kicker"><Icon name="check" size={14} /> APPROVAL & SAVE</div>
                 <h2 id="builder-title">Your ad plan is approved.</h2>
                 <p className="modal-intro">Your approved creative plan is ready. Save it to your private EMM workspace.</p>
                 <div className="approved-plan-summary">
                   <div><span>AD</span><strong>{adPlan.projectTitle}</strong></div>
                   <div><span>PLATFORM</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
                   <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
-                  <div><span>SCENES</span><strong>{adPlan.scenes.length}</strong></div>
+                  <div><span>CREATIVE STRUCTURE</span><strong>Scene-by-scene direction</strong></div>
                 </div>
                 <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Your creative plan is approved and can be saved. Video rendering and MP4 export are not connected yet.</span></div>
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
