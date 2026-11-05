@@ -229,20 +229,23 @@ async function handleGet(request) {
     provider.apiKey
   );
   const attributes = result?.data?.attributes || {};
+  const sourceStatus = cleanText(attributes.status, 40).toLowerCase();
   const rendition = Array.isArray(attributes?.outputs?.renditions)
     ? attributes.outputs.renditions[0]
     : null;
   const renditionStatus = cleanText(rendition?.status, 40).toLowerCase();
+  const sourceIngested = sourceStatus === "ready" || sourceStatus === "failed";
 
-  if (attributes.status === "failed" || renditionStatus === "failed") {
-    throw new ApiError(
-      cleanText(rendition?.error || attributes?.error, 260)
-        || "The video service could not convert this file. Try an MP4 or MOV source, or use another clip.",
-      422
-    );
+  if (sourceStatus === "failed" || renditionStatus === "failed") {
+    return json({
+      status: "failed",
+      sourceIngested,
+      message: cleanText(rendition?.error || attributes?.error, 260)
+        || "The video service could not convert this file. Try another clip.",
+    });
   }
 
-  if (renditionStatus === "ready" && rendition?.url) {
+  if (sourceStatus === "ready" && renditionStatus === "ready" && rendition?.url) {
     let previewUrl;
     try {
       previewUrl = new URL(rendition.url);
@@ -256,6 +259,7 @@ async function handleGet(request) {
     }
     return json({
       status: "ready",
+      sourceIngested: true,
       url: previewUrl.toString(),
       message: "Compatible MP4 ready. Your original source video is unchanged.",
     });
@@ -263,9 +267,12 @@ async function handleGet(request) {
 
   return json({
     status: "processing",
-    message: renditionStatus === "importing"
-      ? "Preparing the MP4 preview…"
-      : "Converting the clip for browser playback…",
+    sourceIngested,
+    message: sourceStatus === "queued" || sourceStatus === "importing"
+      ? "Transferring your source video securely for conversion…"
+      : renditionStatus === "importing" || renditionStatus === "waiting"
+        ? "Preparing the MP4 preview…"
+        : "Converting the clip for browser playback…",
   });
 }
 
