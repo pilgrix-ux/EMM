@@ -34,7 +34,7 @@ The first release should optimize for one person making one advertisement from o
 4. AI suggestions must be distinguishable from completed work.
 5. EMM must never invent product features, prices, testimonials, guarantees, or business claims.
 6. A success message must only appear after the relevant service confirms success.
-7. The app should work well on small Android screens and slower mobile connections.
+7. The web app should work well on small mobile screens and slower connections.
 
 ## 5. First-release scope
 
@@ -172,7 +172,7 @@ Display:
 
 Actions:
 - Save to device.
-- Share using the Android share sheet.
+- Share with the Web Share API when supported, or download the completed file.
 - Make another version.
 - Return to editing.
 
