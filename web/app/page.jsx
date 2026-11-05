@@ -12,6 +12,10 @@ const initialBrief = {
   aspectRatio: "9:16",
   targetDuration: "30",
   language: "English",
+  visualStyle: "Premium and polished",
+  captions: "Clean subtitles",
+  voiceover: "No voiceover",
+  music: "Keep original audio",
 };
 
 function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
@@ -57,9 +61,13 @@ export default function HomePage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [brief, setBrief] = useState(initialBrief);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [builderStep, setBuilderStep] = useState(1);
   const [formError, setFormError] = useState("");
   const [videoPreviewError, setVideoPreviewError] = useState("");
   const [generationMessage, setGenerationMessage] = useState("");
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [adPlan, setAdPlan] = useState(null);
+  const [planApproved, setPlanApproved] = useState(false);
   const [supabase, setSupabase] = useState(null);
   const [supabaseConfigured, setSupabaseConfigured] = useState(false);
   const [user, setUser] = useState(null);
@@ -200,6 +208,15 @@ export default function HomePage() {
         audience: brief.audience.trim() || null, ad_goal: brief.goal.trim() || null,
         platform: brief.platform, aspect_ratio: brief.aspectRatio,
         target_duration_seconds: Number(brief.targetDuration), language: brief.language,
+        creative_settings: {
+          visualStyle: brief.visualStyle,
+          captions: brief.captions,
+          voiceover: brief.voiceover,
+          music: brief.music,
+        },
+        ad_plan: adPlan,
+        ad_plan_approved_at: planApproved ? new Date().toISOString() : null,
+        status: adPlan ? "plan_ready" : "draft",
       }).select("id").single();
 
       if (insertError) {
@@ -271,30 +288,107 @@ export default function HomePage() {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function reviewBrief(event) {
-    event.preventDefault();
+  function openAdBuilder() {
     if (!videoFile) {
-      setFormError("Add a source video before reviewing your brief.");
+      setFormError("Choose a source video before you start creating an ad.");
       jumpTo(videoSectionRef);
-      return;
-    }
-    if (!brief.productName.trim()) {
-      setFormError("Add the product or service name.");
-      jumpTo(briefSectionRef);
-      return;
-    }
-    if (!brief.benefit.trim()) {
-      setFormError("Tell us what makes the product worth choosing.");
-      jumpTo(briefSectionRef);
       return;
     }
     setFormError("");
     setGenerationMessage("");
+    setSaveMessage("");
+    setAdPlan(null);
+    setPlanApproved(false);
+    setBuilderStep(1);
     setReviewOpen(true);
   }
 
-  function handleGenerateAds() {
-    setGenerationMessage("AI ad planning and video rendering are not connected in this deployment yet. Your brief is ready, but EMM has not generated an ad. Save this draft so you can continue when generation is connected.");
+  function continueFromBrief() {
+    if (!brief.productName.trim()) {
+      setGenerationMessage("Add the product or service name to continue.");
+      return;
+    }
+    if (!brief.benefit.trim()) {
+      setGenerationMessage("Describe the main benefit before continuing.");
+      return;
+    }
+    setGenerationMessage("");
+    setBuilderStep(2);
+  }
+
+  async function generateAdPlan() {
+    if (!videoFile) {
+      setGenerationMessage("Choose a source video before generating an ad plan.");
+      return;
+    }
+    if (!user || !supabase) {
+      setAuthMode("sign-in");
+      setAuthMessage("Sign in or create an account to use AI ad generation.");
+      setAuthOpen(true);
+      return;
+    }
+    setGeneratingPlan(true);
+    setGenerationMessage("");
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session?.access_token) {
+        setAuthMode("sign-in");
+        setAuthMessage("Your session has expired. Sign in again to generate the ad plan.");
+        setAuthOpen(true);
+        return;
+      }
+
+      const response = await fetch("/api/ad-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + session.access_token,
+        },
+        body: JSON.stringify({
+          brief: {
+            productName: brief.productName.trim(),
+            benefit: brief.benefit.trim(),
+            audience: brief.audience.trim(),
+            goal: brief.goal,
+            platform: brief.platform,
+            aspectRatio: brief.aspectRatio,
+            targetDuration: Number(brief.targetDuration),
+            language: brief.language,
+            visualStyle: brief.visualStyle,
+            captions: brief.captions,
+            voiceover: brief.voiceover,
+            music: brief.music,
+          },
+          sourceVideoName: videoFile.name,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "EMM could not generate the ad plan. Please try again.");
+      if (!result.plan || !Array.isArray(result.plan.scenes)) {
+        throw new Error("The planning service returned an incomplete ad plan. Please try again.");
+      }
+      setAdPlan(result.plan);
+      setPlanApproved(false);
+      setBuilderStep(3);
+      setGenerationMessage("");
+    } catch (error) {
+      setGenerationMessage(error.message || "Something went wrong while generating your ad plan.");
+    } finally {
+      setGeneratingPlan(false);
+    }
+  }
+
+  function updatePlan(field, value) {
+    setAdPlan((current) => current ? { ...current, [field]: value } : current);
+    setPlanApproved(false);
+  }
+
+  function approvePlan() {
+    if (!adPlan) return;
+    setPlanApproved(true);
+    setBuilderStep(4);
+    setSaveMessage("");
   }
 
   return (
@@ -342,8 +436,8 @@ export default function HomePage() {
               <button className="button button-lime" type="button" onClick={openVideoPicker}>
                 Start with a video <Icon name="arrow" size={16} />
               </button>
-              <button className="text-action" type="button" onClick={() => jumpTo(briefSectionRef)}>
-                Explore the brief <span aria-hidden="true">↗</span>
+              <button className="text-action" type="button" onClick={openAdBuilder}>
+                Open ad builder <span aria-hidden="true">↗</span>
               </button>
             </div>
             <div className="hero-footnote">
@@ -435,113 +529,28 @@ export default function HomePage() {
             />
           </section>
 
-          <section className="surface-card brief-card" ref={briefSectionRef} id="product-brief">
+          <section className="surface-card brief-card generate-launch-card" ref={briefSectionRef} id="product-brief">
             <div className="section-heading brief-heading">
               <div>
-                <div className="section-kicker">02 / PRODUCT BRIEF</div>
-                <h2>Give your product a voice</h2>
-                <p>A few clear details create a stronger starting point.</p>
+                <div className="section-kicker">02 / CREATE YOUR AD</div>
+                <h2>Ready to make something people remember?</h2>
+                <p>Your clip is the starting point. EMM will guide you through the brief, creative choices and ad plan.</p>
               </div>
-              <span className="brief-icon"><Icon name="edit" size={17} /></span>
+              <span className="brief-icon"><Icon name="sparkle" size={18} /></span>
             </div>
-
-            <form className="brief-form" onSubmit={reviewBrief}>
-              <label className="field-group">
-                <span className="field-label">PRODUCT OR SERVICE NAME <b>*</b></span>
-                <input
-                  value={brief.productName}
-                  onChange={(event) => updateBrief("productName", event.target.value)}
-                  placeholder="e.g. Handmade leather bags"
-                  autoComplete="off"
-                  maxLength={120}
-                />
-              </label>
-
-              <label className="field-group">
-                <span className="field-label">WHAT MAKES IT WORTH CHOOSING? <b>*</b></span>
-                <textarea
-                  value={brief.benefit}
-                  onChange={(event) => updateBrief("benefit", event.target.value)}
-                  placeholder="Describe what you offer and the main benefit people get..."
-                  maxLength={500}
-                  rows={4}
-                />
-                <span className="field-counter">{brief.benefit.length} / 500</span>
-              </label>
-
-              <label className="field-group">
-                <span className="field-label">WHO IS THIS FOR?</span>
-                <input
-                  value={brief.audience}
-                  onChange={(event) => updateBrief("audience", event.target.value)}
-                  placeholder="e.g. Students, busy parents"
-                  autoComplete="off"
-                  maxLength={120}
-                />
-              </label>
-
-              <label className="field-group">
-                <span className="field-label">WHAT SHOULD THE AD DO?</span>
-                <select value={brief.goal} onChange={(event) => updateBrief("goal", event.target.value)}>
-                  <option>Build awareness</option>
-                  <option>Explain the product or service</option>
-                  <option>Promote an offer</option>
-                  <option>Get more enquiries</option>
-                  <option>Drive website visits or sales</option>
-                </select>
-              </label>
-
-              <div className="field-grid">
-                <label className="field-group">
-                  <span className="field-label">WHERE WILL YOU SHARE THIS AD?</span>
-                  <select value={brief.platform} onChange={(event) => updateBrief("platform", event.target.value)}>
-                    <option>Instagram Reels</option>
-                    <option>TikTok</option>
-                    <option>YouTube Shorts</option>
-                    <option>Facebook</option>
-                    <option>YouTube (landscape)</option>
-                    <option>Custom</option>
-                  </select>
-                </label>
-                <label className="field-group">
-                  <span className="field-label">VIDEO FORMAT</span>
-                  <select value={brief.aspectRatio} onChange={(event) => updateBrief("aspectRatio", event.target.value)}>
-                    <option value="9:16">Vertical · 9:16</option>
-                    <option value="1:1">Square · 1:1</option>
-                    <option value="16:9">Landscape · 16:9</option>
-                  </select>
-                </label>
-                <label className="field-group">
-                  <span className="field-label">TARGET AD LENGTH</span>
-                  <select value={brief.targetDuration} onChange={(event) => updateBrief("targetDuration", event.target.value)}>
-                    <option value="15">15 seconds</option>
-                    <option value="30">30 seconds</option>
-                    <option value="60">60 seconds</option>
-                  </select>
-                </label>
-                <label className="field-group">
-                  <span className="field-label">AD LANGUAGE</span>
-                  <select value={brief.language} onChange={(event) => updateBrief("language", event.target.value)}>
-                    <option>English</option>
-                    <option>Nigerian Pidgin</option>
-                    <option>Yoruba</option>
-                    <option>Hausa</option>
-                    <option>Igbo</option>
-                    <option>French</option>
-                  </select>
-                </label>
+            <div className="generate-launch-content">
+              <div className="launch-step-list">
+                <div><span>01</span><strong>Edit your brief</strong><small>Tell EMM what you are promoting and who it is for.</small></div>
+                <div><span>02</span><strong>Choose your creative direction</strong><small>Set the platform, format, style, captions and voice.</small></div>
+                <div><span>03</span><strong>Generate and approve the plan</strong><small>Review the hook, script, scenes and call to action.</small></div>
               </div>
-
-              {formError && <p className="form-error" role="alert">{formError}</p>}
-
-              <div className="form-note">
-                <span>Your brief gives the creative process a clear starting point.</span>
-              </div>
-
-              <button className="button button-dark review-button" type="submit">
-                Review ad brief <Icon name="arrow" size={16} />
+              <button className="button button-lime generate-launch-button" type="button" onClick={openAdBuilder}>
+                <Icon name="sparkle" size={17} /> Generate Ads <Icon name="arrow" size={16} />
               </button>
-            </form>
+              {formError && <p className="form-error" role="alert">{formError}</p>}
+              <p className="launch-footnote">You can edit your brief and creative settings before generating the plan.</p>
+            </div>
+          </section>
           </section>
         </section>
 
@@ -580,7 +589,7 @@ export default function HomePage() {
           <span className="prototype-pulse" />
           <span>WEB WORKSPACE PREVIEW</span>
           <i />
-          <span>AI planning and video rendering are the next integrations</span>
+          <span>AI ad planning is connected; video rendering is the next integration</span>
         </div>
         <footer className="footer-line">
           <span>EMM ADS STUDIO</span>
@@ -595,45 +604,222 @@ export default function HomePage() {
       </nav>
 
       {reviewOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setReviewOpen(false);
+        <div className="modal-backdrop builder-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !generatingPlan && !saving) setReviewOpen(false);
         }}>
-          <section className="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title">
-            <div className="modal-topline">
-              <span className="section-kicker">BRIEF REVIEW</span>
-              <button className="modal-close" type="button" aria-label="Close review" onClick={() => setReviewOpen(false)}>
+          <section className="review-modal builder-modal" role="dialog" aria-modal="true" aria-labelledby="builder-title">
+            <div className="modal-topline builder-topline">
+              <div>
+                <span className="section-kicker">CREATE YOUR AD · STEP {builderStep} OF 4</span>
+                <div className="builder-progress" aria-label={`Step ${builderStep} of 4`}>
+                  {[1, 2, 3, 4].map((step) => <span key={step} className={builderStep >= step ? "builder-progress-active" : ""} />)}
+                </div>
+              </div>
+              <button className="modal-close" type="button" aria-label="Close ad builder" onClick={() => setReviewOpen(false)} disabled={generatingPlan || saving}>
                 <Icon name="close" size={18} />
               </button>
             </div>
-            <div className="modal-success-icon"><Icon name="check" size={21} /></div>
-            <h2 id="review-title">Review your ad brief.</h2>
-            <p className="modal-intro">Check the message and publishing details before moving to ad generation.</p>
-            <div className="review-list">
-              <div><span>Source video</span><strong>{videoFile?.name || "No video selected"}</strong></div>
-              <div><span>Product or service</span><strong>{brief.productName}</strong></div>
-              <div><span>Main benefit and message</span><strong>{brief.benefit}</strong></div>
-              <div><span>Who the ad is for</span><strong>{brief.audience || "Audience not specified"}</strong></div>
-              <div><span>Campaign objective</span><strong>{brief.goal}</strong></div>
-              <div><span>Publishing platform</span><strong>{brief.platform}</strong></div>
-              <div><span>Video format</span><strong>{brief.aspectRatio} · {brief.aspectRatio === "9:16" ? "Vertical" : brief.aspectRatio === "1:1" ? "Square" : "Landscape"}</strong></div>
-              <div><span>Target ad length</span><strong>{brief.targetDuration} seconds</strong></div>
-              <div><span>Language</span><strong>{brief.language}</strong></div>
-            </div>
-            <div className="modal-honesty">
-              <Icon name="sparkle" size={15} />
-              <span>When AI planning is connected, EMM will use this brief to prepare hooks, a script, scenes, captions and a call to action. You will review the plan before any video is rendered.</span>
-            </div>
-            {generationMessage && <p className="generation-feedback" role="status">{generationMessage}</p>}
-            {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
-            <div className="modal-actions">
-              <button className="button button-lime review-button" type="button" onClick={handleGenerateAds}>
-                Generate Ads <Icon name="sparkle" size={16} />
-              </button>
-              <button className="button button-dark review-button" type="button" onClick={saveDraft} disabled={saving || Boolean(savedProjectId)}>
-                {saving ? "Saving securely…" : savedProjectId ? "Draft saved to EMM" : "Save draft to EMM"} <Icon name={savedProjectId ? "check" : "arrow"} size={16} />
-              </button>
-              <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Back to workspace</button>
-            </div>
+
+            {builderStep === 1 && (
+              <>
+                <div className="builder-step-kicker"><Icon name="edit" size={14} /> STEP 1 · YOUR BRIEF</div>
+                <h2 id="builder-title">Let’s get your message right.</h2>
+                <p className="modal-intro">This is your brief. Edit anything below before we plan the ad.</p>
+                <div className="builder-video-chip">
+                  <Icon name="film" size={15} />
+                  <span>{videoFile?.name || "No video selected"}</span>
+                  <button type="button" onClick={() => { setReviewOpen(false); jumpTo(videoSectionRef); }}>Change video</button>
+                </div>
+                <div className="builder-fields">
+                  <label className="field-group">
+                    <span className="field-label">PRODUCT OR SERVICE NAME <b>*</b></span>
+                    <input value={brief.productName} onChange={(event) => updateBrief("productName", event.target.value)} maxLength={120} placeholder="What are you advertising?" />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">WHAT MAKES IT WORTH CHOOSING? <b>*</b></span>
+                    <textarea value={brief.benefit} onChange={(event) => updateBrief("benefit", event.target.value)} maxLength={500} rows={4} placeholder="Describe what it does and the main benefit customers get." />
+                    <span className="field-counter">{brief.benefit.length} / 500</span>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">WHO IS THIS FOR?</span>
+                    <input value={brief.audience} onChange={(event) => updateBrief("audience", event.target.value)} maxLength={120} placeholder="e.g. Students, small business owners, parents" />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">WHAT SHOULD THE AD ACHIEVE?</span>
+                    <select value={brief.goal} onChange={(event) => updateBrief("goal", event.target.value)}>
+                      <option>Build awareness</option>
+                      <option>Explain the product or service</option>
+                      <option>Promote an offer</option>
+                      <option>Get more enquiries</option>
+                      <option>Drive website visits or sales</option>
+                    </select>
+                  </label>
+                </div>
+                {generationMessage && <p className="generation-feedback" role="alert">{generationMessage}</p>}
+                <div className="modal-actions builder-actions">
+                  <button className="button button-lime review-button" type="button" onClick={continueFromBrief}>Continue to creative settings <Icon name="arrow" size={16} /></button>
+                </div>
+              </>
+            )}
+
+            {builderStep === 2 && (
+              <>
+                <div className="builder-step-kicker"><Icon name="sparkle" size={14} /> STEP 2 · CREATIVE SETTINGS</div>
+                <h2 id="builder-title">Shape the feel of your ad.</h2>
+                <p className="modal-intro">Choose where it will run and the style you want. You can change these later.</p>
+                <div className="builder-fields builder-fields-grid">
+                  <label className="field-group">
+                    <span className="field-label">PLATFORM</span>
+                    <select value={brief.platform} onChange={(event) => updateBrief("platform", event.target.value)}>
+                      <option>Instagram Reels</option><option>TikTok</option><option>YouTube Shorts</option><option>Facebook</option><option>YouTube (landscape)</option><option>Custom</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">VIDEO FORMAT</span>
+                    <select value={brief.aspectRatio} onChange={(event) => updateBrief("aspectRatio", event.target.value)}>
+                      <option value="9:16">Vertical · 9:16</option><option value="1:1">Square · 1:1</option><option value="16:9">Landscape · 16:9</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">TARGET LENGTH</span>
+                    <select value={brief.targetDuration} onChange={(event) => updateBrief("targetDuration", event.target.value)}>
+                      <option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">LANGUAGE</span>
+                    <select value={brief.language} onChange={(event) => updateBrief("language", event.target.value)}>
+                      <option>English</option><option>Nigerian Pidgin</option><option>Yoruba</option><option>Hausa</option><option>Igbo</option><option>French</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">VISUAL STYLE</span>
+                    <select value={brief.visualStyle} onChange={(event) => updateBrief("visualStyle", event.target.value)}>
+                      <option>Premium and polished</option><option>Bold and energetic</option><option>Clean and minimal</option><option>Warm and relatable</option><option>Cinematic</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">CAPTIONS</span>
+                    <select value={brief.captions} onChange={(event) => updateBrief("captions", event.target.value)}>
+                      <option>Clean subtitles</option><option>Animated captions</option><option>No captions</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">VOICEOVER</span>
+                    <select value={brief.voiceover} onChange={(event) => updateBrief("voiceover", event.target.value)}>
+                      <option>No voiceover</option><option>Natural voiceover</option><option>Energetic voiceover</option><option>Warm conversational voiceover</option>
+                    </select>
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">AUDIO</span>
+                    <select value={brief.music} onChange={(event) => updateBrief("music", event.target.value)}>
+                      <option>Keep original audio</option><option>Music under original audio</option><option>Music only</option><option>Mute audio</option>
+                    </select>
+                  </label>
+                </div>
+                {generationMessage && <p className="generation-feedback" role="alert">{generationMessage}</p>}
+                <div className="builder-info-note"><Icon name="info" size={15} /><span>AI planning uses your written brief and settings. It does not analyse the actual video frames yet.</span></div>
+                <div className="modal-actions builder-actions builder-actions-split">
+                  <button className="button button-quiet review-button" type="button" onClick={() => { setGenerationMessage(""); setBuilderStep(1); }}>Back</button>
+                  <button className="button button-lime review-button" type="button" onClick={generateAdPlan} disabled={generatingPlan}>
+                    {generatingPlan ? "Building your plan…" : "Generate ad plan"} <Icon name="sparkle" size={16} />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {builderStep === 3 && adPlan && (
+              <>
+                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 3 · REVIEW YOUR AD PLAN</div>
+                <h2 id="builder-title">Your ad plan is ready to edit.</h2>
+                <p className="modal-intro">Adjust the hook, script, scenes and call to action. Nothing is final until you approve it.</p>
+                <div className="plan-editor">
+                  <label className="field-group">
+                    <span className="field-label">AD TITLE</span>
+                    <input value={adPlan.projectTitle || ""} onChange={(event) => updatePlan("projectTitle", event.target.value)} maxLength={120} />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">OPENING HOOK · CHOOSE OR EDIT</span>
+                    <div className="hook-options">
+                      {(adPlan.hooks || []).map((hook, index) => (
+                        <button key={index} type="button" className={adPlan.selectedHook === hook ? "hook-option hook-option-active" : "hook-option"} onClick={() => updatePlan("selectedHook", hook)}>
+                          <span>HOOK {index + 1}</span>{hook}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea value={adPlan.selectedHook || ""} onChange={(event) => updatePlan("selectedHook", event.target.value)} rows={2} maxLength={280} />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">AD SCRIPT</span>
+                    <textarea value={adPlan.script || ""} onChange={(event) => updatePlan("script", event.target.value)} rows={6} maxLength={4000} />
+                  </label>
+                  <div className="scene-editor-list">
+                    <div className="scene-editor-heading"><strong>SCENE-BY-SCENE DIRECTION</strong><span>{adPlan.scenes.length} scenes</span></div>
+                    {adPlan.scenes.map((scene, index) => (
+                      <div className="scene-editor-card" key={index}>
+                        <div className="scene-editor-title"><span>SCENE {index + 1}</span><strong>{scene.time || ""}</strong></div>
+                        <label className="field-group"><span className="field-label">VISUAL DIRECTION</span><textarea rows={2} value={scene.visualDirection || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, visualDirection: event.target.value } : item))} /></label>
+                        <label className="field-group"><span className="field-label">VOICEOVER / SPOKEN LINE</span><textarea rows={2} value={scene.voiceover || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, voiceover: event.target.value } : item))} /></label>
+                        <label className="field-group"><span className="field-label">ON-SCREEN TEXT</span><input value={scene.onScreenText || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, onScreenText: event.target.value } : item))} /></label>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="field-group">
+                    <span className="field-label">CALL TO ACTION</span>
+                    <input value={adPlan.callToAction || ""} onChange={(event) => updatePlan("callToAction", event.target.value)} maxLength={240} />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">SOCIAL CAPTION</span>
+                    <textarea value={adPlan.captionText || ""} onChange={(event) => updatePlan("captionText", event.target.value)} rows={3} maxLength={1200} />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">EDITING NOTES</span>
+                    <textarea value={adPlan.editNotes || ""} onChange={(event) => updatePlan("editNotes", event.target.value)} rows={3} maxLength={1000} />
+                  </label>
+                </div>
+                <div className="builder-info-note"><Icon name="info" size={15} /><span>This is an AI-generated creative plan, not a rendered video. Your selected clip has not been visually analysed yet.</span></div>
+                {generationMessage && <p className="generation-feedback" role="alert">{generationMessage}</p>}
+                <div className="modal-actions builder-actions builder-actions-split">
+                  <button className="button button-quiet review-button" type="button" onClick={() => setBuilderStep(2)}>Back to settings</button>
+                  <button className="button button-lime review-button" type="button" onClick={approvePlan}>Approve this plan <Icon name="check" size={16} /></button>
+                </div>
+              </>
+            )}
+
+            {builderStep === 4 && adPlan && (
+              <>
+                <div className="builder-step-kicker"><Icon name="check" size={14} /> STEP 4 · NEXT: CREATE THE VIDEO</div>
+                <h2 id="builder-title">Your plan is approved.</h2>
+                <p className="modal-intro">Your script and scene direction are ready. Save them to your private EMM workspace.</p>
+                <div className="approved-plan-summary">
+                  <div><span>AD</span><strong>{adPlan.projectTitle}</strong></div>
+                  <div><span>PLATFORM</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
+                  <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
+                  <div><span>SCENES</span><strong>{adPlan.scenes.length}</strong></div>
+                </div>
+                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>The video rendering service is not connected yet. EMM has generated and approved the ad plan, but it cannot export the finished video at this stage.</span></div>
+                {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
+                <div className="modal-actions builder-actions">
+                  {savedProjectId ? (
+                    <button className="button button-dark review-button" type="button" onClick={() => setReviewOpen(false)}>Saved to your workspace <Icon name="check" size={16} /></button>
+                  ) : (
+                    <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving}>
+                      {saving ? "Saving your ad plan…" : "Save approved ad plan"} <Icon name="arrow" size={16} />
+                    </button>
+                  )}
+                  <button className="button button-quiet review-button" type="button" onClick={() => { setBuilderStep(3); setPlanApproved(false); }}>Back to edit plan</button>
+                </div>
+              </>
+            )}
+
+            {builderStep === 3 && !adPlan && (
+              <div className="builder-empty-state">
+                <div className="modal-success-icon"><Icon name="sparkle" size={20} /></div>
+                <h2 id="builder-title">Your ad plan is waiting.</h2>
+                <p className="modal-intro">Go back to creative settings and generate the plan.</p>
+                <button className="button button-lime review-button" type="button" onClick={() => setBuilderStep(2)}>Back to settings</button>
+              </div>
+            )}
           </section>
         </div>
       )}
