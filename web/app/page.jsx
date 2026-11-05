@@ -922,7 +922,7 @@ export default function HomePage() {
             </div>
 
             <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Unsupported clips are temporarily converted by Shotstack; the MP4 is saved privately in your EMM workspace.</span>
+              <span><Icon name="shield" size={14} /> Unsupported clips are sent to Shotstack for conversion. Its temporary copy is link-accessible during processing, then deleted when the MP4 is saved privately in your EMM workspace.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
