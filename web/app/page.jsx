@@ -991,6 +991,11 @@ export default function HomePage() {
                 {renderMessage && <p className="render-feedback render-feedback-error" role="alert">{renderMessage}</p>}
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
                 <div className="modal-actions builder-actions">
+                  {!savedProjectId && (
+                    <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving || renderingVideo || downloadingVideo}>
+                      {saving ? "Saving your ad plan…" : "Save approved ad plan"} <Icon name="check" size={16} />
+                    </button>
+                  )}
                   <button className="button button-dark review-button" type="button" onClick={renderFinalVideo} disabled={renderingVideo || saving || downloadingVideo || (Boolean(renderId) && !renderReady)}>
                     {renderingVideo ? "Rendering your video…" : renderReady ? "Render another version" : "Render final video"} <Icon name="film" size={16} />
                   </button>
