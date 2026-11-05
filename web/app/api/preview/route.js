@@ -82,7 +82,7 @@ async function createPrivateSourceUrl(storagePath, auth) {
         Authorization: auth.authorization,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ expiresIn: 3600 }),
+      body: JSON.stringify({ expiresIn: 86400 }),
       cache: "no-store",
     }
   );
