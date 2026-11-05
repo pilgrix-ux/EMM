@@ -236,7 +236,7 @@ class MainActivity : Activity() {
         clipStatus.text = "VIDEO READY"
         clipStatus.setTextColor(0xFF526600.toInt())
         clipStatus.background = rounded(0xFFEAF4C9.toInt(), 30f)
-        sourceHint.text = "Selected on this device  ·  Preview ready"
+        sourceHint.text = "Video selected  ·  Preview ready"
     }
 
     private fun getDisplayName(uri: Uri): String {
@@ -271,7 +271,7 @@ class MainActivity : Activity() {
         clipStatus.text = "NO CLIP"
         clipStatus.setTextColor(0xFF828A97.toInt())
         clipStatus.background = rounded(0xFFF0F2F5.toInt(), 30f)
-        sourceHint.text = "Previewed locally on this device                          MP4 · MOV · WebM"
+        sourceHint.text = "Previewed locally on this device  ·  MP4 · MOV · WebM"
     }
 
     private fun reviewAdBrief() {
