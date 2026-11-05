@@ -1,7 +1,7 @@
-# EMM Ads Create — Product Specification
+# EMM Ads Studio — Product Specification
 
-**Product:** EMM Ads Create  
-**Platform:** Android first  
+**Product:** EMM Ads Studio  
+**Platform:** Web first (responsive browser app; PWA installation planned)  
 **Product category:** AI-assisted video advertising studio  
 **Release target:** A guided, dependable workflow for turning existing footage into a finished short advertisement.
 
@@ -213,7 +213,7 @@ The app should preserve the draft when the user leaves the workspace.
 | Control | Required behavior |
 |---|---|
 | Create an ad | Opens a new project draft |
-| Upload a clip | Opens Android's document picker filtered to video |
+| Upload a clip | Opens the browser/device media picker filtered to video |
 | Replace clip | Lets the user select a replacement |
 | Remove clip | Removes the selected source after confirmation |
 | Build my ad plan | Enabled only when the source and required brief fields are valid |
@@ -223,7 +223,7 @@ The app should preserve the draft when the user leaves the workspace.
 | Render video | Enabled only after a plan is returned and approved |
 | Try again | Retries a failed planning or rendering job |
 | Save to device | Saves a real output file and reports success or failure |
-| Share | Opens the Android share sheet with the actual output file |
+| Share | Uses the Web Share API when supported, otherwise offers a file download |
 | Back to edit | Restores the draft and approved plan |
 
 ## 9. AI planning contract
@@ -268,7 +268,7 @@ The renderer must confirm the output exists before the project becomes Complete.
 
 ## 11. Suggested technical architecture
 
-The Android app owns the mobile experience, local media selection, preview, and project interactions. AI credentials and rendering work belong behind secure server-side endpoints.
+The web frontend owns the responsive experience, browser file selection, local preview, and project interactions. AI credentials and rendering work belong behind secure server-side endpoints.
 
 Backend capabilities:
 - Authentication when user accounts are introduced.
@@ -282,7 +282,7 @@ Backend capabilities:
 A service such as Supabase may provide authentication, database, and storage. It does not automatically provide the AI model or video-rendering engine; those are separate integrations.
 
 Security:
-- Never put model, storage-admin, or rendering-provider secret keys inside the Android app.
+- Never put model, storage-admin, or rendering-provider secret keys in client-side browser bundles.
 - Validate project ownership and media access on the server.
 - Keep storage private by default.
 - Validate file type, size, and duration.
@@ -361,18 +361,18 @@ Design rules:
 - Use consistent spacing, rounded cards, and clear section titles.
 - Display selected settings visibly.
 - Include empty, loading, disabled, success, and error states.
-- Support small Android screens, scrolling, keyboard visibility, and accessibility text scaling.
+- Support small mobile screens, desktop layouts, scrolling, keyboard visibility, and accessibility text scaling.
 
 ## 14. Current implementation status
 
-The repository currently contains a refined Android UI prototype.
+The repository now contains a web-first Next.js and Tailwind workspace in `web/`. The original Android prototype remains preserved in `app/` for reference; it is not the Vercel deployment target.
 
 Already implemented:
-- Android video document picker.
+- Browser video file selection and local video preview/removal in the web workspace.
 - Local video playback and removal.
 - Structured product/service, benefit, audience, and goal fields.
-- Output settings for platform, duration, visual style, and captions.
-- A fixed Build ad plan action that validates the source clip and required brief fields.
+- 
+- Local brief validation and review dialog.
 - A local ad-brief review dialog.
 - Clear prototype labeling for services that are not connected.
 
@@ -393,11 +393,11 @@ The ad-brief review is a local validation step, not an AI-generated script. The 
 
 ## 15. Delivery milestones
 
-### Milestone 1 — Reliable mobile prototype
-- Resolve Android build and theme issues.
-- Refine the workspace around the full creative brief.
-- Verify video selection and playback.
-- Add draft, validation, loading, and error states.
+### Milestone 1 — Deployable web workspace
+- Deploy the Next.js app from the `web/` directory on Vercel.
+- Verify mobile and desktop layouts.
+- Validate browser video selection, local playback, and brief review.
+- Add clear empty, loading, validation, and error states.
 - Keep demo-only actions honestly labeled.
 
 ### Milestone 2 — AI ad planning
@@ -415,9 +415,9 @@ The ad-brief review is a local validation step, not an AI-generated script. The 
 ### Milestone 4 — Production readiness
 - Add authentication and per-user access controls.
 - Add deletion, privacy, usage limits, monitoring, and support.
-- Test on a range of Android devices and network conditions.
+- Test on modern mobile and desktop browsers, including slower network conditions.
 - Consider billing after actual infrastructure costs and reliability are understood.
 
 ## 16. Definition of done
 
-A user with a supported Android phone can select a video, describe the product and audience, choose a goal and format, receive an AI-generated ad plan, edit and approve that plan, render a real MP4, preview it, and save or share it. Each step reports accurate status and understandable errors. No screen claims that AI planning or rendering succeeded unless the connected service confirms it.
+A user on a supported mobile or desktop browser can select a video, describe the product and audience, choose a goal and format, receive an AI-generated ad plan, edit and approve that plan, render a real MP4, preview it, and download or share it. Each step reports accurate status and understandable errors. No screen claims that AI planning or rendering succeeded unless the connected service confirms it.
