@@ -58,6 +58,10 @@ export default function HomePage() {
   const homeRef = useRef(null);
   const videoElementRef = useRef(null);
   const videoObjectUrlRef = useRef("");
+  const ffmpegRef = useRef(null);
+  const ffmpegLoadPromiseRef = useRef(null);
+  const conversionInProgressRef = useRef(false);
+  const hasAttemptedTranscodeRef = useRef(false);
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -66,6 +70,8 @@ export default function HomePage() {
   const [builderStep, setBuilderStep] = useState(1);
   const [formError, setFormError] = useState("");
   const [videoPreviewError, setVideoPreviewError] = useState("");
+  const [videoConversionStatus, setVideoConversionStatus] = useState("");
+  const [videoConversionProgress, setVideoConversionProgress] = useState(0);
   const [generationMessage, setGenerationMessage] = useState("");
   const [generatingPlan, setGeneratingPlan] = useState(false);
   const [adPlan, setAdPlan] = useState(null);
@@ -269,10 +275,13 @@ export default function HomePage() {
 
       videoObjectUrlRef.current = nextUrl;
       if (previousUrl) URL.revokeObjectURL(previousUrl);
+      hasAttemptedTranscodeRef.current = false;
 
       setVideoFile(file);
       setVideoUrl(nextUrl);
       setVideoPreviewError("");
+      setVideoConversionStatus("");
+      setVideoConversionProgress(0);
       setFormError("");
       setGenerationMessage("");
     } catch {
@@ -293,8 +302,131 @@ export default function HomePage() {
     setVideoFile(null);
     setVideoUrl("");
     setVideoPreviewError("");
+    setVideoConversionStatus("");
+    setVideoConversionProgress(0);
+    hasAttemptedTranscodeRef.current = false;
     setFormError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function getVideoTranscoder() {
+    if (ffmpegRef.current) return ffmpegRef.current;
+    if (ffmpegLoadPromiseRef.current) return ffmpegLoadPromiseRef.current;
+
+    ffmpegLoadPromiseRef.current = (async () => {
+      const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
+        import("@ffmpeg/ffmpeg"),
+        import("@ffmpeg/util"),
+      ]);
+      const ffmpeg = new FFmpeg();
+      ffmpeg.on("progress", ({ progress }) => {
+        if (Number.isFinite(progress)) {
+          setVideoConversionProgress(Math.max(0, Math.min(100, Math.round(progress * 100))));
+        }
+      });
+
+      const coreBaseUrl = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+      await ffmpeg.load({
+        coreURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.js", "text/javascript"),
+        wasmURL: await toBlobURL(coreBaseUrl + "/ffmpeg-core.wasm", "application/wasm"),
+      });
+      ffmpegRef.current = ffmpeg;
+      return ffmpeg;
+    })();
+
+    try {
+      return await ffmpegLoadPromiseRef.current;
+    } finally {
+      ffmpegLoadPromiseRef.current = null;
+    }
+  }
+
+  async function convertVideoForPlayback(file) {
+    if (!file || conversionInProgressRef.current || hasAttemptedTranscodeRef.current) return;
+
+    hasAttemptedTranscodeRef.current = true;
+    conversionInProgressRef.current = true;
+    setVideoPreviewError("");
+    setVideoConversionStatus("Preparing the video converter…");
+    setVideoConversionProgress(0);
+
+    try {
+      if (file.size > 104857600) {
+        throw new Error("This clip is larger than the current 100 MB limit for on-device conversion. Choose a smaller video.");
+      }
+
+      const ffmpeg = await getVideoTranscoder();
+      setVideoConversionStatus("Converting this video for playback…");
+
+      const extension = file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase() || "mp4";
+      const inputName = "emm-source." + extension;
+      try { await ffmpeg.deleteFile(inputName); } catch {}
+      try { await ffmpeg.deleteFile("emm-compatible.mp4"); } catch {}
+
+      await ffmpeg.writeFile(inputName, new Uint8Array(await file.arrayBuffer()));
+      const exitCode = await ffmpeg.exec([
+        "-i", inputName,
+        "-map", "0:v:0",
+        "-map", "0:a:0?",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-movflags", "+faststart",
+        "-y", "emm-compatible.mp4",
+      ]);
+      if (exitCode !== 0) throw new Error("The converter could not read this video.");
+
+      const output = await ffmpeg.readFile("emm-compatible.mp4");
+      if (!(output instanceof Uint8Array) || output.byteLength === 0) {
+        throw new Error("The converter did not create a playable video.");
+      }
+
+      const compatibleBlob = new Blob([output], { type: "video/mp4" });
+      const compatibleUrl = URL.createObjectURL(compatibleBlob);
+      const previousUrl = videoObjectUrlRef.current;
+
+      if (videoElementRef.current) {
+        videoElementRef.current.pause();
+        videoElementRef.current.removeAttribute("src");
+        videoElementRef.current.load();
+      }
+
+      videoObjectUrlRef.current = compatibleUrl;
+      if (previousUrl) URL.revokeObjectURL(previousUrl);
+
+      setVideoUrl(compatibleUrl);
+      setVideoPreviewError("");
+      setVideoConversionStatus("Compatible preview ready. Your original file is unchanged.");
+      setVideoConversionProgress(100);
+    } catch (error) {
+      setVideoPreviewError(
+        error?.message?.includes("100 MB")
+          ? error.message
+          : "EMM couldn't convert this video on this device. Try a smaller clip or a common MP4/MOV video."
+      );
+      setVideoConversionStatus("");
+    } finally {
+      conversionInProgressRef.current = false;
+    }
+  }
+
+  function handleVideoPlaybackError(event) {
+    const errorCode = event.currentTarget.error?.code;
+    if (errorCode === 4 && videoFile && !hasAttemptedTranscodeRef.current) {
+      void convertVideoForPlayback(videoFile);
+      return;
+    }
+
+    const message = errorCode === 3
+      ? "Playback stopped because this video could not be decoded. EMM has already tried to prepare a compatible preview."
+      : errorCode === 4
+        ? "This video format is not supported by this browser, and automatic conversion was unsuccessful."
+        : "Playback was interrupted. Try selecting the clip again.";
+    setVideoPreviewError(message);
   }
 
   function updateBrief(field, value) {
@@ -505,28 +637,22 @@ export default function HomePage() {
                     playsInline
                     preload="auto"
                     aria-label={`Preview of ${videoFile?.name || "selected video"}`}
-                    onCanPlay={() => setVideoPreviewError("")}
-                    onError={(event) => {
-                      const errorCode = event.currentTarget.error?.code;
-                      const message = errorCode === 3
-                        ? "Playback stopped because this video could not be decoded completely. Export it as MP4 with H.264 video and AAC audio, then try again."
-                        : errorCode === 4
-                          ? "This video uses a codec your browser does not support. Export it as MP4 with H.264 video and AAC audio."
-                          : "Playback was interrupted. Try selecting the clip again, or export a fresh MP4 with H.264 video and AAC audio.";
-                      setVideoPreviewError(message);
+                    onCanPlay={() => {
+                      setVideoPreviewError("");
+                      if (videoUrl === videoObjectUrlRef.current && videoConversionStatus.startsWith("Converting")) {
+                        setVideoConversionStatus("");
+                      }
                     }}
+                    onError={handleVideoPlaybackError}
                   />
-                  <div className="video-meta">
-                    <div className="video-file-icon"><Icon name="film" size={15} /></div>
-                    <div className="video-file-copy">
-                      <strong>Source video selected</strong>
-                      <span>Ready to use in your ad</span>
-                    </div>
-                    <button className="remove-button" type="button" onClick={removeVideo}>
-                      <Icon name="close" size={14} /> Remove
-                    </button>
-                  </div>
+                  <div className="video-player-actions"><button className="remove-button" type="button" onClick={removeVideo}><Icon name="close" size={14} /> Remove video</button></div>
                   {videoPreviewError && <p className="video-preview-error" role="alert">{videoPreviewError}</p>}
+                  {videoConversionStatus && (
+                    <p className="video-conversion-status" role="status">
+                      {videoConversionStatus}
+                      {videoConversionStatus.startsWith("Converting") && videoConversionProgress > 0 ? " " + videoConversionProgress + "%" : ""}
+                    </p>
+                  )}
                 </>
               ) : (
                 <div className="video-empty">
