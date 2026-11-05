@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F6F7FB">
+    android:background="#F4F6FA">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -77,7 +77,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="LET'S CREATE"
+                android:text="NEW AD PROJECT"
                 android:textColor="#4566E8"
                 android:textSize="10sp"
                 android:textStyle="bold"
@@ -87,9 +87,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="7dp"
-                android:text="Make your next ad stand out."
+                android:text="Turn your footage into a standout ad."
                 android:textColor="#17213D"
-                android:textSize="24sp"
+                android:textSize="23sp"
                 android:textStyle="bold"
                 android:fontFamily="sans" />
 
@@ -97,16 +97,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="Start with your footage. Shape the story. Create with purpose."
+                android:text="Set the product, audience and creative direction in one place."
                 android:textColor="#78829A"
-                android:textSize="12sp"
-                android:lineSpacingExtra="2dp" />
+                android:textSize="13sp"
+                android:lineSpacingExtra="3dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:padding="14dp"
+                android:layout_marginTop="20dp"
+                android:padding="16dp"
                 android:orientation="vertical"
                 android:background="@drawable/emm_surface">
 
@@ -125,7 +125,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="01  /  SOURCE FOOTAGE"
+                            android:text="SOURCE VIDEO"
                             android:textColor="#4566E8"
                             android:textSize="10sp"
                             android:textStyle="bold"
@@ -135,7 +135,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Add your video"
+                            android:text="Select your footage"
                             android:textColor="#17213D"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -145,7 +145,7 @@
                         android:id="@+id/clipStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="NOT ADDED"
+                        android:text="REQUIRED"
                         android:textColor="#8490A8"
                         android:textSize="9sp"
                         android:textStyle="bold"
@@ -159,7 +159,7 @@
                 <FrameLayout
                     android:id="@+id/videoFrame"
                     android:layout_width="match_parent"
-                    android:layout_height="196dp"
+                    android:layout_height="190dp"
                     android:layout_marginTop="13dp"
                     android:background="@drawable/emm_video_surface">
 
@@ -175,7 +175,7 @@
                             android:layout_width="46dp"
                             android:layout_height="46dp"
                             android:gravity="center"
-                            android:text="▶"
+                            android:text="▣"
                             android:textColor="#4566E8"
                             android:textSize="19sp"
                             android:background="@drawable/emm_play_mark" />
@@ -184,7 +184,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:text="Your video preview"
+                            android:text="Your video will appear here"
                             android:textColor="#243152"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -193,7 +193,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Choose a product or service clip to begin"
+                            android:text="Choose a clip from your phone’s gallery to get started"
                             android:textColor="#73809A"
                             android:textSize="11sp"
                             android:gravity="center" />
@@ -205,7 +205,7 @@
                             android:layout_marginTop="12dp"
                             android:paddingStart="19dp"
                             android:paddingEnd="19dp"
-                            android:text="＋  Choose video"
+                            android:text="Choose from gallery"
                             android:textAllCaps="false"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -222,7 +222,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="MP4 and other Android-supported video formats"
+                    android:text="MP4, MOV and other supported video formats"
                     android:textColor="#8791A7"
                     android:textSize="10sp" />
             </LinearLayout>
@@ -239,7 +239,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="02  /  THE AD BRIEF"
+                    android:text="PRODUCT DETAILS"
                     android:textColor="#4566E8"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -249,7 +249,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
-                    android:text="What are we advertising?"
+                    android:text="Tell us about your product"
                     android:textColor="#17213D"
                     android:textSize="17sp"
                     android:textStyle="bold" />
@@ -258,7 +258,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="A few details help us shape the right message."
+                    android:text="Help us understand what you offer and who it is for."
                     android:textColor="#78829A"
                     android:textSize="11sp" />
 
@@ -266,7 +266,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="PRODUCT OR SERVICE NAME  *"
+                    android:text="Product or service name  *"
                     android:textColor="#58647E"
                     android:textSize="10sp"
                     android:textStyle="bold" />
@@ -281,7 +281,7 @@
                     android:hint="e.g. Handmade leather bags"
                     android:textColor="#17213D"
                     android:textColorHint="#98A1B3"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:singleLine="true"
                     android:inputType="textCapSentences"
                     android:background="@drawable/emm_field" />
@@ -290,7 +290,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="13dp"
-                    android:text="WHAT MAKES IT WORTH CHOOSING?  *"
+                    android:text="What makes it worth choosing?  *"
                     android:textColor="#58647E"
                     android:textSize="10sp"
                     android:textStyle="bold" />
@@ -305,7 +305,7 @@
                     android:hint="Describe what you offer and its main benefit..."
                     android:textColor="#17213D"
                     android:textColorHint="#98A1B3"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:maxLines="4"
                     android:inputType="textCapSentences|textMultiLine"
                     android:background="@drawable/emm_field" />
@@ -314,7 +314,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="13dp"
-                    android:text="WHO SHOULD SEE THIS AD?"
+                    android:text="Who is this ad for?"
                     android:textColor="#58647E"
                     android:textSize="10sp"
                     android:textStyle="bold" />
@@ -329,7 +329,7 @@
                     android:hint="e.g. Students, local shoppers"
                     android:textColor="#17213D"
                     android:textColorHint="#98A1B3"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:singleLine="true"
                     android:inputType="textCapSentences"
                     android:background="@drawable/emm_field" />
@@ -338,7 +338,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="13dp"
-                    android:text="WHAT SHOULD THE AD ACHIEVE?"
+                    android:text="What should this ad achieve?"
                     android:textColor="#58647E"
                     android:textSize="10sp"
                     android:textStyle="bold" />
@@ -371,7 +371,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="03  /  OUTPUT SETTINGS"
+                    android:text="CREATIVE DIRECTION"
                     android:textColor="#4566E8"
                     android:textSize="10sp"
                     android:textStyle="bold"
@@ -381,7 +381,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
-                    android:text="Give your ad its finish"
+                    android:text="Set the creative direction"
                     android:textColor="#17213D"
                     android:textSize="17sp"
                     android:textStyle="bold" />
@@ -390,7 +390,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Choose where it will play and how it should feel."
+                    android:text="Choose the format, duration, visual style and captions."
                     android:textColor="#78829A"
                     android:textSize="11sp" />
 
