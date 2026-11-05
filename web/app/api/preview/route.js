@@ -4,7 +4,6 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const BUCKET = "emm-source-videos";
-const MAX_SOURCE_SIZE = 104857600;
 
 class ApiError extends Error {
   constructor(message, status = 500) {
