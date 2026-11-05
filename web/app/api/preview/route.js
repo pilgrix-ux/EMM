@@ -236,6 +236,43 @@ async function handleGet(request) {
   const renditionStatus = cleanText(rendition?.status, 40).toLowerCase();
   const sourceIngested = sourceStatus === "ready" || sourceStatus === "failed";
 
+  // If a previous ready response was interrupted after Shotstack deletion,
+  // re-issue a signed link to the already-copied private Supabase rendition.
+  if (sourceStatus === "deleted") {
+    const storagePath = `${auth.user.id}/preview-output/${preview.sourceId}.mp4`;
+    const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
+    const signResponse = await fetch(
+      `${auth.supabaseUrl}/storage/v1/object/sign/${BUCKET}/${encodedPath}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: auth.publishableKey,
+          Authorization: auth.authorization,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ expiresIn: 86400 }),
+        cache: "no-store",
+      }
+    );
+    const signed = await readResponse(signResponse);
+    if (!signResponse.ok || !signed?.signedURL) {
+      throw new ApiError("The temporary conversion has ended, but EMM could not recover the private preview. Prepare it again.", 409);
+    }
+    const signedPath = String(signed.signedURL);
+    const privateUrl = /^https:\/\//i.test(signedPath)
+      ? signedPath
+      : signedPath.startsWith("/storage/v1/")
+        ? auth.supabaseUrl + signedPath
+        : auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
+    return json({
+      status: "ready",
+      sourceIngested: true,
+      url: privateUrl,
+      storagePath,
+      message: "Compatible MP4 ready in your private EMM workspace.",
+    });
+  }
+
   if (sourceStatus === "failed" || renditionStatus === "failed") {
     return json({
       status: "failed",
