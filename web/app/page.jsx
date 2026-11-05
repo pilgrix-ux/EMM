@@ -231,7 +231,7 @@ export default function HomePage() {
     input.value = "";
     if (!file) return;
 
-    const supportedVideo = file.type.startsWith("video/") || /\\.(mp4|mov|webm|m4v|3gp)$/i.test(file.name);
+    const supportedVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm|m4v|3gp)$/i.test(file.name);
     if (!supportedVideo) {
       setFormError("Choose a supported video file to continue.");
       return;
@@ -378,7 +378,7 @@ export default function HomePage() {
               </div>
               <span className={`status-chip ${videoFile ? "status-ready" : ""}`}>
                 <span className="status-dot" />
-                {videoFile ? "VIDEO READY" : "NO CLIP"}
+                {videoFile ? "VIDEO READY" : "NO VIDEO"}
               </span>
             </div>
 
@@ -621,7 +621,7 @@ export default function HomePage() {
             </div>
             <div className="modal-honesty">
               <Icon name="sparkle" size={15} />
-              <span>Next, EMM will use this brief to plan the hook, script, scenes, captions and call to action. You will review the plan before any video is rendered.</span>
+              <span>When AI planning is connected, EMM will use this brief to prepare hooks, a script, scenes, captions and a call to action. You will review the plan before any video is rendered.</span>
             </div>
             {generationMessage && <p className="generation-feedback" role="status">{generationMessage}</p>}
             {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
