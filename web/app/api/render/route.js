@@ -240,7 +240,7 @@ function buildEdit(project, sourceUrl, environment) {
           },
           padding: 18,
           align: { horizontal: "center", vertical: "middle" },
-          animation: { style: captionsMode === "Animated captions" ? "highlight" : "none" },
+          ...(captionsMode === "Animated captions" ? { animation: { style: "highlight" } } : {}),
         },
         start: 0,
         length: "end",
@@ -277,6 +277,10 @@ function buildEdit(project, sourceUrl, environment) {
         offset: { y: 0.1 },
       }],
     });
+  }
+
+  if (wantsVoiceover && !voiceoverText) {
+    throw new ApiError("The approved ad plan does not include a narration script. Regenerate the plan or turn voiceover off before rendering.", 400);
   }
 
   if (wantsVoiceover && voiceoverText) {
@@ -329,7 +333,7 @@ function buildEdit(project, sourceUrl, environment) {
       },
       start: 0,
       length: duration,
-      fit: "cover",
+      fit: "crop",
     }],
   });
 
