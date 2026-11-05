@@ -104,6 +104,10 @@ class MainActivity : Activity() {
     private lateinit var conceptContainer: LinearLayout
     private lateinit var toolsContainer: LinearLayout
     private lateinit var chatContainer: LinearLayout
+    private lateinit var productNameInput: EditText
+    private lateinit var productDescriptionInput: EditText
+    private lateinit var audienceInput: EditText
+    private lateinit var adGoalInput: EditText
     private lateinit var promptInput: EditText
     private lateinit var sendButton: Button
     private lateinit var generateButton: Button
@@ -146,11 +150,48 @@ class MainActivity : Activity() {
         }
 
         generateButton.setOnClickListener {
+            val productName = productNameInput.text?.toString()?.trim().orEmpty()
+            val productDescription = productDescriptionInput.text?.toString()?.trim().orEmpty()
+
+            if (productName.isBlank() || productDescription.isBlank()) {
+                Toast.makeText(
+                    this,
+                    "Add the product name and a short description to complete your ad brief.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
+
+            val audience = audienceInput.text?.toString()?.trim().orEmpty()
+                .ifBlank { "Not specified" }
+            val goal = adGoalInput.text?.toString()?.trim().orEmpty()
+                .ifBlank { "Introduce the product or service" }
+            val selectedStyle = chosenOptions["Style"] ?: "Premium and elegant"
+            val selectedFormat = chosenOptions["Format"] ?: "9:16 · Reels / TikTok"
+
+            messages.add(
+                ChatMessage(
+                    "AD BRIEF\nProduct: $productName\nDetails: $productDescription\nAudience: $audience\nGoal: $goal\nStyle: $selectedStyle\nFormat: $selectedFormat",
+                    true
+                )
+            )
+            messages.add(
+                ChatMessage(
+                    "Your brief is ready in this prototype. Live AI planning and video rendering are not connected yet, so no finished ad has been created.",
+                    false
+                )
+            )
+            renderChat()
+
             Toast.makeText(
                 this,
-                "This is the studio interface prototype. Connect a video-rendering service to generate the finished ad.",
+                "Brief checked. AI planning is not connected yet.",
                 Toast.LENGTH_LONG
             ).show()
+
+            findViewById<ScrollView>(R.id.contentScroll).post {
+                findViewById<ScrollView>(R.id.contentScroll).fullScroll(View.FOCUS_DOWN)
+            }
         }
     }
 
@@ -163,6 +204,10 @@ class MainActivity : Activity() {
         conceptContainer = findViewById(R.id.conceptContainer)
         toolsContainer = findViewById(R.id.toolsContainer)
         chatContainer = findViewById(R.id.chatContainer)
+        productNameInput = findViewById(R.id.productNameInput)
+        productDescriptionInput = findViewById(R.id.productDescriptionInput)
+        audienceInput = findViewById(R.id.audienceInput)
+        adGoalInput = findViewById(R.id.adGoalInput)
         promptInput = findViewById(R.id.promptInput)
         sendButton = findViewById(R.id.sendButton)
         generateButton = findViewById(R.id.generateButton)
