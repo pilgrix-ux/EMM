@@ -447,6 +447,9 @@ export default function HomePage() {
         m4v: "video/x-m4v",
         "3gp": "video/3gpp",
       })[extension] || "video/mp4";
+      const uploadMime = videoFile.type && videoFile.type !== "application/octet-stream"
+        ? videoFile.type
+        : inferredMime;
       const safeName = videoFile.name.normalize("NFKD")
         .replace(/[^a-zA-Z0-9._-]+/g, "-")
         .replace(/^-+|-+$/g, "")
@@ -455,7 +458,7 @@ export default function HomePage() {
 
       const { error: uploadError } = await supabase.storage.from("emm-source-videos").upload(storagePath, videoFile, {
         cacheControl: "3600",
-        contentType: videoFile.type || inferredMime,
+        contentType: uploadMime,
         upsert: false,
       });
       if (uploadError) throw uploadError;
