@@ -202,7 +202,7 @@ export default function HomePage() {
       if (uploadError) throw uploadError;
 
       const { data, error: insertError } = await supabase.from("ad_projects").insert({
-        id: projectId, user_id: user.id, title: brief.productName.trim(), status: "draft",
+        id: projectId, user_id: user.id, title: brief.productName.trim(),
         source_video_path: storagePath, source_video_name: videoFile.name,
         source_video_mime_type: videoFile.type || null, source_video_size_bytes: videoFile.size,
         product_name: brief.productName.trim(), product_benefit: brief.benefit.trim(),
@@ -801,8 +801,11 @@ export default function HomePage() {
                 <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>The video rendering service is not connected yet. EMM has generated and approved the ad plan, but it cannot export the finished video at this stage.</span></div>
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
                 <div className="modal-actions builder-actions">
+                  <button className="button button-dark review-button render-disabled-button" type="button" disabled title="Connect a video-rendering provider to enable export">
+                    Render final video <Icon name="film" size={16} />
+                  </button>
                   {savedProjectId ? (
-                    <button className="button button-dark review-button" type="button" onClick={() => setReviewOpen(false)}>Saved to your workspace <Icon name="check" size={16} /></button>
+                    <button className="button button-lime review-button" type="button" onClick={() => setReviewOpen(false)}>Saved to your workspace <Icon name="check" size={16} /></button>
                   ) : (
                     <button className="button button-lime review-button" type="button" onClick={saveDraft} disabled={saving}>
                       {saving ? "Saving your ad plan…" : "Save approved ad plan"} <Icon name="arrow" size={16} />
