@@ -86,7 +86,7 @@ class MainActivity : Activity() {
             scrollTo(R.id.briefSection)
         }
 
-        findViewById<TextView>(R.id.homeDockButton).setOnClickListener {
+        findViewById<View>(R.id.homeDockButton).setOnClickListener {
             scrollTo(R.id.homeTop)
         }
 
