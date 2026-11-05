@@ -907,7 +907,7 @@ export default function HomePage() {
                   </label>
                 </div>
                 {generationMessage && <p className="generation-feedback" role="alert">{generationMessage}</p>}
-                <div className="builder-info-note"><Icon name="info" size={15} /><span>AI planning uses your written brief and settings. It does not analyse the actual video frames yet.</span></div>
+                <div className="builder-info-note"><Icon name="info" size={15} /><span>AI planning uses your written brief and settings; it does not analyse the actual video frames yet. Cloud voiceover currently supports English and French. For Nigerian Pidgin, Yoruba, Hausa or Igbo, choose No voiceover; captions can still be generated from the source audio.</span></div>
                 <div className="modal-actions builder-actions builder-actions-split">
                   <button className="button button-quiet review-button" type="button" onClick={() => { setGenerationMessage(""); setBuilderStep(1); }}>Back</button>
                   <button className="button button-lime review-button" type="button" onClick={generateAdPlan} disabled={generatingPlan}>
