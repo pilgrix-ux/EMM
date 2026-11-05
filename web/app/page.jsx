@@ -1025,31 +1025,45 @@ export default function HomePage() {
             </div>
 
             {builderStep === 1 && (
-              <>
+              <div className="builder-brief-step">
                 <div className="builder-step-kicker"><Icon name="edit" size={14} /> YOUR BRIEF</div>
-                <h2 id="builder-title">Review your product brief.</h2>
-                <p className="modal-intro">Confirm the product information and campaign objective. You can edit these details.</p>
-                <div className="builder-video-chip">
-                  <Icon name="film" size={15} />
-                  <span>Selected source video</span>
-                  <button type="button" onClick={() => { setReviewOpen(false); jumpTo(videoSectionRef); }}>Change video</button>
+                <div className="builder-brief-heading">
+                  <div>
+                    <h2 id="builder-title">Tell us about your product.</h2>
+                    <p className="modal-intro">Share a few details so EMM can shape an ad around what you offer and who you want to reach.</p>
+                  </div>
+                  <span className="builder-brief-index">01 <i /> 04</span>
                 </div>
-                <div className="builder-fields">
-                  <label className="field-group">
-                    <span className="field-label">PRODUCT OR SERVICE NAME <b>*</b></span>
-                    <input value={brief.productName} onChange={(event) => updateBrief("productName", event.target.value)} maxLength={120} placeholder="What are you advertising?" />
+
+                <div className="builder-video-chip">
+                  <span className="builder-video-chip-icon"><Icon name="film" size={16} /></span>
+                  <span className="builder-video-copy">
+                    <strong>Source video attached</strong>
+                    <small>{videoFile?.name || "Ready to use in your ad"}</small>
+                  </span>
+                  <button type="button" onClick={() => { setReviewOpen(false); jumpTo(videoSectionRef); }}>Change</button>
+                </div>
+
+                <div className="builder-brief-section-heading">
+                  <span>PRODUCT DETAILS</span>
+                  <small><b>*</b> Required fields</small>
+                </div>
+                <div className="builder-fields builder-brief-fields">
+                  <label className="field-group brief-field-product">
+                    <span className="field-label">Product or service name <b>*</b></span>
+                    <input value={brief.productName} onChange={(event) => updateBrief("productName", event.target.value)} maxLength={120} placeholder="e.g. Pilgrix AI, FreshBite Cafe" autoComplete="off" />
                   </label>
-                  <label className="field-group">
-                    <span className="field-label">WHAT MAKES IT WORTH CHOOSING? <b>*</b></span>
-                    <textarea value={brief.benefit} onChange={(event) => updateBrief("benefit", event.target.value)} maxLength={500} rows={4} placeholder="Describe what it does and the main benefit customers get." />
+                  <label className="field-group brief-field-benefit">
+                    <span className="field-label">What makes it worth choosing? <b>*</b></span>
+                    <textarea value={brief.benefit} onChange={(event) => updateBrief("benefit", event.target.value)} maxLength={500} rows={4} placeholder="Describe what it does, the problem it solves, and the main benefit customers get." />
                     <span className="field-counter">{brief.benefit.length} / 500</span>
                   </label>
-                  <label className="field-group">
-                    <span className="field-label">WHO IS THIS FOR?</span>
-                    <input value={brief.audience} onChange={(event) => updateBrief("audience", event.target.value)} maxLength={120} placeholder="e.g. Students, small business owners, parents" />
+                  <label className="field-group brief-field-audience">
+                    <span className="field-label">Who is this for?</span>
+                    <input value={brief.audience} onChange={(event) => updateBrief("audience", event.target.value)} maxLength={120} placeholder="e.g. Students, creators, small businesses" autoComplete="off" />
                   </label>
-                  <label className="field-group">
-                    <span className="field-label">WHAT SHOULD THE AD ACHIEVE?</span>
+                  <label className="field-group brief-field-goal">
+                    <span className="field-label">What should the ad achieve?</span>
                     <select value={brief.goal} onChange={(event) => updateBrief("goal", event.target.value)}>
                       <option>Build awareness</option>
                       <option>Explain the product or service</option>
@@ -1063,7 +1077,7 @@ export default function HomePage() {
                 <div className="modal-actions builder-actions">
                   <button className="button button-lime review-button" type="button" onClick={continueFromBrief}>Continue to creative settings <Icon name="arrow" size={16} /></button>
                 </div>
-              </>
+              </div>
             )}
 
             {builderStep === 2 && (
