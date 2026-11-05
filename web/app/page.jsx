@@ -572,7 +572,7 @@ export default function HomePage() {
                     <span className="saved-project-icon"><Icon name="film" size={16} /></span>
                     <span className="saved-project-copy">
                       <strong>{project.title}</strong>
-                      <small>{"Source video attached"} · {new Date(project.created_at).toLocaleDateString()}</small>
+                      <small>Source video attached</small>
                     </span>
                     <span className="saved-project-status">{(project.status || "draft").replaceAll("_", " ")}</span>
                   </div>
