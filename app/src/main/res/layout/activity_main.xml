@@ -360,49 +360,6 @@
                     android:background="@drawable/emm_field" />
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/settingsSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:padding="16dp"
-                android:orientation="vertical"
-                android:background="@drawable/emm_surface">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="CREATIVE DIRECTION"
-                    android:textColor="#4566E8"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.07" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:text="Set the creative direction"
-                    android:textColor="#17213D"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Choose the format, duration, visual style and captions."
-                    android:textColor="#78829A"
-                    android:textSize="11sp" />
-
-                <LinearLayout
-                    android:id="@+id/settingsContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="13dp"
-                    android:orientation="vertical" />
-            </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
 
