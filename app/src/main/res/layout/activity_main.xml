@@ -211,6 +211,136 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/briefSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:layout_marginTop="14dp"
+                android:background="#FFFFFF">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AD BRIEF"
+                    android:textColor="#4566E8"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Tell EMM what you are advertising"
+                    android:textColor="#17213D"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="A clear brief helps shape a more relevant ad plan."
+                    android:textColor="#78829A"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="13dp"
+                    android:text="Product or service name *"
+                    android:textColor="#4E5B76"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/productNameInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:minHeight="48dp"
+                    android:padding="12dp"
+                    android:hint="e.g. Handmade leather bags"
+                    android:textColor="#17213D"
+                    android:textColorHint="#78829A"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:inputType="textCapSentences"
+                    android:background="#FAFBFE" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="11dp"
+                    android:text="What are you promoting? *"
+                    android:textColor="#4E5B76"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/productDescriptionInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:minHeight="76dp"
+                    android:gravity="top|start"
+                    android:padding="12dp"
+                    android:hint="Describe the product and its main benefit..."
+                    android:textColor="#17213D"
+                    android:textColorHint="#78829A"
+                    android:textSize="12sp"
+                    android:maxLines="4"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:background="#FAFBFE" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="11dp"
+                    android:text="Who is this ad for?"
+                    android:textColor="#4E5B76"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/audienceInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:minHeight="48dp"
+                    android:padding="12dp"
+                    android:hint="e.g. Students, new parents, local shoppers"
+                    android:textColor="#17213D"
+                    android:textColorHint="#78829A"
+                    android:textSize="12sp"
+                    android:inputType="textCapSentences"
+                    android:background="#FAFBFE" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="11dp"
+                    android:text="What should the ad achieve?"
+                    android:textColor="#4E5B76"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/adGoalInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:minHeight="48dp"
+                    android:padding="12dp"
+                    android:hint="e.g. Get enquiries or introduce a new product"
+                    android:textColor="#17213D"
+                    android:textColorHint="#78829A"
+                    android:textSize="12sp"
+                    android:inputType="textCapSentences"
+                    android:background="#FAFBFE" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/suggestionSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -323,7 +453,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Work with your AI creative partner"
+                        android:text="Add notes to shape your creative brief"
                         android:textColor="#78829A"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -331,7 +461,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="●  STUDIO"
+                    android:text="●  DEMO MODE"
                     android:textColor="#25865A"
                     android:textSize="9sp"
                     android:textStyle="bold"
@@ -369,7 +499,7 @@
                     android:id="@+id/generateButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Generate ad  ↗"
+                    android:text="Build ad plan  ↗"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF"
                     android:backgroundTint="#4566E8"
@@ -438,7 +568,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:paddingStart="4dp"
-            android:text="Your clip stays on this device in this prototype. AI rendering is not connected yet."
+            android:text="Prototype mode: your clip stays on this device. AI planning and video rendering are not connected yet."
             android:textColor="#78829A"
             android:textSize="9sp" />
     </LinearLayout>
