@@ -81,6 +81,12 @@ export default function HomePage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [savedProjectId, setSavedProjectId] = useState("");
+  const [renderingVideo, setRenderingVideo] = useState(false);
+  const [renderId, setRenderId] = useState("");
+  const [renderStatus, setRenderStatus] = useState("");
+  const [renderMessage, setRenderMessage] = useState("");
+  const [renderReady, setRenderReady] = useState(false);
+  const [downloadingVideo, setDownloadingVideo] = useState(false);
   const [savedProjects, setSavedProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
 
@@ -313,6 +319,11 @@ export default function HomePage() {
       setVideoFile(file);
       setVideoUrl(nextUrl);
       setVideoPreviewError("");
+      setSavedProjectId("");
+      setRenderId("");
+      setRenderStatus("");
+      setRenderMessage("");
+      setRenderReady(false);
       setFormError("");
       setGenerationMessage("");
     } catch {
@@ -333,6 +344,11 @@ export default function HomePage() {
     setVideoFile(null);
     setVideoUrl("");
     setVideoPreviewError("");
+    setSavedProjectId("");
+    setRenderId("");
+    setRenderStatus("");
+    setRenderMessage("");
+    setRenderReady(false);
     setFormError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
