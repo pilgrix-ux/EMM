@@ -322,7 +322,7 @@ export default function HomePage() {
       const ffmpeg = new FFmpeg();
       ffmpeg.on("log", ({ message }) => {
         const entry = String(message || "").trim();
-        if (entry) ffmpegLogRef.current = (ffmpegLogRef.current + "\\n" + entry).slice(-2400);
+        if (entry) ffmpegLogRef.current = (ffmpegLogRef.current + "\n" + entry).slice(-2400);
       });
       ffmpeg.on("progress", ({ progress }) => {
         if (Number.isFinite(progress)) {
@@ -386,7 +386,7 @@ export default function HomePage() {
         "-y", "emm-compatible.mp4",
       ]);
       if (exitCode !== 0) {
-        const diagnostic = ffmpegLogRef.current.split("\\n").filter(Boolean).slice(-4).join(" ");
+        const diagnostic = ffmpegLogRef.current.split("\n").filter(Boolean).slice(-4).join(" ");
         throw new Error(diagnostic || "The video converter stopped before finishing the file.");
       }
 
@@ -413,7 +413,7 @@ export default function HomePage() {
       setVideoConversionStatus("Compatible preview ready. Your original file is unchanged.");
       setVideoConversionProgress(100);
     } catch (error) {
-      const detail = String(error?.message || error || "Unknown conversion error").replace(/\\s+/g, " ").trim();
+      const detail = String(error?.message || error || "Unknown conversion error").replace(/\s+/g, " ").trim();
       setVideoPreviewError(
         detail.includes("100 MB")
           ? detail
