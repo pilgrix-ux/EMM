@@ -1045,6 +1045,36 @@ button:focus-visible, a:focus-visible {
   padding: 10px 12px;
   background: #542b30;
 }
+.video-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.video-preview-convert {
+  justify-self: start;
+  min-height: 34px;
+  padding: 7px 12px;
+  color: #fff;
+  background: #303744;
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.video-preview-convert:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+.video-preview-conversion-status {
+  margin: 0;
+  padding: 9px 12px;
+  color: #d9e7a0;
+  background: rgba(13, 17, 22, 0.92);
+  font-size: 9px;
+  line-height: 1.5;
+}
 .video-preview-error {
   margin: 0;
   color: #ffe2df;
