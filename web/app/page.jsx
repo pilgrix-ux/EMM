@@ -18,7 +18,7 @@ const initialBrief = {
   music: "Keep original audio",
 };
 
-function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
+function Icon({ name, size = 18, strokeWidth = 1.7, className = "" }) {
   const common = {
     width: size,
     height: size,
@@ -38,7 +38,7 @@ function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
     play: <path d="m9 6 10 6-10 6z" fill="currentColor" stroke="none" />,
     plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
     film: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4" /></>,
-    sparkle: <><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z" /><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>,
+    sliders: <><path d="M4 7h7M15 7h5M4 17h3M11 17h9" /><circle cx="13" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>,
     edit: <><path d="m15 5 4 4" /><path d="m4 20 4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16z" /></>,
     check: <path d="m5 12 4 4L19 6" />,
     close: <><path d="m6 6 12 12" /><path d="M18 6 6 18" /></>,
@@ -48,14 +48,13 @@ function Icon({ name, size = 18, strokeWidth = 1.8, className = "" }) {
     info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8h.01" /></>,
   };
 
-  return <svg {...common}>{paths[name] || paths.sparkle}</svg>;
+  return <svg {...common}>{paths[name] || paths.info}</svg>;
 }
 
 export default function HomePage() {
   const fileInputRef = useRef(null);
   const videoSectionRef = useRef(null);
   const briefSectionRef = useRef(null);
-  const homeRef = useRef(null);
   const videoElementRef = useRef(null);
   const videoObjectUrlRef = useRef("");
   const ffmpegRef = useRef(null);
@@ -553,9 +552,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden pb-32">
-      <div className="ambient ambient-warm" />
-      <div className="ambient ambient-lime" />
+    <main className="min-h-screen overflow-x-hidden pb-12">
 
       <header className="topbar-wrap">
         <div className="topbar glass-panel">
@@ -581,7 +578,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <div className="workspace" id="home" ref={homeRef}>
+      <div className="workspace" id="home">
         <section className="hero-grid">
           <div className="hero-copy">
             <div className="eyebrow"><span className="eyebrow-dot" /> YOUR CREATIVE WORKSPACE</div>
@@ -609,7 +606,6 @@ export default function HomePage() {
           <aside className="manifesto-card">
             <div className="manifesto-top">
               <span>THE EMM WORKFLOW</span>
-              <span className="manifesto-icon"><Icon name="sparkle" size={18} /></span>
             </div>
             <div className="manifesto-content">
               <span className="lime-kicker">FROM FOOTAGE TO AD PLAN</span>
@@ -667,7 +663,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <div className="video-empty">
-                  <div className="video-empty-icon"><Icon name="play" size={22} /></div>
+                  <div className="video-empty-icon"><Icon name="upload" size={20} /></div>
                   <strong>No video selected</strong>
                   <p>Select a video from your device. Your preview will appear here before you continue.</p>
                   <button className="button button-lime upload-button" type="button" onClick={openVideoPicker}>
@@ -698,16 +694,16 @@ export default function HomePage() {
                 <h2>Create your next ad.</h2>
                 <p>Start with your video, complete the product brief, then choose how the advertisement should look and sound.</p>
               </div>
-              <span className="brief-icon"><Icon name="sparkle" size={18} /></span>
+              <span className="brief-icon"><Icon name="sliders" size={18} /></span>
             </div>
             <div className="generate-launch-content">
               <div className="launch-step-list">
-                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="edit" size={16} /></span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
-                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="sparkle" size={16} /></span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
-                <div><span className="launch-step-mark" aria-hidden="true"><Icon name="check" size={16} /></span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
+                <div><span className="launch-step-number" aria-hidden="true">01</span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
+                <div><span className="launch-step-number" aria-hidden="true">02</span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
+                <div><span className="launch-step-number" aria-hidden="true">03</span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
               </div>
               <button className="button button-lime generate-launch-button" type="button" onClick={openAdBuilder}>
-                <Icon name="sparkle" size={17} /> Generate Ads <Icon name="arrow" size={16} />
+                <Icon name="film" size={17} /> Generate Ads <Icon name="arrow" size={16} />
               </button>
               {formError && <p className="form-error" role="alert">{formError}</p>}
               <p className="launch-footnote">Your settings remain editable until you approve the ad plan.</p>
@@ -757,12 +753,6 @@ export default function HomePage() {
           <span>CREATE. REVIEW. APPROVE.</span>
         </footer>
       </div>
-
-      <nav className="floating-dock" aria-label="Primary navigation">
-        <button className="dock-home" type="button" aria-label="Home" title="Home" onClick={() => jumpTo(homeRef)}>
-          <Icon name="home" size={19} />
-        </button>
-      </nav>
 
       {reviewOpen && (
         <div className="modal-backdrop builder-backdrop" role="presentation" onMouseDown={(event) => {
@@ -825,7 +815,7 @@ export default function HomePage() {
 
             {builderStep === 2 && (
               <>
-                <div className="builder-step-kicker"><Icon name="sparkle" size={14} /> CREATIVE SETTINGS</div>
+                <div className="builder-step-kicker"><Icon name="sliders" size={14} /> CREATIVE SETTINGS</div>
                 <h2 id="builder-title">Choose your ad format and style.</h2>
                 <p className="modal-intro">Set the destination platform, video format, language and creative treatment.</p>
                 <div className="builder-fields builder-fields-grid">
@@ -883,7 +873,7 @@ export default function HomePage() {
                 <div className="modal-actions builder-actions builder-actions-split">
                   <button className="button button-quiet review-button" type="button" onClick={() => { setGenerationMessage(""); setBuilderStep(1); }}>Back</button>
                   <button className="button button-lime review-button" type="button" onClick={generateAdPlan} disabled={generatingPlan}>
-                    {generatingPlan ? "Building your plan…" : "Generate ad plan"} <Icon name="sparkle" size={16} />
+                    {generatingPlan ? "Building your plan…" : "Generate ad plan"} <Icon name="arrow" size={16} />
                   </button>
                 </div>
               </>
@@ -978,7 +968,7 @@ export default function HomePage() {
 
             {builderStep === 3 && !adPlan && (
               <div className="builder-empty-state">
-                <div className="modal-success-icon"><Icon name="sparkle" size={20} /></div>
+                <div className="modal-success-icon"><Icon name="check" size={20} /></div>
                 <h2 id="builder-title">Your ad plan is waiting.</h2>
                 <p className="modal-intro">Go back to creative settings and generate the plan.</p>
                 <button className="button button-lime review-button" type="button" onClick={() => setBuilderStep(2)}>Back to settings</button>
