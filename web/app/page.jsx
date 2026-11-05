@@ -80,6 +80,8 @@ export default function HomePage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [savedProjectId, setSavedProjectId] = useState("");
+  const [savedProjects, setSavedProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
 
   useEffect(() => {
     const configured = Boolean(
@@ -107,6 +109,25 @@ export default function HomePage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!supabase || !user) {
+      setSavedProjects([]);
+      return undefined;
+    }
+    let active = true;
+    setProjectsLoading(true);
+    supabase.from("ad_projects")
+      .select("id, title, status, source_video_name, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) { setAuthMessage(error.message); return; }
+        setSavedProjects(data || []);
+      })
+      .finally(() => { if (active) setProjectsLoading(false); });
+    return () => { active = false; };
+  }, [supabase, user]);
   async function handleAuthSubmit(event) {
     event.preventDefault();
     if (!supabase) {
@@ -192,6 +213,7 @@ export default function HomePage() {
         throw insertError;
       }
       setSavedProjectId(data.id);
+      setSavedProjects((current) => [{ id: data.id, title: brief.productName.trim(), status: "draft", source_video_name: videoFile.name, created_at: new Date().toISOString() }, ...current].slice(0, 6));
       setSaveMessage("Saved securely to your EMM workspace.");
     } catch (error) {
       setSaveMessage(error.message || "Could not save this project. Please try again.");
@@ -462,6 +484,37 @@ export default function HomePage() {
             </form>
           </section>
         </section>
+
+        {user && (
+          <section className="surface-card saved-projects">
+            <div className="section-heading">
+              <div>
+                <div className="section-kicker">YOUR EMM WORKSPACE</div>
+                <h2>Recent drafts</h2>
+                <p>Your private projects, saved to Supabase.</p>
+              </div>
+              <span className="status-chip status-ready"><span className="status-dot" />SYNCED</span>
+            </div>
+            {projectsLoading ? (
+              <p className="saved-empty">Loading your drafts…</p>
+            ) : savedProjects.length ? (
+              <div className="saved-project-list">
+                {savedProjects.map((project) => (
+                  <div className="saved-project-row" key={project.id}>
+                    <span className="saved-project-icon"><Icon name="film" size={16} /></span>
+                    <span className="saved-project-copy">
+                      <strong>{project.title}</strong>
+                      <small>{project.source_video_name || "Source video"} · {new Date(project.created_at).toLocaleDateString()}</small>
+                    </span>
+                    <span className="saved-project-status">{project.status}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="saved-empty">No saved drafts yet. Review a brief and save it to start your workspace.</p>
+            )}
+          </section>
+        )}
 
         <div className="prototype-note">
           <span className="prototype-pulse" />
