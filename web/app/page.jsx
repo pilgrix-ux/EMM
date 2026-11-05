@@ -117,7 +117,7 @@ export default function HomePage() {
     setAuthMessage("");
     try {
       if (authMode === "sign-up") {
-        const { data, error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword });
+        const { data, error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin + "/auth/callback" } });
         if (error) throw error;
         if (data.session) {
           setUser(data.user);
@@ -160,6 +160,7 @@ export default function HomePage() {
       setAuthOpen(true);
       return;
     }
+    if (videoFile && videoFile.size > 104857600) { setSaveMessage("This video exceeds the 100 MB upload limit. Choose a smaller clip for this first release."); return; }
     if (!videoFile || !brief.productName.trim() || !brief.benefit.trim()) {
       setSaveMessage("Choose a source video and complete the required product details before saving.");
       return;
