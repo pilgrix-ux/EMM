@@ -90,9 +90,9 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
           </a>
 
           <div className="studio-v2-actions" aria-label="Signed-in account">
-            <span className="studio-v2-user-chip" title={user?.email || "Signed in"}>
+            <span className="studio-v2-user-chip" title={user?.email || "Guest workspace"}>
               <span className="studio-v2-user-avatar" aria-hidden="true">{initials}</span>
-              <span className="studio-v2-user-label">{sessionError ? "Session check" : user?.email || "Signed in"}</span>
+              <span className="studio-v2-user-label">{sessionError ? "Session check" : user?.email || "Guest workspace"}</span>
             </span>
           </div>
         </header>
@@ -101,8 +101,8 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
           <section className="studio-v2-welcome">
             <div className="studio-v2-welcome-copy">
               <span className="studio-v2-eyebrow"><i /> YOUR CREATIVE WORKSPACE</span>
-              <h1>{sessionError ? "Reconnecting your workspace." : `Welcome back, ${firstName}.`}</h1>
-              <p>{sessionError ? "We couldn’t verify your sign-in on this request. Retry the workspace to reconnect without clearing your session." : "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching."}</p>
+              <h1>{sessionError ? "Reconnecting your workspace." : user ? `Welcome back, ${firstName}.` : "Your creative workspace."}</h1>
+              <p>{sessionError ? "We couldn’t verify your sign-in on this request. Retry the workspace to reconnect without clearing your session." : user ? "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching." : "Start with a video, build your ad and review every edit before you render. Sign in when you’re ready to save your work."}</p>
             </div>
             {!sessionError && (
               <div className="studio-v2-welcome-action-wrap">
