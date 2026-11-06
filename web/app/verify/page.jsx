@@ -3,6 +3,21 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
 
+async function verifySignupCode(supabase, email, token) {
+  // Current supabase-js uses "email" for email OTP verification. Keep a
+  // compatibility retry for signup-issued tokens from older Auth flows.
+  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (!result.error) return result;
+
+  const isOtpMismatch =
+    result.error.code === "otp_expired" ||
+    /token has expired or is invalid/i.test(result.error.message || "");
+  if (!isOtpMismatch) return result;
+
+  const legacyResult = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+  return legacyResult.error ? result : legacyResult;
+}
+
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
@@ -17,7 +32,7 @@ export default function VerifyEmailPage() {
 
   async function verifyEmail(event) {
     event.preventDefault();
-    const normalizedEmail = email.trim();
+    const normalizedEmail = email.trim().toLowerCase();
     const code = token.trim();
 
     if (!normalizedEmail) {
@@ -35,11 +50,7 @@ export default function VerifyEmailPage() {
     setMessage("");
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.verifyOtp({
-        email: normalizedEmail,
-        token: code,
-        type: "email",
-      });
+      const { error } = await verifySignupCode(supabase, normalizedEmail, code);
       if (error) throw error;
 
       setMessageType("success");
@@ -71,7 +82,7 @@ export default function VerifyEmailPage() {
       if (error) throw error;
       setToken("");
       setMessageType("success");
-      setMessage("A new 6-digit code has been sent. Check your inbox and spam folder.");
+      setMessage("A new 6-digit code has been sent. Use the newest email only; each resend invalidates the previous code. Check your inbox and spam folder.");
     } catch (error) {
       setMessageType("error");
       setMessage(error.message || "We could not resend the code. Please try again.");
