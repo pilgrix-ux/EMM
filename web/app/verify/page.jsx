@@ -25,7 +25,7 @@ export default function VerifyEmailPage() {
       setMessage("Enter the email address you used to create your account.");
       return;
     }
-    if (!/^\\d{6}$/.test(code)) {
+    if (!/^\d{6}$/.test(code)) {
       setMessageType("error");
       setMessage("Enter the 6-digit code from your email.");
       return;
@@ -127,7 +127,7 @@ export default function VerifyEmailPage() {
               required
               autoFocus
               value={token}
-              onChange={(event) => setToken(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
               aria-label="6-digit email verification code"
             />
