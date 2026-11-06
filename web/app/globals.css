@@ -7646,3 +7646,55 @@ a:focus-visible {
     transition: none;
   }
 }
+
+
+/* Dedicated, authenticated ad-creation workspace */
+.studio-create-page {
+  background: #f2f3f6;
+}
+.studio-create-workspace {
+  padding-top: 42px;
+}
+.studio-create-intro {
+  max-width: 760px;
+  margin: 0 0 28px;
+  padding: 0 2px;
+}
+.studio-create-intro h1 {
+  margin: 14px 0 0;
+  color: #15171b;
+  font-size: clamp(34px, 5vw, 54px);
+  line-height: 1.02;
+  font-weight: 820;
+  letter-spacing: -0.075em;
+}
+.studio-create-intro p {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: #78818e;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.studio-create-grid {
+  margin-top: 0;
+  align-items: stretch;
+}
+.studio-create-grid > .surface-card {
+  height: 100%;
+}
+@media (max-width: 820px) {
+  .studio-create-workspace {
+    padding-top: 30px;
+  }
+  .studio-create-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .studio-create-intro h1 {
+    font-size: 37px;
+  }
+  .studio-create-intro p {
+    font-size: 12px;
+  }
+}
