@@ -46,7 +46,7 @@ function formatDate(value) {
   }).format(date);
 }
 
-export default function StudioDashboard({ user, projects = [], projectsError = false }) {
+export default function StudioDashboard({ user, projects = [], stats = {}, projectsError = false }) {
   const [signingOut, setSigningOut] = useState(false);
   const displayName =
     user?.user_metadata?.full_name?.trim() ||
@@ -54,8 +54,9 @@ export default function StudioDashboard({ user, projects = [], projectsError = f
     user?.email?.split("@")[0] ||
     "there";
   const firstName = displayName.split(/[ ._-]/)[0] || "there";
-  const planCount = projects.filter((item) => ["plan_ready", "approved", "rendering", "done", "complete"].includes(item.status)).length;
-  const completedCount = projects.filter((item) => ["done", "complete"].includes(item.status)).length;
+  const totalCount = Number.isFinite(stats.total) ? stats.total : projects.length;
+  const planCount = Number.isFinite(stats.plans) ? stats.plans : 0;
+  const completedCount = Number.isFinite(stats.completed) ? stats.completed : 0;
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -104,7 +105,7 @@ export default function StudioDashboard({ user, projects = [], projectsError = f
           <section className="studio-overview-grid" aria-label="Workspace overview">
             <article className="studio-stat-card">
               <span className="studio-stat-icon"><Icon name="folder" size={18} /></span>
-              <span className="studio-stat-copy"><span>Total projects</span><strong>{projects.length}</strong></span>
+              <span className="studio-stat-copy"><span>Total projects</span><strong>{totalCount}</strong></span>
             </article>
             <article className="studio-stat-card">
               <span className="studio-stat-icon"><Icon name="clock" size={18} /></span>
