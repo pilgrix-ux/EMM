@@ -181,7 +181,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                 </span>
               </div>
 
-              {projectsError ? (
+              {projectsError || sessionError ? (
                 <div className="studio-v2-empty studio-v2-empty-error" role="alert">
                   <span className="studio-v2-empty-icon"><Icon name="folder" size={22} /></span>
                   <h3>{sessionError ? "We couldn’t verify your session just now." : "We couldn’t load your projects."}</h3>
