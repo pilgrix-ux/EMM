@@ -52,8 +52,8 @@ export default function VerifyEmailPage() {
       }
 
       setMessageType("success");
-      setMessage("Email verified. Opening your Pilgrix workspace…");
-      window.location.replace("/studio");
+      setMessage("Email verified. Returning to Pilgrix…");
+      window.location.replace("/");
     } catch (error) {
       logAuthDiagnostic("verification page submission failed", error, { flow: "signup-confirmation" });
       setMessageType("error");
