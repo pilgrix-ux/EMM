@@ -1419,7 +1419,7 @@ export default function HomePage() {
                     </button>
                   )}
                   <button className="button button-quiet review-button" type="button" onClick={() => { setBuilderStep(3); setPlanApproved(false); }}>Back to edit plan</button>
-                  <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)}>Close</button>
+                  <button className="button button-quiet review-button" type="button" onClick={() => setReviewOpen(false)} disabled={renderingVideo || saving}>Close</button>
                 </div>
               </>
             )}
