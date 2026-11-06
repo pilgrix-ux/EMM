@@ -2,21 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
-
-async function verifySignupCode(supabase, email, token) {
-  // Current supabase-js uses "email" for email OTP verification. Keep a
-  // compatibility retry for signup-issued tokens from older Auth flows.
-  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (!result.error) return result;
-
-  const isOtpMismatch =
-    result.error.code === "otp_expired" ||
-    /token has expired or is invalid/i.test(result.error.message || "");
-  if (!isOtpMismatch) return result;
-
-  const legacyResult = await supabase.auth.verifyOtp({ email, token, type: "signup" });
-  return legacyResult.error ? result : legacyResult;
-}
+import { logAuthDiagnostic, verifySignupOtp } from "../../lib/supabase/verify-signup-otp";
 
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState("");
@@ -50,7 +36,7 @@ export default function VerifyEmailPage() {
     setMessage("");
     try {
       const supabase = createClient();
-      const { error } = await verifySignupCode(supabase, normalizedEmail, code);
+      const { error } = await verifySignupOtp({ supabase, email: normalizedEmail, token: code });
       if (error) throw error;
 
       setMessageType("success");
