@@ -17,55 +17,54 @@ export function logAuthDiagnostic(event, error, context = {}) {
   });
 }
 
-function isOtpMismatch(error) {
-  return error?.code === "otp_expired" ||
-    /token has expired or is invalid|invalid.*otp|otp.*invalid/i.test(error?.message || "");
+export function getSignupVerificationErrorMessage(error) {
+  const code = typeof error?.code === "string" ? error.code : "";
+  const message = typeof error?.message === "string" ? error.message : "";
+
+  if (code === "otp_expired" || /expired|already been used/i.test(message)) {
+    return "That code has expired or has already been used. Request a new code, then enter the newest code from your email.";
+  }
+
+  if (
+    ["bad_code", "invalid_token", "token_not_found"].includes(code) ||
+    /invalid.*(otp|token|code)|(otp|token|code).*(invalid|incorrect)/i.test(message)
+  ) {
+    return "That code doesn't match. Check the six digits in your newest email and try again.";
+  }
+
+  return "We couldn't verify your email right now. Please try again.";
+}
+
+export function getSignupResendErrorMessage(error) {
+  if (
+    error?.code === "over_email_send_rate_limit" ||
+    /only request this after|rate limit/i.test(error?.message || "")
+  ) {
+    return "Please wait a moment before requesting another code.";
+  }
+
+  return "We couldn't send a new verification code. Please try again shortly.";
 }
 
 /**
- * Confirms an email/password signup. Signup confirmation OTPs use type "signup";
- * "email" is retained as a compatibility fallback for OTPs issued by the
- * passwordless sign-in flow.
+ * Supabase's JavaScript signup OTP flow uses type "email" when verifying
+ * the six-digit code sent by the Confirm signup email template.
+ * Do not try "signup" first: that is not the JS OTP verification type for
+ * this code flow and creates a second, misleading failed verification call.
  */
 export async function verifySignupOtp({ supabase, email, token }) {
-  const attempts = [];
-  let lastResult = null;
+  const result = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
 
-  for (const type of ["signup", "email"]) {
-    let result;
-    try {
-      result = await supabase.auth.verifyOtp({ email, token, type });
-    } catch (error) {
-      logAuthDiagnostic("signup OTP request threw", error, {
-        attemptedTypes: [...attempts.map((attempt) => attempt.type), type],
-      });
-      throw error;
-    }
-
-    lastResult = result;
-    if (!result.error) {
-      if (type === "email") {
-        console.info("[Pilgrix auth diagnostic]", {
-          event: "signup OTP verified by compatibility fallback",
-          attemptedTypes: attempts.map((attempt) => attempt.type).concat(type),
-        });
-      }
-      return result;
-    }
-
-    attempts.push({ type, error: summarizeAuthError(result.error) });
-    if (!isOtpMismatch(result.error)) {
-      logAuthDiagnostic("signup OTP verification failed", result.error, {
-        attemptedTypes: attempts.map((attempt) => attempt.type),
-        attempts,
-      });
-      return result;
-    }
+  if (result.error) {
+    logAuthDiagnostic("signup OTP verification failed", result.error, {
+      flow: "signup-confirmation",
+      verificationType: "email",
+    });
   }
 
-  logAuthDiagnostic("signup OTP rejected by all verification types", lastResult?.error, {
-    attemptedTypes: attempts.map((attempt) => attempt.type),
-    attempts,
-  });
-  return lastResult;
+  return result;
 }
