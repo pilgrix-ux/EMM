@@ -1,7 +1,5 @@
-import HomePageClient from "../../HomePageClient";
-
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
 export default function StudioCreatePage() {
-  return <HomePageClient workspaceOnly />;
+  redirect("/");
 }
