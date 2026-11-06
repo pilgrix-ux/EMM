@@ -253,6 +253,8 @@ export default function HomePage() {
     }
     if (!user) {
       setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
       setAuthMessage("Sign in or create an account to save this ad and its source video privately.");
       setAuthOpen(true);
       return null;
@@ -488,12 +490,16 @@ export default function HomePage() {
     if (!videoFile || !supabaseConfigured || !supabase) {
       setPreviewConversionMessage("Sign in to your Pilgrix workspace to prepare a compatible cloud preview.");
       setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
       setAuthMessage("Sign in to convert this clip into a browser-friendly MP4 preview.");
       setAuthOpen(true);
       return;
     }
     if (!user) {
       setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
       setAuthMessage("Sign in to convert this clip into a browser-friendly MP4 preview.");
       setAuthOpen(true);
       return;
@@ -654,6 +660,8 @@ export default function HomePage() {
     }
     if (!user || !supabase) {
       setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
       setAuthMessage("Sign in or create an account to use AI ad generation.");
       setAuthOpen(true);
       return;
@@ -665,6 +673,8 @@ export default function HomePage() {
       if (sessionError) throw sessionError;
       if (!session?.access_token) {
         setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
         setAuthMessage("Your session has expired. Sign in again to generate the ad plan.");
         setAuthOpen(true);
         return;
@@ -758,6 +768,8 @@ export default function HomePage() {
     }
     if (!supabase || !user) {
       setAuthMode("sign-in");
+      setAuthOtpStep(false);
+      setAuthOtp("");
       setAuthMessage("Sign in to save your source video and render the final ad.");
       setAuthOpen(true);
       return;
@@ -1321,7 +1333,11 @@ export default function HomePage() {
 
       {authOpen && (
         <div className="modal-backdrop auth-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !authBusy) setAuthOpen(false);
+          if (event.target === event.currentTarget && !authBusy) {
+            setAuthOpen(false);
+            setAuthOtpStep(false);
+            setAuthOtp("");
+          }
         }}>
           <section className="review-modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
             <div className="auth-shell">
@@ -1351,12 +1367,12 @@ export default function HomePage() {
               <div className="auth-main">
                 <div className="auth-main-top">
                   <span>PILGRIX <i>/</i> ACCOUNT</span>
-                  <button className="modal-close auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)} disabled={authBusy}><Icon name="close" size={18} /></button>
+                  <button className="modal-close auth-close" type="button" aria-label="Close sign in" onClick={() => { setAuthOpen(false); setAuthOtpStep(false); setAuthOtp(""); }} disabled={authBusy}><Icon name="close" size={18} /></button>
                 </div>
                 <div className="auth-heading">
                   <span className="auth-eyebrow">{authMode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
-                  <h2 id="auth-title">{authMode === "sign-up" ? "Create your account." : "Your studio awaits."}</h2>
-                  <p>{authMode === "sign-up" ? "Set up your Pilgrix account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
+                  <h2 id="auth-title">{authOtpStep ? "Verify your email address." : authMode === "sign-up" ? "Create your account." : "Your studio awaits."}</h2>
+                  <p>{authOtpStep ? "Enter the secure 6-digit code to activate your Pilgrix account." : authMode === "sign-up" ? "Set up your Pilgrix account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
                 </div>
 
                 <form className="auth-form" onSubmit={handleAuthSubmit}>
