@@ -48,7 +48,7 @@ export function getSignupResendErrorMessage(error) {
 
 /**
  * Supabase's JavaScript signup OTP flow uses type "email" when verifying
- * the six-digit code sent by the Confirm signup email template.
+ * the eight-digit code sent by the Confirm signup email template.
  * Do not try "signup" first: that is not the JS OTP verification type for
  * this code flow and creates a second, misleading failed verification call.
  */
