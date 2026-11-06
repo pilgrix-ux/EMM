@@ -65,7 +65,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="EMM Ads Studio"
+                    android:text="Pilgrix Ads Studio"
                     android:textColor="#121316"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -199,7 +199,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:text="Start with your video. Tell us what makes your product worth choosing. EMM helps you shape a story people remember."
+                        android:text="Start with your video. Tell us what makes your product worth choosing. Pilgrix helps you shape a story people remember."
                         android:textColor="#78808E"
                         android:textSize="12sp"
                         android:lineSpacingExtra="4dp" />
@@ -260,7 +260,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:letterSpacing="0.13"
-                            android:text="THE EMM APPROACH"
+                            android:text="THE PILGRIX APPROACH"
                             android:textColor="#B6C0D0"
                             android:textSize="9sp"
                             android:textStyle="bold" />
@@ -305,7 +305,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="13dp"
-                        android:text="FROM PRODUCT TO IMPACT     EMM STUDIO  ↗"
+                        android:text="FROM PRODUCT TO IMPACT     PILGRIX STUDIO  ↗"
                         android:textColor="#AEB5C2"
                         android:textSize="8sp"
                         android:textStyle="bold"
@@ -656,7 +656,7 @@
                     android:layout_marginTop="19dp"
                     android:gravity="center"
                     android:letterSpacing="0.09"
-                    android:text="EMM ADS STUDIO  /  CREATIVE STARTS HERE"
+                    android:text="PILGRIX ADS STUDIO  /  CREATIVE STARTS HERE"
                     android:textColor="#9AA1AD"
                     android:textSize="7sp"
                     android:textStyle="bold" />
