@@ -101,8 +101,6 @@ export default function HomePage({ workspaceOnly = false } = {}) {
   const [renderMessage, setRenderMessage] = useState("");
   const [renderReady, setRenderReady] = useState(false);
   const [downloadingVideo, setDownloadingVideo] = useState(false);
-  const [savedProjects, setSavedProjects] = useState([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
 
   useEffect(() => {
     if (reviewOpen) {
@@ -130,41 +128,14 @@ export default function HomePage({ workspaceOnly = false } = {}) {
     client.auth.getSession().then(({ data }) => {
       const sessionUser = data.session?.user ?? null;
       setUser(sessionUser);
-      // A signed-in visitor should never remain on the public marketing page.
-      // The creation route opts out so it can keep the focused builder open.
-      if (sessionUser && !workspaceOnly) {
-        window.location.replace("/studio");
-      }
     });
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
-      if (sessionUser && !workspaceOnly && window.location.pathname === "/") {
-        window.location.replace("/studio");
-      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!supabase || !user) {
-      setSavedProjects([]);
-      return undefined;
-    }
-    let active = true;
-    setProjectsLoading(true);
-    supabase.from("ad_projects")
-      .select("id, title, status, source_video_name, created_at")
-      .order("created_at", { ascending: false })
-      .limit(6)
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) { setAuthMessage(error.message); return; }
-        setSavedProjects(data || []);
-      })
-      .finally(() => { if (active) setProjectsLoading(false); });
-    return () => { active = false; };
-  }, [supabase, user]);
   async function handleAuthSubmit(event) {
     event.preventDefault();
     if (!supabase) {
@@ -193,9 +164,6 @@ export default function HomePage({ workspaceOnly = false } = {}) {
         setAuthPassword("");
         setAuthOtp("");
         setAuthOtpStep(false);
-        if (!reviewOpen) {
-          window.location.replace("/studio");
-        }
         return;
       }
 
@@ -250,9 +218,6 @@ export default function HomePage({ workspaceOnly = false } = {}) {
         setUser(data.user);
         setAuthOpen(false);
         setAuthPassword("");
-        if (!reviewOpen) {
-          window.location.replace("/studio");
-        }
       }
     } catch (error) {
       const wasVerifyingOtp = authOtpStep;
@@ -978,12 +943,10 @@ export default function HomePage({ workspaceOnly = false } = {}) {
             <nav className="topbar-nav" aria-label="Main navigation">
               <a href="#source-video">Source video</a>
               <a href="#product-brief">How it works</a>
-              {user && <a href="/studio">Your workspace</a>}
             </nav>
             <div className="topbar-actions">
               {user ? (
                 <>
-                  <a className="button button-quiet topbar-action" href="/studio">Open workspace</a>
                   <button className="button button-quiet topbar-action" type="button" onClick={handleSignOut}>
                     <span>Sign out</span>
                   </button>
@@ -1216,36 +1179,6 @@ export default function HomePage({ workspaceOnly = false } = {}) {
           </section>
         </section>
 
-        {!workspaceOnly && user && (
-          <section className="surface-card saved-projects" id="recent-projects">
-            <div className="section-heading">
-              <div>
-                <div className="section-kicker">YOUR Pilgrix WORKSPACE</div>
-                <h2>Recent drafts</h2>
-                <p>Your private projects, saved to Supabase.</p>
-              </div>
-              <span className="status-chip status-ready"><span className="status-dot" />SYNCED</span>
-            </div>
-            {projectsLoading ? (
-              <p className="saved-empty">Loading your drafts…</p>
-            ) : savedProjects.length ? (
-              <div className="saved-project-list">
-                {savedProjects.map((project) => (
-                  <div className="saved-project-row" key={project.id}>
-                    <span className="saved-project-icon"><Icon name="film" size={16} /></span>
-                    <span className="saved-project-copy">
-                      <strong>{project.title}</strong>
-                      <small>Source video attached</small>
-                    </span>
-                    <span className="saved-project-status">{(project.status || "draft").replaceAll("_", " ")}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="saved-empty">No saved drafts yet. Review a brief and save it to start your workspace.</p>
-            )}
-          </section>
-        )}
 
         {!workspaceOnly && (
           <>
