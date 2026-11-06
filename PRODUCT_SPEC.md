@@ -1,21 +1,21 @@
-# EMM Ads Studio — Product Specification
+# Pilgrix Ads Studio — Product Specification
 
-**Product:** EMM Ads Studio  
+**Product:** Pilgrix Ads Studio  
 **Platform:** Web first (responsive browser app; PWA installation planned)  
 **Product category:** AI-assisted video advertising studio  
 **Release target:** A guided, dependable workflow for turning existing footage into a finished short advertisement.
 
 ## 1. Product definition
 
-EMM Ads Create helps small businesses, independent sellers, and creators turn footage they already have into a polished advertisement. The user supplies the footage and truthful business information. AI helps plan the message, hook, script, scenes, captions, and call to action. A separate video-rendering service assembles and exports the final video.
+Pilgrix Ads Studio helps small businesses, independent sellers, and creators turn footage they already have into a polished advertisement. The user supplies the footage and truthful business information. AI helps plan the message, hook, script, scenes, captions, and call to action. A separate video-rendering service assembles and exports the final video.
 
-EMM is a video-first creative workspace, not a general-purpose chatbot and not an ad-buying platform.
+Pilgrix Ads Studio is a video-first creative workspace, not a general-purpose chatbot and not an ad-buying platform.
 
 ## 2. The user problem
 
 A person creating an advertisement often has to decide what to say, choose useful footage, write a hook, structure a short story, add captions or voiceover, fit the video to a social platform, and export it. Those steps can be difficult without editing or marketing experience.
 
-EMM puts those steps into one guided process and makes the user's choices visible before a video is rendered.
+Pilgrix Ads Studio puts those steps into one guided process and makes the user's choices visible before a video is rendered.
 
 ## 3. Target users
 
@@ -32,7 +32,7 @@ The first release should optimize for one person making one advertisement from o
 2. The workflow is guided and understandable for a first-time user.
 3. Users can review and edit the ad plan before rendering.
 4. AI suggestions must be distinguishable from completed work.
-5. EMM must never invent product features, prices, testimonials, guarantees, or business claims.
+5. Pilgrix Ads Studio must never invent product features, prices, testimonials, guarantees, or business claims.
 6. A success message must only appear after the relevant service confirms success.
 7. The web app should work well on small mobile screens and slower connections.
 
@@ -69,7 +69,7 @@ The first release should optimize for one person making one advertisement from o
 **Purpose:** Start a new ad and return to existing work.
 
 Elements:
-- EMM Ads Create identity.
+- Pilgrix Ads Studio identity.
 - Primary Create an ad action.
 - Recent projects with thumbnail, title, last-updated date, and status.
 - A first-use empty state that explains the video-first workflow.
