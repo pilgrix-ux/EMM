@@ -948,26 +948,28 @@ export default function HomePage() {
       <div className="workspace" id="home">
         <section className="hero-grid hero-grid-premium">
           <div className="hero-copy hero-copy-premium">
-            <div className="eyebrow"><span className="eyebrow-dot" /> THE CREATIVE STUDIO FOR VIDEO ADS</div>
+            <div className="eyebrow"><span className="eyebrow-dot" /> VIDEO-FIRST AI AD CREATION</div>
             <h1>
-              Make your footage
-              <span className="headline-second">work <span className="headline-highlight">harder.</span></span>
+              Turn your footage
+              <span className="headline-second">into a <span className="headline-highlight">polished ad.</span></span>
             </h1>
             <p className="hero-description">
-              Bring your product video and your idea. Pilgrix helps you shape a focused ad plan, refine every scene, and prepare the final edit.
+              Start with the video you already have. Pilgrix helps shape the hook, script and scene plan, then renders the edit you approve.
             </p>
             <div className="hero-actions hero-actions-premium">
               <button className="button button-dark" type="button" onClick={openVideoPicker}>
-                <Icon name="upload" size={16} /> Choose your footage
+                <Icon name="upload" size={16} /> Upload a source video
               </button>
               <button className="text-action" type="button" onClick={openAdBuilder}>
-                Open ad studio <Icon name="arrow" size={15} />
+                Open the ad builder <Icon name="arrow" size={15} />
               </button>
             </div>
             <div className="hero-proof-row">
-              <span><Icon name="check" size={14} /> Guided creative planning</span>
+              <span><Icon name="check" size={14} /> Built around your footage</span>
               <i />
-              <span><Icon name="check" size={14} /> You approve before rendering</span>
+              <span><Icon name="check" size={14} /> Edit before you approve</span>
+              <i />
+              <span><Icon name="check" size={14} /> Download the finished MP4</span>
             </div>
           </div>
 
@@ -977,12 +979,12 @@ export default function HomePage() {
                 <span className="hero-showcase-mark">P</span>
                 <span><strong>PILGRIX</strong><small>CREATIVE STUDIO</small></span>
               </div>
-              <span className="hero-showcase-live"><i /> YOUR WORKFLOW</span>
+              <span className="hero-showcase-live"><i /> WORKFLOW PREVIEW</span>
             </div>
 
             <div className="hero-showcase-screen">
               <div className="hero-screen-topline">
-                <span>CAMPAIGN PREVIEW</span>
+                <span>AD STORYBOARD</span>
                 <span>01 / 03</span>
               </div>
               <div className="hero-screen-art">
@@ -995,8 +997,8 @@ export default function HomePage() {
                 <span className="hero-art-ratio">9:16</span>
               </div>
               <div className="hero-screen-footer">
-                <span><i /> CREATIVE DIRECTION</span>
-                <strong>Built around your brief.</strong>
+                <span><i /> BUILT FROM YOUR BRIEF</span>
+                <strong>Ready for your review.</strong>
               </div>
             </div>
 
@@ -1015,8 +1017,8 @@ export default function HomePage() {
             <div className="section-heading">
               <div>
                 <div className="section-kicker">SOURCE VIDEO</div>
-                <h2>Select your source video</h2>
-                <p>Upload the footage you want Pilgrix to use as the starting point.</p>
+                <h2>Start with your source video</h2>
+                <p>Choose the clip you want to turn into an advertisement. Preview it before you begin.</p>
               </div>
               <span className={`status-chip ${videoFile ? "status-ready" : ""}`}>
                 <span className="status-dot" />
@@ -1122,8 +1124,8 @@ export default function HomePage() {
             <div className="section-heading brief-heading">
               <div>
                 <div className="section-kicker">CREATE YOUR AD</div>
-                <h2>Create your next ad.</h2>
-                <p>Start with your video, complete the product brief, then choose how the advertisement should look and sound.</p>
+                <h2>Shape your next ad.</h2>
+                <p>Give Pilgrix the product details and creative direction. Review the proposed story before anything is rendered.</p>
               </div>
               <span className="brief-icon"><Icon name="sliders" size={18} /></span>
             </div>
@@ -1131,10 +1133,10 @@ export default function HomePage() {
               <div className="launch-step-list">
                 <div><span className="launch-step-number" aria-hidden="true">01</span><strong>Edit your brief</strong><small>Add the product details, benefit and target audience.</small></div>
                 <div><span className="launch-step-number" aria-hidden="true">02</span><strong>Choose your creative direction</strong><small>Choose the platform, aspect ratio, style, captions and audio.</small></div>
-                <div><span className="launch-step-number" aria-hidden="true">03</span><strong>Generate and approve the plan</strong><small>Review and edit the ad hook, script, scenes and call to action.</small></div>
+                <div><span className="launch-step-number" aria-hidden="true">03</span><strong>Review, approve and render</strong><small>Refine the hook, script, scene directions and call to action before rendering.</small></div>
               </div>
               <button className="button button-lime generate-launch-button" type="button" onClick={openAdBuilder}>
-                <Icon name="film" size={17} /> Generate Ads <Icon name="arrow" size={16} />
+                <Icon name="film" size={17} /> Open the ad builder <Icon name="arrow" size={16} />
               </button>
               {formError && <p className="form-error" role="alert">{formError}</p>}
               <p className="launch-footnote">Your settings remain editable until you approve the ad plan.</p>
