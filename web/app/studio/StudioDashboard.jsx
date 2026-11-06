@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "../../lib/supabase/client";
-
 function Icon({ name, size = 18 }) {
   const common = {
     width: size,
@@ -23,7 +20,6 @@ function Icon({ name, size = 18 }) {
     folder: <><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>,
     check: <path d="m5 12 4 4L19 6" />,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-    logout: <><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" /></>,
     spark: <><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-2-5.8L4 11l6-2.2z" /><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" /></>,
     upload: <><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M4 19v1h16v-1" /></>,
     layers: <><path d="m12 3 9 5-9 5-9-5 9-5z" /><path d="m3 12 9 5 9-5" /><path d="m3 16 9 5 9-5" /></>,
@@ -64,7 +60,6 @@ function formatDate(value) {
 }
 
 export default function StudioDashboard({ user, projects = [], stats = {}, projectsError = false, sessionError = false }) {
-  const [signingOut, setSigningOut] = useState(false);
   const displayName =
     user?.user_metadata?.full_name?.trim() ||
     user?.user_metadata?.name?.trim() ||
@@ -82,18 +77,6 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
   const planCount = Number.isFinite(stats.plans) ? stats.plans : 0;
   const completedCount = Number.isFinite(stats.completed) ? stats.completed : 0;
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      window.location.assign("/");
-    } catch {
-      setSigningOut(false);
-    }
-  }
-
   return (
     <main className="studio-page studio-page-refresh">
       <div className="studio-shell studio-shell-refresh">
@@ -106,22 +89,12 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
             </span>
           </a>
 
-          <nav className="studio-v2-actions" aria-label="Account navigation">
+          <div className="studio-v2-actions" aria-label="Signed-in account">
             <span className="studio-v2-user-chip" title={user?.email || "Signed in"}>
               <span className="studio-v2-user-avatar" aria-hidden="true">{initials}</span>
               <span className="studio-v2-user-label">{sessionError ? "Session check" : user?.email || "Signed in"}</span>
             </span>
-            <a className="button button-quiet studio-v2-nav-button" href="/">Public site</a>
-            <button
-              className="button button-quiet studio-v2-nav-button"
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-            >
-              <Icon name="logout" size={15} />
-              {signingOut ? "Signing out…" : "Sign out"}
-            </button>
-          </nav>
+          </div>
         </header>
 
         <div className="studio-v2-main">
