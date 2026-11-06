@@ -60,10 +60,10 @@ async function authorize(request) {
   const authorization = request.headers.get("authorization");
 
   if (!supabaseUrl || !publishableKey) {
-    throw new ApiError("The EMM Supabase connection is not configured.", 503);
+    throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
   }
   if (!authorization?.startsWith("Bearer ")) {
-    throw new ApiError("Sign in to your EMM workspace before rendering a video.", 401);
+    throw new ApiError("Sign in to your Pilgrix workspace before rendering a video.", 401);
   }
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -72,7 +72,7 @@ async function authorize(request) {
   });
   const user = await readResponse(response);
   if (!response.ok || !user?.id) {
-    throw new ApiError("Your EMM session has expired. Sign in again and retry.", 401);
+    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
   }
 
   return { supabaseUrl, publishableKey, authorization, user };
@@ -98,7 +98,7 @@ async function getProject(projectId, auth) {
   const rows = await readResponse(response);
   if (!response.ok) {
     throw new ApiError(
-      cleanText(rows?.message || rows?.error, 260) || "EMM could not load this saved project.",
+      cleanText(rows?.message || rows?.error, 260) || "Pilgrix could not load this saved project.",
       502
     );
   }
@@ -141,7 +141,7 @@ async function updateCreativeSettings(project, auth, patch, projectStatus = null
   if (!response.ok) {
     const detail = await readResponse(response);
     throw new ApiError(
-      cleanText(detail?.message || detail?.error, 240) || "EMM could not save the render status to this project.",
+      cleanText(detail?.message || detail?.error, 240) || "Pilgrix could not save the render status to this project.",
       502
     );
   }
@@ -168,7 +168,7 @@ async function createSourceUrl(project, auth) {
   const result = await readResponse(response);
   if (!response.ok || !result?.signedURL) {
     throw new ApiError(
-      cleanText(result?.message || result?.error, 240) || "EMM could not prepare the private source video for rendering.",
+      cleanText(result?.message || result?.error, 240) || "Pilgrix could not prepare the private source video for rendering.",
       502
     );
   }
