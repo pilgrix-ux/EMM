@@ -60,6 +60,7 @@ export default function HomePage() {
   const videoElementRef = useRef(null);
   const videoObjectUrlRef = useRef("");
   const previewAutoAttemptRef = useRef(false);
+  const builderMainRef = useRef(null);
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -100,6 +101,12 @@ export default function HomePage() {
   const [downloadingVideo, setDownloadingVideo] = useState(false);
   const [savedProjects, setSavedProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
+
+  useEffect(() => {
+    if (reviewOpen) {
+      builderMainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [builderStep, reviewOpen]);
 
   useEffect(() => {
     const configured = Boolean(
@@ -1155,7 +1162,7 @@ export default function HomePage() {
                 </div>
               </aside>
 
-              <div className="builder-main">
+              <div className="builder-main" ref={builderMainRef}>
                 <div className="modal-topline builder-topline">
               <div>
                 <span className="section-kicker">CREATE YOUR AD</span>
@@ -1232,49 +1239,49 @@ export default function HomePage() {
                 <div className="builder-fields builder-fields-grid">
                   <label className="field-group">
                     <span className="field-label">PLATFORM</span>
-                    <select value={brief.platform} onChange={(event) => updateBrief("platform", event.target.value)}>
+                    <select value={brief.platform} onChange={(event) => updateBrief("platform", event.target.value)} disabled={generatingPlan}>
                       <option>Instagram Reels</option><option>TikTok</option><option>YouTube Shorts</option><option>Facebook</option><option>YouTube (landscape)</option><option>Custom</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">VIDEO FORMAT</span>
-                    <select value={brief.aspectRatio} onChange={(event) => updateBrief("aspectRatio", event.target.value)}>
+                    <select value={brief.aspectRatio} onChange={(event) => updateBrief("aspectRatio", event.target.value)} disabled={generatingPlan}>
                       <option value="9:16">Vertical · 9:16</option><option value="1:1">Square · 1:1</option><option value="16:9">Landscape · 16:9</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">TARGET LENGTH</span>
-                    <select value={brief.targetDuration} onChange={(event) => updateBrief("targetDuration", event.target.value)}>
+                    <select value={brief.targetDuration} onChange={(event) => updateBrief("targetDuration", event.target.value)} disabled={generatingPlan}>
                       <option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">LANGUAGE</span>
-                    <select value={brief.language} onChange={(event) => updateBrief("language", event.target.value)}>
+                    <select value={brief.language} onChange={(event) => updateBrief("language", event.target.value)} disabled={generatingPlan}>
                       <option>English</option><option>Nigerian Pidgin</option><option>Yoruba</option><option>Hausa</option><option>Igbo</option><option>French</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">VISUAL STYLE</span>
-                    <select value={brief.visualStyle} onChange={(event) => updateBrief("visualStyle", event.target.value)}>
+                    <select value={brief.visualStyle} onChange={(event) => updateBrief("visualStyle", event.target.value)} disabled={generatingPlan}>
                       <option>Premium and polished</option><option>Bold and energetic</option><option>Clean and minimal</option><option>Warm and relatable</option><option>Cinematic</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">CAPTIONS</span>
-                    <select value={brief.captions} onChange={(event) => updateBrief("captions", event.target.value)}>
+                    <select value={brief.captions} onChange={(event) => updateBrief("captions", event.target.value)} disabled={generatingPlan}>
                       <option>Clean subtitles</option><option>Animated captions</option><option>No captions</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">VOICEOVER</span>
-                    <select value={brief.voiceover} onChange={(event) => updateBrief("voiceover", event.target.value)}>
+                    <select value={brief.voiceover} onChange={(event) => updateBrief("voiceover", event.target.value)} disabled={generatingPlan}>
                       <option>No voiceover</option><option>Natural voiceover</option><option>Energetic voiceover</option><option>Warm conversational voiceover</option>
                     </select>
                   </label>
                   <label className="field-group">
                     <span className="field-label">AUDIO</span>
-                    <select value={brief.music} onChange={(event) => updateBrief("music", event.target.value)}>
+                    <select value={brief.music} onChange={(event) => updateBrief("music", event.target.value)} disabled={generatingPlan}>
                       <option>Keep original audio</option><option>Lower original audio</option><option>Mute original audio</option>
                     </select>
                   </label>
