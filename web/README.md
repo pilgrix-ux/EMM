@@ -1,6 +1,6 @@
-# EMM Ads Studio Web
+# Pilgrix Ads Studio Web
 
-This folder is the web-first EMM Ads Studio application.
+This folder is the web-first Pilgrix Ads Studio application.
 
 ## Stack
 
@@ -40,7 +40,7 @@ Environment variables:
 - `SHOTSTACK_PRODUCTION_API_KEY` (server-only; use for watermark-free production renders)
 - `SHOTSTACK_ENV` (optional; defaults to `stage`; set to `v1` for production renders)
 
-Add `GEMINI_API_KEY` and the matching Shotstack key to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. EMM selects `SHOTSTACK_SANDBOX_API_KEY` with `SHOTSTACK_ENV=stage` and `SHOTSTACK_PRODUCTION_API_KEY` with `SHOTSTACK_ENV=v1`. The legacy `SHOTSTACK_API_KEY` is accepted as a fallback, but its value must match the selected environment. Keep all keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
+Add `GEMINI_API_KEY` and the matching Shotstack key to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Pilgrix Ads Studio selects `SHOTSTACK_SANDBOX_API_KEY` with `SHOTSTACK_ENV=stage` and `SHOTSTACK_PRODUCTION_API_KEY` with `SHOTSTACK_ENV=v1`. The legacy `SHOTSTACK_API_KEY` is accepted as a fallback, but its value must match the selected environment. Keep all keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
 
 Shotstack's `stage` environment is for watermarked sandbox testing. Ordinary sandbox renders are free, but the account must have at least one active credit and AI-generated assets such as narration or automatic captions can still consume credits. The `v1` environment produces watermark-free production renders and uses the credits on your Shotstack account. Review the Shotstack usage page before switching to production.
 ### Database and storage
@@ -74,7 +74,7 @@ Add both Supabase variables to Vercel **Preview** and **Production** before test
 
 The Generate Ads workflow calls the authenticated `/api/ad-plan` endpoint and uses Gemini to create an editable hook, script, scene plan, captions, and call to action. The source video's actual frames are not sent to Gemini yet, so the plan does not claim to have visually analysed the clip.
 
-After approving a plan, a signed-in user can save it without rendering, or choose **Render final video**. EMM then:
+After approving a plan, a signed-in user can save it without rendering, or choose **Render final video**. Pilgrix Ads Studio then:
 
 1. Creates a short-lived signed URL for the private source clip.
 2. Uses Shotstack's media-probe endpoint to inspect the actual video stream and duration, then limits the output timeline to the shorter of the requested duration and the source clip duration. This avoids rendering a long blank tail when a short clip is selected.
@@ -82,6 +82,6 @@ After approving a plan, a signed-in user can save it without rendering, or choos
 4. Adds the scene text, call to action and, when selected, word-synchronised captions. English and French voiceovers use Shotstack's current native text-to-speech asset. The provider currently documents support for English and French voice choices in this integration; turn voiceover off for Nigerian Pidgin, Yoruba, Hausa or Igbo.
 5. Polls the asynchronous render job and lets the signed-in project owner download the finished MP4 through the authenticated EMM API. The download fallback accepts the temporary S3 output URL returned by the render-status endpoint while the permanent CDN asset is being published.
 
-The local preview is intentionally lightweight and does not encode large source files inside the browser. Some phone/browser combinations cannot preview every MOV or HEVC codec; in that case EMM displays a compatibility message while the original upload can still be sent to cloud preprocessing.
+The local preview is intentionally lightweight and does not encode large source files inside the browser. Some phone/browser combinations cannot preview every MOV or HEVC codec; in that case Pilgrix Ads Studio displays a compatibility message while the original upload can still be sent to cloud preprocessing.
 
-The renderer requires `SHOTSTACK_API_KEY` in Vercel. Keep `SHOTSTACK_ENV=stage` for watermarked sandbox testing; set it to `v1` only when paid production renders are intended. Rendering, generated speech and automated captions consume provider resources/credits according to the provider account. The EMM application does not currently provide a licensed background-music library, automatic visual scene analysis, or a saved-project reopen/edit screen.
+The renderer requires `SHOTSTACK_API_KEY` in Vercel. Keep `SHOTSTACK_ENV=stage` for watermarked sandbox testing; set it to `v1` only when paid production renders are intended. Rendering, generated speech and automated captions consume provider resources/credits according to the provider account. The Pilgrix Ads Studio application does not currently provide a licensed background-music library, automatic visual scene analysis, or a saved-project reopen/edit screen.
