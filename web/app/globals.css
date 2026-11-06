@@ -4118,3 +4118,219 @@ a:focus-visible {
   cursor: not-allowed;
   opacity: 0.55;
 }
+
+
+/* Dedicated Pilgrix email verification page */
+.verify-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: 34px 18px 22px;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(219, 232, 185, 0.5), transparent 34%),
+    radial-gradient(circle at 90% 92%, rgba(223, 229, 214, 0.7), transparent 30%),
+    #f3f5f1;
+}
+.verify-card {
+  width: min(100%, 470px);
+  display: grid;
+  justify-items: stretch;
+  padding: clamp(24px, 6vw, 42px);
+  color: #20291d;
+  background: #fff;
+  border: 1px solid rgba(225, 231, 217, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(35, 49, 26, 0.11);
+}
+.verify-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.verify-brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #667d18;
+  border-radius: 13px;
+  font-size: 19px;
+  font-weight: 850;
+}
+.verify-brand > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.verify-brand strong {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+.verify-brand small {
+  color: #929a88;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.2em;
+}
+.verify-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-top: 38px;
+  color: #647c19;
+  background: #f0f5e5;
+  border: 1px solid #e4edcf;
+  border-radius: 18px;
+}
+.verify-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.verify-eyebrow {
+  margin-top: 25px;
+  color: #788b3b;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.17em;
+}
+.verify-card h1 {
+  margin: 10px 0 0;
+  color: #20291d;
+  font-size: clamp(25px, 5vw, 32px);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+.verify-intro {
+  margin: 12px 0 0;
+  color: #818a7b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.verify-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 27px;
+}
+.verify-card .field-group {
+  display: grid;
+  gap: 8px;
+}
+.verify-card .field-group input {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 15px;
+  color: #252d21;
+  background: #f8f9f6;
+  border: 1px solid #e2e7dc;
+  border-radius: 12px;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.verify-card .field-group input:focus {
+  background: #fff;
+  border-color: #8ca64a;
+  box-shadow: 0 0 0 3px rgba(140, 166, 74, 0.13);
+}
+.verify-card .field-group .verify-code-input {
+  padding: 15px 12px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 850;
+  letter-spacing: 0.42em;
+}
+.verify-submit {
+  width: 100%;
+  min-height: 50px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.verify-submit:disabled,
+.verify-resend:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.verify-message {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 11px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.verify-message-info {
+  color: #5c651f;
+  background: #f7f7e8;
+  border: 1px solid #e9e8c9;
+}
+.verify-message-error {
+  color: #8b3434;
+  background: #fff0ef;
+  border: 1px solid #f2d6d4;
+}
+.verify-message-success {
+  color: #496019;
+  background: #f1f7e7;
+  border: 1px solid #e0eccb;
+}
+.verify-resend {
+  justify-self: center;
+  margin-top: 16px;
+  padding: 5px;
+  color: #637a18;
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.verify-help {
+  margin: 12px 0 0;
+  color: #9aa292;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+.verify-back {
+  justify-self: center;
+  margin-top: 20px;
+  color: #77816e;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.verify-back:hover {
+  color: #526a12;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.verify-footer {
+  margin: 0;
+  color: #9aa390;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.19em;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .verify-page {
+    align-content: center;
+    padding: 18px 14px;
+  }
+  .verify-card {
+    border-radius: 20px;
+    padding: 25px 21px;
+  }
+}
