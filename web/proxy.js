@@ -35,8 +35,16 @@ export async function proxy(request) {
     },
   });
 
-  // Refresh/validate the cookie-backed auth session for this request.
+  // Refresh/validate the cookie-backed auth session before rendering.
+  // Any refreshed cookies are copied to both the forwarded request and response
+  // above so Server Components and the browser share the same session.
   await supabase.auth.getClaims();
+
+  // A user-specific workspace response must never be reused from a shared cache.
+  if (request.nextUrl.pathname.startsWith("/studio")) {
+    supabaseResponse.headers.set("Cache-Control", "private, no-store");
+  }
+
   return supabaseResponse;
 }
 
