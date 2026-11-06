@@ -9,11 +9,26 @@ export default async function StudioPage() {
   try {
     supabase = await createClient();
   } catch {
-    redirect("/");
+    return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect("/");
+  // Verify the cookie-backed access token without an additional Auth user lookup.
+  // The root Proxy refreshes expiring sessions and forwards updated cookies here.
+  const { data: { claims } = {}, error: authError } = await supabase.auth.getClaims();
+
+  // A transient verification/network failure must not look like a sign-out.
+  // Keep the user on the workspace and let them retry instead of redirecting to "/".
+  if (authError) {
+    return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
+  }
+
+  if (!claims?.sub) redirect("/");
+
+  const user = {
+    id: claims.sub,
+    email: claims.email,
+    user_metadata: claims.user_metadata || {},
+  };
 
   const [projectResult, totalResult, planResult, completedResult] = await Promise.all([
     supabase
@@ -40,7 +55,7 @@ export default async function StudioPage() {
 
   return (
     <StudioDashboard
-      user={{ email: user.email, user_metadata: user.user_metadata }}
+      user={user}
       projects={projectResult.data || []}
       stats={{
         total: totalResult.count ?? 0,
