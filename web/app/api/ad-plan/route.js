@@ -7,8 +7,10 @@ function json(data, status = 200) {
   return Response.json(data, { status });
 }
 
-function text(value, max = 500) {
-  return typeof value === "string" ? value.trim().slice(0, max) : "";
+function text(value, max = Infinity) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return Number.isFinite(max) ? trimmed.slice(0, max) : trimmed;
 }
 
 function cleanPlan(raw, brief) {
@@ -70,7 +72,7 @@ export async function POST(request) {
     const body = await request.json();
     const brief = body?.brief || {};
     const productName = text(brief.productName, 120);
-    const benefit = text(brief.benefit, 500);
+    const benefit = text(brief.benefit);
     if (!productName || !benefit) {
       return json({ error: "Add a product name and its main benefit before generating an ad plan." }, 400);
     }
