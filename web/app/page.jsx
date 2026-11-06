@@ -176,11 +176,15 @@ export default function HomePage() {
         });
         if (error) throw error;
 
-        setUser(data.user || data.session?.user || null);
+        const verifiedUser = data.user || data.session?.user || null;
+        setUser(verifiedUser);
         setAuthOpen(false);
         setAuthPassword("");
         setAuthOtp("");
         setAuthOtpStep(false);
+        if (!reviewOpen) {
+          window.location.replace("/studio");
+        }
         return;
       }
 
@@ -195,6 +199,9 @@ export default function HomePage() {
           setUser(data.user);
           setAuthOpen(false);
           setAuthPassword("");
+          if (!reviewOpen) {
+            window.location.replace("/studio");
+          }
         } else {
           setAuthPassword("");
           setAuthOtpStep(false);
@@ -219,6 +226,9 @@ export default function HomePage() {
         setUser(data.user);
         setAuthOpen(false);
         setAuthPassword("");
+        if (!reviewOpen) {
+          window.location.replace("/studio");
+        }
       }
     } catch (error) {
       setAuthMessage(error.message || "Authentication failed. Please try again.");
@@ -916,12 +926,12 @@ export default function HomePage() {
           <nav className="topbar-nav" aria-label="Main navigation">
             <a href="#source-video">Source video</a>
             <a href="#product-brief">How it works</a>
-            {user && <a href="#recent-projects">Your workspace</a>}
+            {user && <a href="/studio">Your workspace</a>}
           </nav>
           <div className="topbar-actions">
             {user ? (
               <>
-                <span className="topbar-user"><span className="topbar-user-dot" />SIGNED IN</span>
+                <a className="button button-quiet topbar-action" href="/studio">Open workspace</a>
                 <button className="button button-quiet topbar-action" type="button" onClick={handleSignOut}>
                   <span>Sign out</span>
                 </button>
