@@ -239,7 +239,7 @@ export default function HomePage() {
         setSavedProjects((current) => current.map((project) => project.id === savedProjectId
           ? { ...project, title: brief.productName.trim(), status: adPlan ? "plan_ready" : "draft" }
           : project));
-        setSaveMessage("Updated your EMM project.");
+        setSaveMessage("Updated your Pilgrix project.");
         return savedProjectId;
       }
 
@@ -281,7 +281,7 @@ export default function HomePage() {
         source_video_name: videoFile.name,
         created_at: new Date().toISOString(),
       }, ...current].slice(0, 6));
-      setSaveMessage("Saved securely to your EMM workspace.");
+      setSaveMessage("Saved securely to your Pilgrix workspace.");
       return data.id;
     } catch (error) {
       setSaveMessage(error.message || "Could not save this project. Please try again.");
@@ -426,7 +426,7 @@ export default function HomePage() {
 
   async function prepareCompatiblePreview() {
     if (!videoFile || !supabaseConfigured || !supabase) {
-      setPreviewConversionMessage("Sign in to your EMM workspace to prepare a compatible cloud preview.");
+      setPreviewConversionMessage("Sign in to your Pilgrix workspace to prepare a compatible cloud preview.");
       setAuthMode("sign-in");
       setAuthMessage("Sign in to convert this clip into a browser-friendly MP4 preview.");
       setAuthOpen(true);
@@ -439,7 +439,7 @@ export default function HomePage() {
       return;
     }
     if (videoFile.size > 104857600) {
-      setPreviewConversionMessage("This clip is larger than EMM's current 100 MB upload limit. Choose a smaller video.");
+      setPreviewConversionMessage("This clip is larger than Pilgrix's current 100 MB upload limit. Choose a smaller video.");
       return;
     }
     if (compatiblePreviewUrl) return;
@@ -489,7 +489,7 @@ export default function HomePage() {
       });
       const startResult = await startResponse.json().catch(() => ({}));
       if (!startResponse.ok || !startResult.token) {
-        throw new Error(startResult.error || "EMM could not start the compatible preview conversion.");
+        throw new Error(startResult.error || "Pilgrix could not start the compatible preview conversion.");
       }
       providerAcceptedSource = true;
 
@@ -513,7 +513,7 @@ export default function HomePage() {
         if (statusResult.sourceIngested && storagePath) {
           const { error: cleanupError } = await supabase.storage.from("emm-source-videos").remove([storagePath]);
           if (cleanupError) {
-            setPreviewConversionMessage("The source was converted. EMM could not remove the temporary upload automatically.");
+            setPreviewConversionMessage("The source was converted. Pilgrix could not remove the temporary upload automatically.");
           }
           storagePath = "";
         }
@@ -526,7 +526,7 @@ export default function HomePage() {
           setCompatiblePreviewPath(statusResult.storagePath || "");
           setVideoPreviewError("");
           setPreviewErrorCode(null);
-          setPreviewConversionMessage("Compatible MP4 ready in your private EMM workspace. Your original video is unchanged.");
+          setPreviewConversionMessage("Compatible MP4 ready in your private Pilgrix workspace. Your original video is unchanged.");
           return;
         }
         setPreviewConversionMessage(statusResult.message || "Converting your clip…");
@@ -534,7 +534,7 @@ export default function HomePage() {
 
       throw new Error("The preview conversion is taking longer than expected. The private upload has been kept while Shotstack finishes fetching it. Try again in a moment.");
     } catch (error) {
-      const message = error.message || "EMM could not prepare a compatible preview.";
+      const message = error.message || "Pilgrix could not prepare a compatible preview.";
       setPreviewConversionMessage(message);
       setVideoPreviewError((current) => current || "This browser cannot play the original video. " + message);
     } finally {
@@ -635,7 +635,7 @@ export default function HomePage() {
         }),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "EMM could not generate the ad plan. Please try again.");
+      if (!response.ok) throw new Error(result.error || "Pilgrix could not generate the ad plan. Please try again.");
       if (!result.plan || !Array.isArray(result.plan.scenes)) {
         throw new Error("The planning service returned an incomplete ad plan. Please try again.");
       }
@@ -723,7 +723,7 @@ export default function HomePage() {
         body: JSON.stringify({ projectId }),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "EMM could not start the video render.");
+      if (!response.ok) throw new Error(result.error || "Pilgrix could not start the video render.");
       setRenderId(result.renderId);
       setRenderReady(false);
       setRenderStatus(result.message || "Your video is queued for rendering.");
@@ -790,10 +790,10 @@ export default function HomePage() {
 
       <header className="topbar-wrap">
         <div className="topbar glass-panel">
-          <a className="brand-lockup" href="#home" aria-label="EMM Ads Studio home">
-            <span className="brand-mark">E</span>
+          <a className="brand-lockup" href="#home" aria-label="Pilgrix Ads Studio home">
+            <span className="brand-mark">P</span>
             <span className="brand-copy">
-              <strong>EMM Ads Studio</strong>
+              <strong>Pilgrix Ads Studio</strong>
               <small>AI ADVERTISING WORKSPACE</small>
             </span>
           </a>
@@ -839,7 +839,7 @@ export default function HomePage() {
 
           <aside className="manifesto-card">
             <div className="manifesto-top">
-              <span>THE EMM WORKFLOW</span>
+              <span>THE Pilgrix WORKFLOW</span>
             </div>
             <div className="manifesto-content">
               <span className="lime-kicker">FROM FOOTAGE TO AD PLAN</span>
@@ -847,7 +847,7 @@ export default function HomePage() {
             </div>
             <div className="manifesto-bottom">
               <span>FROM BRIEF TO APPROVED PLAN</span>
-              <span>EMM STUDIO <span className="manifesto-arrow">↗</span></span>
+              <span>Pilgrix STUDIO <span className="manifesto-arrow">↗</span></span>
             </div>
           </aside>
         </section>
@@ -858,7 +858,7 @@ export default function HomePage() {
               <div>
                 <div className="section-kicker">SOURCE VIDEO</div>
                 <h2>Select your source video</h2>
-                <p>Upload the footage you want EMM to use as the starting point.</p>
+                <p>Upload the footage you want Pilgrix to use as the starting point.</p>
               </div>
               <span className={`status-chip ${videoFile ? "status-ready" : ""}`}>
                 <span className="status-dot" />
@@ -930,7 +930,7 @@ export default function HomePage() {
             </div>
 
             <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Unsupported clips are sent to Shotstack for conversion. Its temporary copy is link-accessible during processing, then deleted when the MP4 is saved privately in your EMM workspace.</span>
+              <span><Icon name="shield" size={14} /> Unsupported clips are sent to Shotstack for conversion. Its temporary copy is link-accessible during processing, then deleted when the MP4 is saved privately in your Pilgrix workspace.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
@@ -971,7 +971,7 @@ export default function HomePage() {
           <section className="surface-card saved-projects">
             <div className="section-heading">
               <div>
-                <div className="section-kicker">YOUR EMM WORKSPACE</div>
+                <div className="section-kicker">YOUR Pilgrix WORKSPACE</div>
                 <h2>Recent drafts</h2>
                 <p>Your private projects, saved to Supabase.</p>
               </div>
@@ -1000,12 +1000,12 @@ export default function HomePage() {
 
         <div className="prototype-note">
           <span className="prototype-pulse" />
-          <span>EMM ADS WORKSPACE</span>
+          <span>Pilgrix ADS WORKSPACE</span>
           <i />
           <span>AI ad planning and cloud video rendering are connected</span>
         </div>
         <footer className="footer-line">
-          <span>EMM ADS STUDIO</span>
+          <span>Pilgrix ADS STUDIO</span>
           <span>CREATE. REVIEW. APPROVE.</span>
         </footer>
       </div>
@@ -1033,7 +1033,7 @@ export default function HomePage() {
                 <div className="builder-brief-heading">
                   <div>
                     <h2 id="builder-title">Tell us about your product.</h2>
-                    <p className="modal-intro">Share a few details so EMM can shape an ad around what you offer and who you want to reach.</p>
+                    <p className="modal-intro">Share a few details so Pilgrix can shape an ad around what you offer and who you want to reach.</p>
                   </div>
                   <span className="builder-brief-index">01 <i /> 04</span>
                 </div>
@@ -1211,14 +1211,14 @@ export default function HomePage() {
               <>
                 <div className="builder-step-kicker"><Icon name="check" size={14} /> APPROVAL & SAVE</div>
                 <h2 id="builder-title">Your ad plan is approved.</h2>
-                <p className="modal-intro">Your approved creative plan is ready. Save it to your private EMM workspace.</p>
+                <p className="modal-intro">Your approved creative plan is ready. Save it to your private Pilgrix workspace.</p>
                 <div className="approved-plan-summary">
                   <div><span>AD</span><strong>{adPlan.projectTitle}</strong></div>
                   <div><span>PLATFORM</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
                   <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
                   <div><span>CREATIVE STRUCTURE</span><strong>Scene-by-scene direction</strong></div>
                 </div>
-                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>EMM sends your saved source clip to Shotstack for cloud rendering. Sandbox exports carry a watermark; production renders consume credits. Voice generation and automatic captions may use additional AI credits. Only render when you are ready to submit this video for processing.</span></div>
+                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Pilgrix sends your saved source clip to Shotstack for cloud rendering. Sandbox exports carry a watermark; production renders consume credits. Voice generation and automatic captions may use additional AI credits. Only render when you are ready to submit this video for processing.</span></div>
                 {renderStatus && <p className="render-feedback" role="status">{renderStatus}</p>}
                 {renderMessage && <p className="render-feedback render-feedback-error" role="alert">{renderMessage}</p>}
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
@@ -1267,8 +1267,8 @@ export default function HomePage() {
             <div className="auth-shell">
               <aside className="auth-aside">
                 <div className="auth-brand-lockup">
-                  <span className="auth-brand-mark">E</span>
-                  <span className="auth-brand-name"><strong>EMM</strong><small>ADS STUDIO</small></span>
+                  <span className="auth-brand-mark">P</span>
+                  <span className="auth-brand-name"><strong>PILGRIX</strong><small>ADS STUDIO</small></span>
                 </div>
                 <div className="auth-aside-copy">
                   <span className="auth-aside-label"><span /> YOUR CREATIVE WORKSPACE</span>
@@ -1290,13 +1290,13 @@ export default function HomePage() {
 
               <div className="auth-main">
                 <div className="auth-main-top">
-                  <span>EMM <i>/</i> ACCOUNT</span>
+                  <span>PILGRIX <i>/</i> ACCOUNT</span>
                   <button className="modal-close auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)} disabled={authBusy}><Icon name="close" size={18} /></button>
                 </div>
                 <div className="auth-heading">
                   <span className="auth-eyebrow">{authMode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
                   <h2 id="auth-title">{authMode === "sign-up" ? "Create your account." : "Your studio awaits."}</h2>
-                  <p>{authMode === "sign-up" ? "Set up your EMM account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
+                  <p>{authMode === "sign-up" ? "Set up your Pilgrix account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
                 </div>
 
                 <form className="auth-form" onSubmit={handleAuthSubmit}>
@@ -1316,13 +1316,13 @@ export default function HomePage() {
                   </label>
                   {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
                   <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured}>
-                    <span>{authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in to EMM"}</span>
+                    <span>{authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in to Pilgrix"}</span>
                     {!authBusy && <Icon name="arrow" size={17} />}
                   </button>
                 </form>
 
                 <p className="auth-switch">
-                  {authMode === "sign-up" ? "Already have an account?" : "New to EMM?"}{" "}
+                  {authMode === "sign-up" ? "Already have an account?" : "New to Pilgrix?"}{" "}
                   <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthMessage(""); setShowAuthPassword(false); }}>
                     {authMode === "sign-up" ? "Sign in" : "Create an account"}
                   </button>
