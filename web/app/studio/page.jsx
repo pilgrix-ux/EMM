@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import StudioDashboard from "./StudioDashboard";
 import { createClient } from "../../lib/supabase/server";
 
