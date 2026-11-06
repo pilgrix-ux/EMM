@@ -12,17 +12,28 @@ export default async function StudioPage() {
     return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
   }
 
-  // Verify the cookie-backed access token without an additional Auth user lookup.
-  // The root Proxy refreshes expiring sessions and forwards updated cookies here.
-  const { data: { claims } = {}, error: authError } = await supabase.auth.getClaims();
-
-  // A transient verification/network failure must not look like a sign-out.
-  // Keep the user on the workspace and let them retry instead of redirecting to "/".
-  if (authError) {
-    return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
+  // The root Proxy refreshes expiring cookie-backed sessions before this page
+  // renders. Verify the resulting access token locally through its signed claims.
+  let claims = null;
+  let authError = null;
+  try {
+    const result = await supabase.auth.getClaims();
+    claims = result.data?.claims || null;
+    authError = result.error || null;
+  } catch (error) {
+    authError = error;
   }
 
-  if (!claims?.sub) redirect("/");
+  // No cookie-backed session is a real sign-in requirement. A different Auth
+  // error may be temporary, so keep the user in Studio and let them retry.
+  const sessionMissing =
+    authError?.name === "AuthSessionMissingError" ||
+    authError?.message === "Auth session missing!";
+
+  if (!claims?.sub) {
+    if (!authError || sessionMissing) redirect("/");
+    return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
+  }
 
   const user = {
     id: claims.sub,
