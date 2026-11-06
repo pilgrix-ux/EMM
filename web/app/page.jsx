@@ -620,6 +620,15 @@ export default function HomePage() {
   function updateBrief(field, value) {
     setBrief((current) => ({ ...current, [field]: value }));
     if (formError) setFormError("");
+    if (adPlan) {
+      setAdPlan(null);
+      setPlanApproved(false);
+      setRenderId("");
+      setRenderStatus("");
+      setRenderMessage("");
+      setRenderReady(false);
+      setSaveMessage("Your brief changed. Generate a fresh plan to keep everything in sync.");
+    }
   }
 
   function jumpTo(ref) {
@@ -637,6 +646,11 @@ export default function HomePage() {
     setSaveMessage("");
     setAdPlan(null);
     setPlanApproved(false);
+    setSavedProjectId("");
+    setRenderId("");
+    setRenderStatus("");
+    setRenderMessage("");
+    setRenderReady(false);
     setBuilderStep(1);
     setReviewOpen(true);
   }
@@ -1085,17 +1099,71 @@ export default function HomePage() {
 
       {reviewOpen && (
         <div className="modal-backdrop builder-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !generatingPlan && !saving) setReviewOpen(false);
+          if (event.target === event.currentTarget && !generatingPlan && !saving && !renderingVideo) setReviewOpen(false);
         }}>
           <section className="review-modal builder-modal" role="dialog" aria-modal="true" aria-labelledby="builder-title">
-            <div className="modal-topline builder-topline">
+            <div className="builder-shell">
+              <aside className="builder-aside">
+                <a className="builder-brand" href="#home" aria-label="Pilgrix Ads Studio home">
+                  <span className="builder-brand-mark">P</span>
+                  <span><strong>PILGRIX</strong><small>ADS STUDIO</small></span>
+                </a>
+                <div className="builder-aside-intro">
+                  <span className="builder-aside-eyebrow">AD CREATION WORKSPACE</span>
+                  <h2>Make every second count.</h2>
+                  <p>A guided creative process, from your first brief to a finished ad.</p>
+                </div>
+                <nav className="builder-step-nav" aria-label="Ad creation steps">
+                  {[
+                    { id: 1, title: "Your brief", description: "Product & audience" },
+                    { id: 2, title: "Creative direction", description: "Format & style" },
+                    { id: 3, title: "Review the plan", description: "Hook, script & scenes" },
+                    { id: 4, title: "Approve & render", description: "Save your final brief" },
+                  ].map((step) => (
+                    <button
+                      key={step.id}
+                      type="button"
+                      className={`builder-side-step ${builderStep === step.id ? "builder-side-step-active" : builderStep > step.id ? "builder-side-step-done" : ""}`}
+                      onClick={() => {
+                        if (step.id < builderStep && !generatingPlan && !saving && !renderingVideo) {
+                          setBuilderStep(step.id);
+                          setGenerationMessage("");
+                        }
+                      }}
+                      disabled={step.id >= builderStep || generatingPlan || saving || renderingVideo}
+                      aria-current={builderStep === step.id ? "step" : undefined}
+                    >
+                      <span className="builder-side-step-number">
+                        {builderStep > step.id ? <Icon name="check" size={14} /> : String(step.id).padStart(2, "0")}
+                      </span>
+                      <span className="builder-side-step-copy">
+                        <strong>{step.title}</strong>
+                        <small>{step.description}</small>
+                      </span>
+                      {builderStep === step.id && <span className="builder-side-step-marker" />}
+                    </button>
+                  ))}
+                </nav>
+                <div className="builder-aside-video">
+                  <span className="builder-aside-video-icon"><Icon name="film" size={16} /></span>
+                  <span><strong>Source video</strong><small title={videoFile?.name || ""}>{videoFile?.name || "No video selected"}</small></span>
+                  <span className="builder-aside-video-status"><Icon name="check" size={13} /></span>
+                </div>
+                <div className="builder-aside-footer">
+                  <Icon name="shield" size={15} />
+                  <span>Your creative stays in your private workspace until you choose to render.</span>
+                </div>
+              </aside>
+
+              <div className="builder-main">
+                <div className="modal-topline builder-topline">
               <div>
                 <span className="section-kicker">CREATE YOUR AD</span>
                 <div className="builder-progress" role="progressbar" aria-label="Ad creation progress" aria-valuemin={1} aria-valuemax={4} aria-valuenow={builderStep}>
                   {[1, 2, 3, 4].map((step) => <span key={step} className={builderStep >= step ? "builder-progress-active" : ""} />)}
                 </div>
               </div>
-              <button className="modal-close" type="button" aria-label="Close ad builder" onClick={() => setReviewOpen(false)} disabled={generatingPlan || saving}>
+              <button className="modal-close" type="button" aria-label="Close ad builder" onClick={() => setReviewOpen(false)} disabled={generatingPlan || saving || renderingVideo}>
                 <Icon name="close" size={18} />
               </button>
             </div>
@@ -1212,6 +1280,17 @@ export default function HomePage() {
                   </label>
                 </div>
                 {generationMessage && <p className="generation-feedback" role="alert">{generationMessage}</p>}
+                {generatingPlan && (
+                  <div className="builder-working-card" role="status" aria-live="polite">
+                    <span className="builder-working-orbit"><span /></span>
+                    <div className="builder-working-copy">
+                      <span>YOUR AI CREATIVE DIRECTOR</span>
+                      <strong>Shaping your ad concept…</strong>
+                      <p>Turning your brief into a clear hook, script and scene-by-scene direction. This can take a moment.</p>
+                    </div>
+                    <div className="builder-working-indicator"><i /><i /><i /></div>
+                  </div>
+                )}
                 <div className="builder-info-note"><Icon name="info" size={15} /><span>AI planning uses your written brief and settings; it does not analyse the actual video frames yet. Cloud voiceover currently supports English and French. For Nigerian Pidgin, Yoruba, Hausa or Igbo, choose No voiceover; captions can still be generated from the source audio.</span></div>
                 <div className="modal-actions builder-actions builder-actions-split">
                   <button className="button button-quiet review-button" type="button" onClick={() => { setGenerationMessage(""); setBuilderStep(1); }}>Back</button>
@@ -1227,6 +1306,11 @@ export default function HomePage() {
                 <div className="builder-step-kicker"><Icon name="check" size={14} /> REVIEW YOUR AD PLAN</div>
                 <h2 id="builder-title">Review and refine your ad plan.</h2>
                 <p className="modal-intro">Edit the opening hook, script, scene directions, captions and call to action before approval.</p>
+                <div className="plan-review-summary">
+                  <div><span>FORMAT</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
+                  <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
+                  <div><span>SCENES</span><strong>{adPlan.scenes.length} planned</strong></div>
+                </div>
                 <div className="plan-editor">
                   <label className="field-group">
                     <span className="field-label">AD TITLE</span>
@@ -1251,7 +1335,7 @@ export default function HomePage() {
                     <div className="scene-editor-heading"><strong>SCENE-BY-SCENE DIRECTION</strong></div>
                     {adPlan.scenes.map((scene, index) => (
                       <div className="scene-editor-card" key={index}>
-                        <div className="scene-editor-title">{scene.time && <strong>{scene.time}</strong>}</div>
+                        <div className="scene-editor-title"><span>SCENE {String(index + 1).padStart(2, "0")}</span>{scene.time && <strong>{scene.time}</strong>}</div>
                         <label className="field-group"><span className="field-label">VISUAL DIRECTION</span><textarea rows={2} value={scene.visualDirection || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, visualDirection: event.target.value } : item))} /></label>
                         <label className="field-group"><span className="field-label">VOICEOVER / SPOKEN LINE</span><textarea rows={2} value={scene.voiceover || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, voiceover: event.target.value } : item))} /></label>
                         <label className="field-group"><span className="field-label">ON-SCREEN TEXT</span><input value={scene.onScreenText || ""} onChange={(event) => updatePlan("scenes", adPlan.scenes.map((item, i) => i === index ? { ...item, onScreenText: event.target.value } : item))} /></label>
@@ -1286,13 +1370,26 @@ export default function HomePage() {
                 <h2 id="builder-title">Your ad plan is approved.</h2>
                 <p className="modal-intro">Your approved creative plan is ready. Save it to your private Pilgrix workspace.</p>
                 <div className="approved-plan-summary">
-                  <div><span>AD</span><strong>{adPlan.projectTitle}</strong></div>
-                  <div><span>PLATFORM</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
-                  <div><span>LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
-                  <div><span>CREATIVE STRUCTURE</span><strong>Scene-by-scene direction</strong></div>
+                  <div><span>CAMPAIGN</span><strong>{adPlan.projectTitle}</strong></div>
+                  <div><span>PRODUCT / SERVICE</span><strong>{brief.productName}</strong></div>
+                  <div><span>PLATFORM & FORMAT</span><strong>{brief.platform} · {brief.aspectRatio}</strong></div>
+                  <div><span>TARGET LENGTH</span><strong>{brief.targetDuration} seconds</strong></div>
+                  <div><span>WHO IT'S FOR</span><strong>{brief.audience || "Broad audience"}</strong></div>
+                  <div><span>CREATIVE DIRECTION</span><strong>{adPlan.scenes.length} scenes · {brief.visualStyle}</strong></div>
                 </div>
-                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Pilgrix sends your saved source clip to Shotstack for cloud rendering. Sandbox exports carry a watermark; production renders consume credits. Voice generation and automatic captions may use additional AI credits. Only render when you are ready to submit this video for processing.</span></div>
-                {renderStatus && <p className="render-feedback" role="status">{renderStatus}</p>}
+                <div className="builder-info-note builder-info-warning"><Icon name="info" size={15} /><span>Rendering sends your saved clip to Shotstack. Sandbox exports include a watermark; production renders use credits. Voiceover and captions may also use AI credits.</span></div>
+                {(saving || renderingVideo || renderId || renderReady) && (
+                  <div className={`render-state-card ${renderReady ? "render-state-ready" : "render-state-working"}`} role="status" aria-live="polite">
+                    <span className="render-state-icon"><Icon name={renderReady ? "check" : "film"} size={19} /></span>
+                    <div className="render-state-copy">
+                      <span>{renderReady ? "RENDER COMPLETE" : saving ? "SAVING YOUR PROJECT" : renderingVideo ? "WORKING ON YOUR AD" : "CLOUD RENDER STATUS"}</span>
+                      <strong>{renderReady ? "Your finished video is ready." : saving ? "Saving your approved creative…" : renderingVideo ? "Preparing your video…" : "Your video is processing."}</strong>
+                      <p>{renderReady ? "Your MP4 is ready. Download it to review, share or publish." : renderStatus || "Your approved brief and source video are being prepared securely."}</p>
+                    </div>
+                    {!renderReady && <span className="render-state-live"><i /> LIVE</span>}
+                    {!renderReady && <div className="render-state-progress"><span /></div>}
+                  </div>
+                )}
                 {renderMessage && <p className="render-feedback render-feedback-error" role="alert">{renderMessage}</p>}
                 {saveMessage && <p className={"save-feedback " + (savedProjectId ? "save-feedback-success" : "")} role="status">{saveMessage}</p>}
                 <div className="modal-actions builder-actions">
@@ -1328,6 +1425,8 @@ export default function HomePage() {
                 <button className="button button-lime review-button" type="button" onClick={() => setBuilderStep(2)}>Back to settings</button>
               </div>
             )}
+              </div>
+            </div>
           </section>
         </div>
       )}
