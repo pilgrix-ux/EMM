@@ -167,8 +167,8 @@ export default function HomePage() {
     try {
       if (authOtpStep) {
         const token = authOtp.trim();
-        if (!/^\d{6}$/.test(token)) {
-          throw new Error("Enter the 6-digit code from your email.");
+        if (!/^\d{8}$/.test(token)) {
+          throw new Error("Enter the 8-digit code from your email.");
         }
         const normalizedEmail = authEmail.trim().toLowerCase();
         const { data, error } = await verifySignupOtp({ supabase, email: normalizedEmail, token });
@@ -271,7 +271,7 @@ export default function HomePage() {
       });
       if (error) throw error;
       setAuthOtp("");
-      setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim().toLowerCase() + ". Use the newest email only; each resend invalidates the previous code.");
+      setAuthMessage("A new 8-digit verification code has been sent to " + authEmail.trim().toLowerCase() + ". Use the newest email only; each resend invalidates the previous code.");
     } catch (error) {
       logAuthDiagnostic("signup verification code resend failed", error, { flow: "signup-resend" });
       setAuthMessage(getSignupResendErrorMessage(error));
@@ -385,7 +385,7 @@ export default function HomePage() {
         status: adPlan ? "plan_ready" : "draft",
         source_video_name: videoFile.name,
         created_at: new Date().toISOString(),
-      }, ...current].slice(0, 6));
+      }, ...current].slice(0, 8));
       setSaveMessage("Saved securely to your Pilgrix workspace.");
       return data.id;
     } catch (error) {
@@ -1596,7 +1596,7 @@ export default function HomePage() {
                 <div className="auth-heading">
                   <span className="auth-eyebrow">{authMode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
                   <h2 id="auth-title">{authOtpStep ? "Verify your email address." : authMode === "sign-up" ? "Create your account." : "Your studio awaits."}</h2>
-                  <p>{authOtpStep ? "Enter the secure 6-digit code to activate your Pilgrix account." : authMode === "sign-up" ? "Set up your Pilgrix account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
+                  <p>{authOtpStep ? "Enter the secure 8-digit code to activate your Pilgrix account." : authMode === "sign-up" ? "Set up your Pilgrix account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
                 </div>
 
                 <form className="auth-form" onSubmit={handleAuthSubmit}>
@@ -1626,7 +1626,7 @@ export default function HomePage() {
                     <>
                       <div className="auth-otp-copy">
                         <span className="field-label">EMAIL VERIFICATION</span>
-                        <p>Enter the 6-digit code sent to</p>
+                        <p>Enter the 8-digit code sent to</p>
                         <strong>{authEmail}</strong>
                       </div>
                       <label className="field-group auth-field">
@@ -1636,17 +1636,17 @@ export default function HomePage() {
                           type="text"
                           inputMode="numeric"
                           autoComplete="one-time-code"
-                          pattern="[0-9]{6}"
-                          maxLength={6}
+                          pattern="[0-9]{8}"
+                          maxLength={8}
                           required
                           value={authOtp}
-                          onChange={(event) => setAuthOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                          placeholder="000000"
-                          aria-label="6-digit email verification code"
+                          onChange={(event) => setAuthOtp(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                          placeholder="00000000"
+                          aria-label="8-digit email verification code"
                         />
                       </label>
                       {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
-                      <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured || authOtp.length !== 6}>
+                      <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured || authOtp.length !== 8}>
                         <span>{authBusy ? "Verifying…" : "Verify email"}</span>
                         {!authBusy && <Icon name="arrow" size={17} />}
                       </button>
