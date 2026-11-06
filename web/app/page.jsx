@@ -158,7 +158,7 @@ export default function HomePage() {
     try {
       if (authOtpStep) {
         const token = authOtp.trim();
-        if (!/^\\d{6}$/.test(token)) {
+        if (!/^\d{6}$/.test(token)) {
           throw new Error("Enter the 6-digit code from your email.");
         }
         const { data, error } = await supabase.auth.verifyOtp({
@@ -1400,7 +1400,7 @@ export default function HomePage() {
                           maxLength={6}
                           required
                           value={authOtp}
-                          onChange={(event) => setAuthOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+                          onChange={(event) => setAuthOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
                           placeholder="000000"
                           aria-label="6-digit email verification code"
                         />
