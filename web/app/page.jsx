@@ -385,7 +385,7 @@ export default function HomePage() {
         status: adPlan ? "plan_ready" : "draft",
         source_video_name: videoFile.name,
         created_at: new Date().toISOString(),
-      }, ...current].slice(0, 8));
+      }, ...current].slice(0, 6));
       setSaveMessage("Saved securely to your Pilgrix workspace.");
       return data.id;
     } catch (error) {
