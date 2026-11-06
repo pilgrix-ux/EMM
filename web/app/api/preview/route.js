@@ -53,7 +53,7 @@ async function authorize(request) {
   const authorization = request.headers.get("authorization");
 
   if (!supabaseUrl || !publishableKey) {
-    throw new ApiError("The EMM Supabase connection is not configured.", 503);
+    throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
   }
   if (!authorization?.startsWith("Bearer ")) {
     throw new ApiError("Sign in to prepare a compatible video preview.", 401);
@@ -65,7 +65,7 @@ async function authorize(request) {
   });
   const user = await readResponse(response);
   if (!response.ok || !user?.id) {
-    throw new ApiError("Your EMM session has expired. Sign in again and retry.", 401);
+    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
   }
 
   return { supabaseUrl, publishableKey, authorization, user };
@@ -90,7 +90,7 @@ async function createPrivateSourceUrl(storagePath, auth) {
   if (!response.ok || !result?.signedURL) {
     throw new ApiError(
       cleanText(result?.message || result?.error, 240)
-        || "EMM could not prepare the private video for conversion.",
+        || "Pilgrix could not prepare the private video for conversion.",
       502
     );
   }
@@ -160,7 +160,7 @@ function verifyPreviewToken(token, userId, apiKey) {
     throw new ApiError("This preview session is invalid. Prepare the preview again.", 400);
   }
   if (decoded.userId !== userId) {
-    throw new ApiError("This preview belongs to a different EMM account.", 403);
+    throw new ApiError("This preview belongs to a different Pilgrix account.", 403);
   }
   if (!Number.isFinite(decoded.expiresAt) || decoded.expiresAt < Date.now()) {
     throw new ApiError("This preview session has expired. Prepare the preview again.", 410);
@@ -185,7 +185,7 @@ async function handlePost(request) {
     || !/^[a-z0-9._-]{1,180}$/i.test(parts[2])
     || storagePath.includes("..")
   ) {
-    throw new ApiError("The temporary video path is invalid for this EMM account.", 403);
+    throw new ApiError("The temporary video path is invalid for this Pilgrix account.", 403);
   }
 
   const sourceUrl = await createPrivateSourceUrl(storagePath, auth);
@@ -256,7 +256,7 @@ async function handleGet(request) {
     );
     const signed = await readResponse(signResponse);
     if (!signResponse.ok || !signed?.signedURL) {
-      throw new ApiError("The temporary conversion has ended, but EMM could not recover the private preview. Prepare it again.", 409);
+      throw new ApiError("The temporary conversion has ended, but Pilgrix could not recover the private preview. Prepare it again.", 409);
     }
     const signedPath = String(signed.signedURL);
     const privateUrl = /^https:\/\//i.test(signedPath)
@@ -269,7 +269,7 @@ async function handleGet(request) {
       sourceIngested: true,
       url: privateUrl,
       storagePath,
-      message: "Compatible MP4 ready in your private EMM workspace.",
+      message: "Compatible MP4 ready in your private Pilgrix workspace.",
     });
   }
 
@@ -303,11 +303,11 @@ async function handleGet(request) {
     }
     const contentLength = Number(mediaResponse.headers.get("content-length") || 0);
     if (contentLength > 104857600) {
-      throw new ApiError("The compatible preview is larger than EMM's 100 MB private storage limit.", 413);
+      throw new ApiError("The compatible preview is larger than Pilgrix's 100 MB private storage limit.", 413);
     }
     const mediaBuffer = Buffer.from(await mediaResponse.arrayBuffer());
     if (!mediaBuffer.length || mediaBuffer.length > 104857600) {
-      throw new ApiError("The compatible preview is empty or exceeds EMM's 100 MB private storage limit.", 413);
+      throw new ApiError("The compatible preview is empty or exceeds Pilgrix's 100 MB private storage limit.", 413);
     }
 
     const storagePath = `${auth.user.id}/preview-output/${preview.sourceId}.mp4`;
@@ -331,7 +331,7 @@ async function handleGet(request) {
       const uploadError = await readResponse(uploadResponse);
       throw new ApiError(
         cleanText(uploadError?.message || uploadError?.error, 240)
-          || "EMM could not save the compatible preview to your private workspace.",
+          || "Pilgrix could not save the compatible preview to your private workspace.",
         502
       );
     }
@@ -351,7 +351,7 @@ async function handleGet(request) {
     );
     const signed = await readResponse(signResponse);
     if (!signResponse.ok || !signed?.signedURL) {
-      throw new ApiError("EMM saved the preview but could not create its private playback link.", 502);
+      throw new ApiError("Pilgrix saved the preview but could not create its private playback link.", 502);
     }
 
     const signedPath = String(signed.signedURL);
@@ -373,7 +373,7 @@ async function handleGet(request) {
       sourceIngested: true,
       url: privateUrl,
       storagePath,
-      message: "Compatible MP4 ready in your private EMM workspace. Temporary Shotstack media has been deleted.",
+      message: "Compatible MP4 ready in your private Pilgrix workspace. Temporary Shotstack media has been deleted.",
     });
   }
 
