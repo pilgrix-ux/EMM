@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
-import { logAuthDiagnostic, verifySignupOtp } from "../../lib/supabase/verify-signup-otp";
+import { getSignupResendErrorMessage, getSignupVerificationErrorMessage, logAuthDiagnostic, verifySignupOtp } from "../../lib/supabase/verify-signup-otp";
 
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,13 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setEmail(params.get("email") || "");
+    const signupEmail = params.get("email") || "";
+    setEmail(signupEmail);
+
+    if (params.get("signup") === "sent") {
+      setMessageType("success");
+      setMessage("Your signup was received. Enter the newest 6-digit code sent to your email to finish setting up your Pilgrix account.");
+    }
   }, []);
 
   async function verifyEmail(event) {
@@ -36,8 +42,14 @@ export default function VerifyEmailPage() {
     setMessage("");
     try {
       const supabase = createClient();
-      const { error } = await verifySignupOtp({ supabase, email: normalizedEmail, token: code });
+      const { data, error } = await verifySignupOtp({ supabase, email: normalizedEmail, token: code });
       if (error) throw error;
+
+      if (!data?.session) {
+        const sessionError = new Error("Email verification completed without a session.");
+        logAuthDiagnostic("signup OTP returned no session", sessionError, { flow: "signup-confirmation" });
+        throw sessionError;
+      }
 
       setMessageType("success");
       setMessage("Email verified. Opening your Pilgrix workspace…");
@@ -45,7 +57,7 @@ export default function VerifyEmailPage() {
     } catch (error) {
       logAuthDiagnostic("verification page submission failed", error, { flow: "signup-confirmation" });
       setMessageType("error");
-      setMessage("We couldn't verify that code. Please request a new code and try again.");
+      setMessage(getSignupVerificationErrorMessage(error));
       setBusy(false);
     }
   }
@@ -73,7 +85,7 @@ export default function VerifyEmailPage() {
     } catch (error) {
       setMessageType("error");
       logAuthDiagnostic("verification page resend failed", error, { flow: "signup-resend" });
-      setMessage("We couldn't send a new verification code. Please try again shortly.");
+      setMessage(getSignupResendErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -95,10 +107,10 @@ export default function VerifyEmailPage() {
           </svg>
         </div>
 
-        <span className="verify-eyebrow">ONE QUICK SECURITY CHECK</span>
-        <h1 id="verify-title">Verify your email address.</h1>
+        <span className="verify-eyebrow">SIGNUP RECEIVED</span>
+        <h1 id="verify-title">Your account is almost ready.</h1>
         <p className="verify-intro">
-          We sent a 6-digit verification code to your email. Enter it below to activate your Pilgrix account.
+          We received your signup details. Confirm your email address with the latest 6-digit code to finish creating your Pilgrix account.
         </p>
 
         <form className="verify-form" onSubmit={verifyEmail}>
