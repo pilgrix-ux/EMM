@@ -58,13 +58,15 @@ export default function VerifyEmailPage() {
       window.location.replace("/studio");
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "We could not verify that code. Check it and try again.");
+      setMessage(error.code === "otp_expired" || /token has expired or is invalid/i.test(error.message || "")
+        ? "That code was rejected. Use only the newest Pilgrix email; every resend invalidates older codes. If this keeps happening, the Confirm signup template must send {{ .Token }} only and must not include {{ .ConfirmationURL }}."
+        : error.message || "We could not verify that code. Check it and try again.");
       setBusy(false);
     }
   }
 
   async function resendCode() {
-    const normalizedEmail = email.trim();
+    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
       setMessageType("error");
       setMessage("Enter your email address before requesting a code.");
