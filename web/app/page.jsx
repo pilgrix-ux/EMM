@@ -249,7 +249,8 @@ export default function HomePage() {
       setAuthOtp("");
       setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim().toLowerCase() + ". Use the newest email only; each resend invalidates the previous code.");
     } catch (error) {
-      setAuthMessage(error.message || "Could not resend the code. Please try again.");
+      logAuthDiagnostic("signup verification code resend failed", error, { flow: "signup-resend" });
+      setAuthMessage("We couldn't send a new verification code. Please try again shortly.");
     } finally {
       setAuthBusy(false);
     }
