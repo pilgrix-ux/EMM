@@ -188,10 +188,11 @@ export default function HomePage() {
           setAuthOpen(false);
           setAuthPassword("");
         } else {
-          setAuthOtpStep(true);
-          setAuthOtp("");
           setAuthPassword("");
-          setAuthMessage("We sent a 6-digit verification code to " + authEmail.trim() + ". Enter it below to verify your email.");
+          setAuthOtpStep(false);
+          setAuthOtp("");
+          window.location.assign("/verify?email=" + encodeURIComponent(authEmail.trim()));
+          return;
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
