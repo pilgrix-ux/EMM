@@ -128,10 +128,16 @@ export default function HomePage({ workspaceOnly = false } = {}) {
     client.auth.getSession().then(({ data }) => {
       const sessionUser = data.session?.user ?? null;
       setUser(sessionUser);
+      if (sessionUser && !workspaceOnly) {
+        window.location.replace("/studio");
+      }
     });
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
+      if (sessionUser && !workspaceOnly && window.location.pathname === "/") {
+        window.location.replace("/studio");
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -164,6 +170,9 @@ export default function HomePage({ workspaceOnly = false } = {}) {
         setAuthPassword("");
         setAuthOtp("");
         setAuthOtpStep(false);
+        if (!workspaceOnly && !reviewOpen) {
+          window.location.replace("/studio");
+        }
         return;
       }
 
@@ -191,6 +200,9 @@ export default function HomePage({ workspaceOnly = false } = {}) {
           setUser(data.user);
           setAuthOpen(false);
           setAuthPassword("");
+          if (!workspaceOnly && !reviewOpen) {
+            window.location.replace("/studio");
+          }
         } else {
           setAuthPassword("");
           setAuthOtpStep(false);
@@ -215,6 +227,9 @@ export default function HomePage({ workspaceOnly = false } = {}) {
         setUser(data.user);
         setAuthOpen(false);
         setAuthPassword("");
+        if (!workspaceOnly && !reviewOpen) {
+          window.location.replace("/studio");
+        }
       }
     } catch (error) {
       const wasVerifyingOtp = authOtpStep;
