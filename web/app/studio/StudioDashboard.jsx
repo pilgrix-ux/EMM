@@ -107,11 +107,11 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
             {!sessionError && (
               <div className="studio-v2-welcome-action-wrap">
                 <span>Ready for your next project?</span>
-                <button className="button button-dark studio-v2-primary-action" type="button" aria-disabled="true">
+                <a className="button button-dark studio-v2-primary-action" href="/studio/create">
                   <Icon name="plus" size={16} />
                   Create new ad
                   <Icon name="arrow" size={15} />
-                </button>
+                </a>
               </div>
             )}
           </section>
@@ -191,10 +191,10 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                   <span className="studio-v2-empty-icon"><Icon name="film" size={22} /></span>
                   <h3>Your first ad starts with a video.</h3>
                   <p>Upload a product clip, add a few details and shape it into a polished creative. Your saved work will appear here.</p>
-                  <button className="button button-dark studio-v2-empty-action" type="button" aria-disabled="true">
+                  <a className="button button-dark studio-v2-empty-action" href="/studio/create">
                     <Icon name="plus" size={15} />
                     Create your first ad
-                  </button>
+                  </a>
                 </div>
               )}
             </section>
@@ -205,10 +205,10 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                 <span className="studio-v2-create-kicker">MAKE YOUR NEXT MOVE</span>
                 <h2>Good ideas deserve great ads.</h2>
                 <p>Start with your footage. Build the story, review the scenes and create a video made to connect.</p>
-                <button className="button button-lime studio-v2-create-action" type="button" aria-disabled="true">
+                <a className="button button-lime studio-v2-create-action" href="/studio/create">
                   Start a new ad
                   <Icon name="arrow" size={15} />
-                </button>
+                </a>
                 <span className="studio-v2-create-note"><Icon name="upload" size={13} /> Start with a video from your device</span>
               </section>
 
