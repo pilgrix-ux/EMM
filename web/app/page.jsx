@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
-import { logAuthDiagnostic, verifySignupOtp } from "../lib/supabase/verify-signup-otp";
+import { getSignupResendErrorMessage, getSignupVerificationErrorMessage, logAuthDiagnostic, verifySignupOtp } from "../lib/supabase/verify-signup-otp";
 
 const initialBrief = {
   productName: "",
@@ -173,8 +173,11 @@ export default function HomePage() {
         const normalizedEmail = authEmail.trim().toLowerCase();
         const { data, error } = await verifySignupOtp({ supabase, email: normalizedEmail, token });
         if (error) throw error;
+        if (!data?.session) {
+          throw new Error("Email verification completed without a session.");
+        }
 
-        const verifiedUser = data.user || data.session?.user || null;
+        const verifiedUser = data.user || data.session.user || null;
         setUser(verifiedUser);
         setAuthOpen(false);
         setAuthPassword("");
@@ -187,11 +190,24 @@ export default function HomePage() {
       }
 
       if (authMode === "sign-up") {
+        const normalizedEmail = authEmail.trim().toLowerCase();
         const { data, error } = await supabase.auth.signUp({
-          email: authEmail.trim().toLowerCase(),
+          email: normalizedEmail,
           password: authPassword,
         });
         if (error) throw error;
+
+        // Supabase returns an obfuscated user with no identities for a duplicate
+        // signup when email confirmations are enabled. Do not send that person
+        // to a code screen for an email that will not receive a new confirmation.
+        if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
+          setAuthPassword("");
+          setAuthOtp("");
+          setAuthOtpStep(false);
+          setAuthMode("sign-in");
+          setAuthMessage("We couldn't start a new signup with those details. Try signing in instead.");
+          return;
+        }
 
         if (data.session) {
           setUser(data.user);
@@ -204,7 +220,7 @@ export default function HomePage() {
           setAuthPassword("");
           setAuthOtpStep(false);
           setAuthOtp("");
-          window.location.assign("/verify?email=" + encodeURIComponent(authEmail.trim().toLowerCase()));
+          window.location.assign("/verify?signup=sent&email=" + encodeURIComponent(normalizedEmail));
           return;
         }
       } else {
@@ -231,9 +247,14 @@ export default function HomePage() {
     } catch (error) {
       const wasVerifyingOtp = authOtpStep;
       logAuthDiagnostic(wasVerifyingOtp ? "signup OTP form failed" : "email sign-in or signup form failed", error);
+      const duplicateSignup = !wasVerifyingOtp && authMode === "sign-up" &&
+        (error?.code === "user_already_exists" || error?.code === "user_already_registered" ||
+          /user already registered|already exists/i.test(error?.message || ""));
       setAuthMessage(wasVerifyingOtp
-        ? "We couldn't verify your email. Please try again or request a new code."
-        : "We couldn't complete that request. Please check your details and try again.");
+        ? getSignupVerificationErrorMessage(error)
+        : duplicateSignup
+          ? "We couldn't start a new signup with those details. Try signing in instead."
+          : "We couldn't complete that request. Please check your details and try again.");
     } finally {
       setAuthBusy(false);
     }
@@ -253,7 +274,7 @@ export default function HomePage() {
       setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim().toLowerCase() + ". Use the newest email only; each resend invalidates the previous code.");
     } catch (error) {
       logAuthDiagnostic("signup verification code resend failed", error, { flow: "signup-resend" });
-      setAuthMessage("We couldn't send a new verification code. Please try again shortly.");
+      setAuthMessage(getSignupResendErrorMessage(error));
     } finally {
       setAuthBusy(false);
     }
