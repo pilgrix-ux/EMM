@@ -5419,3 +5419,14 @@ a:focus-visible {
     transition: none;
   }
 }
+
+
+/* Keep the dark workflow sidebar typography distinct from the content pane. */
+.builder-modal .builder-aside-intro h2 {
+  margin: 13px 0 0;
+  color: #f5f8f1;
+  font-size: 31px;
+  line-height: 1.06;
+  font-weight: 790;
+  letter-spacing: -0.055em;
+}
