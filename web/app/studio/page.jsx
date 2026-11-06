@@ -9,7 +9,7 @@ export default async function StudioPage() {
   try {
     supabase = await createClient();
   } catch {
-    return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
+    return <StudioDashboard user={null} projects={[]} stats={{}} />;
   }
 
   // The root Proxy refreshes expiring cookie-backed sessions before this page
@@ -31,7 +31,9 @@ export default async function StudioPage() {
     authError?.message === "Auth session missing!";
 
   if (!claims?.sub) {
-    if (!authError || sessionMissing) redirect("/");
+    if (!authError || sessionMissing) {
+      return <StudioDashboard user={null} projects={[]} stats={{}} />;
+    }
     return <StudioDashboard user={null} projects={[]} stats={{}} sessionError />;
   }
 
