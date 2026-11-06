@@ -1005,6 +1005,7 @@ export default function HomePage({ workspaceOnly = false } = {}) {
             <h1>Create your next ad.</h1>
             <p>Upload your footage, add your product details and build a polished ad plan in your workspace.</p>
           </section>
+        )}
         {!workspaceOnly && (
           <section className="hero-grid hero-grid-premium">
           <div className="hero-copy hero-copy-premium">
