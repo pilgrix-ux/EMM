@@ -4072,3 +4072,49 @@ a:focus-visible {
     transition: none;
   }
 }
+
+
+/* Email OTP verification */
+.auth-otp-copy {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  color: #56613b;
+  background: #f4f6ef;
+  border: 1px solid #e6eadc;
+  border-radius: 12px;
+}
+.auth-otp-copy p {
+  margin: 0;
+  color: #7b8470;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.auth-otp-copy strong {
+  overflow-wrap: anywhere;
+  color: #293321;
+  font-size: 13px;
+  font-weight: 750;
+}
+.auth-otp-input {
+  text-align: center;
+  letter-spacing: 0.38em;
+  font-size: 20px !important;
+  font-weight: 800;
+}
+.auth-resend {
+  justify-self: center;
+  padding: 4px 6px;
+  color: #5d7100;
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.auth-resend:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
