@@ -1,8 +1,8 @@
-# EMM Ads Studio
+# Pilgrix Ads Studio
 
-**EMM Ads Studio** is a web-first, video-first advertising workspace for small businesses, independent sellers, and creators. It helps users turn footage they already have into a polished promotional video.
+**Pilgrix Ads Studio** is a web-first, video-first advertising workspace for small businesses, independent sellers, and creators. It helps users turn footage they already have into a polished promotional video.
 
-EMM is a guided creative workspace, not a general-purpose chatbot and not an ad-buying platform.
+Pilgrix Ads Studio is a guided creative workspace, not a general-purpose chatbot and not an ad-buying platform.
 
 ## Web app (Vercel)
 
@@ -26,7 +26,7 @@ The `EMM` Supabase project is connected at the code level. The database has an o
 
 ## Current web experience
 
-- Responsive EMM Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
+- Responsive Pilgrix Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
 - Browser video selection and local preview.
 - Product name, benefit, audience, and advertising goal fields.
 - Supabase email/password sign-up and sign-in.
