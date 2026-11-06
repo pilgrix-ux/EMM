@@ -141,7 +141,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                       <span className="studio-project-thumb"><Icon name="film" size={19} /></span>
                       <span className="studio-project-copy">
                         <strong title={project.title}>{project.title || "Untitled ad"}</strong>
-                        <small>{project.source_video_name || "Source video"} · Updated {formatDate(project.created_at)}</small>
+                        <small>{project.source_video_name || "Source video"} · Updated {formatDate(project.updated_at || project.created_at)}</small>
                       </span>
                       <span className={"studio-project-status status-" + (project.status || "draft").replaceAll("_", "_")}>{statusLabel(project.status)}</span>
                     </article>
