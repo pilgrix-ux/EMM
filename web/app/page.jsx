@@ -128,10 +128,20 @@ export default function HomePage({ workspaceOnly = false } = {}) {
     }
 
     client.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+      const sessionUser = data.session?.user ?? null;
+      setUser(sessionUser);
+      // A signed-in visitor should never remain on the public marketing page.
+      // The creation route opts out so it can keep the focused builder open.
+      if (sessionUser && !workspaceOnly) {
+        window.location.replace("/studio");
+      }
     });
     const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const sessionUser = session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser && !workspaceOnly && window.location.pathname === "/") {
+        window.location.replace("/studio");
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
