@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "EMM Ads Creator"
+rootProject.name = "Pilgrix Ads Studio"
 include(":app")
