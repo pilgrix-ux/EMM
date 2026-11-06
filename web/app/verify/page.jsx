@@ -44,7 +44,7 @@ export default function VerifyEmailPage() {
 
       setMessageType("success");
       setMessage("Email verified. Opening your Pilgrix workspace…");
-      window.location.replace("/");
+      window.location.replace("/studio");
     } catch (error) {
       setMessageType("error");
       setMessage(error.message || "We could not verify that code. Check it and try again.");
