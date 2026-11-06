@@ -109,7 +109,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
           <nav className="studio-v2-actions" aria-label="Account navigation">
             <span className="studio-v2-user-chip" title={user?.email || "Signed in"}>
               <span className="studio-v2-user-avatar" aria-hidden="true">{initials}</span>
-              <span className="studio-v2-user-label">{user?.email || "Signed in"}</span>
+              <span className="studio-v2-user-label">{sessionError ? "Session check" : user?.email || "Signed in"}</span>
             </span>
             <a className="button button-quiet studio-v2-nav-button" href="/">Public site</a>
             <button
@@ -128,20 +128,22 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
           <section className="studio-v2-welcome">
             <div className="studio-v2-welcome-copy">
               <span className="studio-v2-eyebrow"><i /> YOUR CREATIVE WORKSPACE</span>
-              <h1>Welcome back, {firstName}.</h1>
-              <p>Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching.</p>
+              <h1>{sessionError ? "Reconnecting your workspace." : `Welcome back, ${firstName}.`}</h1>
+              <p>{sessionError ? "We couldn’t verify your sign-in on this request. Retry the workspace to reconnect without clearing your session." : "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching."}</p>
             </div>
-            <div className="studio-v2-welcome-action-wrap">
-              <span>Ready for your next project?</span>
-              <a className="button button-dark studio-v2-primary-action" href="/#source-video">
-                <Icon name="plus" size={16} />
-                Create new ad
-                <Icon name="arrow" size={15} />
-              </a>
-            </div>
+            {!sessionError && (
+              <div className="studio-v2-welcome-action-wrap">
+                <span>Ready for your next project?</span>
+                <a className="button button-dark studio-v2-primary-action" href="/#source-video">
+                  <Icon name="plus" size={16} />
+                  Create new ad
+                  <Icon name="arrow" size={15} />
+                </a>
+              </div>
+            )}
           </section>
 
-          <section className="studio-v2-overview" aria-label="Workspace overview">
+          {!sessionError && <section className="studio-v2-overview" aria-label="Workspace overview">
             <article className="studio-v2-stat-card">
               <span className="studio-v2-stat-icon"><Icon name="folder" size={18} /></span>
               <span className="studio-v2-stat-copy">
@@ -166,7 +168,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                 <small>Finished creative exports</small>
               </span>
             </article>
-          </section>
+          </section>}
 
           <div className="studio-v2-content-grid">
             <section className="studio-v2-panel studio-v2-projects-panel" aria-label="Recent projects">
