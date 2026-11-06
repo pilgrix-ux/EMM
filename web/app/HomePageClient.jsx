@@ -191,9 +191,6 @@ export default function HomePage({ workspaceOnly = false } = {}) {
           setUser(data.user);
           setAuthOpen(false);
           setAuthPassword("");
-          if (!reviewOpen) {
-            window.location.replace("/studio");
-          }
         } else {
           setAuthPassword("");
           setAuthOtpStep(false);
@@ -916,7 +913,7 @@ export default function HomePage({ workspaceOnly = false } = {}) {
       {workspaceOnly ? (
         <header className="topbar-wrap">
           <div className="topbar glass-panel">
-            <a className="brand-lockup" href="/studio" aria-label="Back to Pilgrix workspace">
+            <a className="brand-lockup" href="/" aria-label="Back to Pilgrix home">
               <span className="brand-mark">P</span>
               <span className="brand-copy">
                 <strong>Pilgrix Ads Studio</strong>
@@ -924,8 +921,8 @@ export default function HomePage({ workspaceOnly = false } = {}) {
               </span>
             </a>
             <div className="topbar-actions">
-              <a className="button button-quiet topbar-action" href="/studio">
-                <Icon name="arrow" size={15} /> Back to workspace
+              <a className="button button-quiet topbar-action" href="/">
+                <Icon name="arrow" size={15} /> Back to Pilgrix home
               </a>
             </div>
           </div>
