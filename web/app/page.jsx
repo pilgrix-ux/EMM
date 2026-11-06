@@ -84,6 +84,8 @@ export default function HomePage() {
   const [authMode, setAuthMode] = useState("sign-in");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authOtp, setAuthOtp] = useState("");
+  const [authOtpStep, setAuthOtpStep] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
@@ -150,28 +152,86 @@ export default function HomePage() {
       setAuthMessage("Supabase is not configured. Add the project URL and publishable key in Vercel.");
       return;
     }
+
     setAuthBusy(true);
     setAuthMessage("");
     try {
-      if (authMode === "sign-up") {
-        const { data, error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin + "/auth/callback" } });
+      if (authOtpStep) {
+        const token = authOtp.trim();
+        if (!/^\\d{6}$/.test(token)) {
+          throw new Error("Enter the 6-digit code from your email.");
+        }
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: authEmail.trim(),
+          token,
+          type: "email",
+        });
         if (error) throw error;
+
+        setUser(data.user || data.session?.user || null);
+        setAuthOpen(false);
+        setAuthPassword("");
+        setAuthOtp("");
+        setAuthOtpStep(false);
+        return;
+      }
+
+      if (authMode === "sign-up") {
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail.trim(),
+          password: authPassword,
+        });
+        if (error) throw error;
+
         if (data.session) {
           setUser(data.user);
           setAuthOpen(false);
           setAuthPassword("");
         } else {
-          setAuthMessage("Check your email for the confirmation link, then come back here to sign in.");
+          setAuthOtpStep(true);
+          setAuthOtp("");
+          setAuthPassword("");
+          setAuthMessage("We sent a 6-digit verification code to " + authEmail.trim() + ". Enter it below to verify your email.");
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: authEmail.trim(),
+          password: authPassword,
+        });
+        if (error) {
+          if (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message || "")) {
+            setAuthOtpStep(true);
+            setAuthOtp("");
+            setAuthMessage("Your email address has not been verified. Resend the code below, then enter it here.");
+            return;
+          }
+          throw error;
+        }
         setUser(data.user);
         setAuthOpen(false);
         setAuthPassword("");
       }
     } catch (error) {
       setAuthMessage(error.message || "Authentication failed. Please try again.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    if (!supabase || !authEmail.trim()) return;
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: authEmail.trim(),
+      });
+      if (error) throw error;
+      setAuthOtp("");
+      setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim() + ".");
+    } catch (error) {
+      setAuthMessage(error.message || "Could not resend the code. Please try again.");
     } finally {
       setAuthBusy(false);
     }
@@ -1300,33 +1360,78 @@ export default function HomePage() {
                 </div>
 
                 <form className="auth-form" onSubmit={handleAuthSubmit}>
-                  <label className="field-group auth-field">
-                    <span className="field-label">EMAIL ADDRESS</span>
-                    <input type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@company.com" />
-                  </label>
-                  <label className="field-group auth-field">
-                    <span className="field-label">PASSWORD</span>
-                    <span className="auth-password-control">
-                      <input type={showAuthPassword ? "text" : "password"} autoComplete={authMode === "sign-up" ? "new-password" : "current-password"} minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Enter your password" />
-                      <button type="button" className="auth-password-toggle" onClick={() => setShowAuthPassword((value) => !value)} aria-label={showAuthPassword ? "Hide password" : "Show password"} aria-pressed={showAuthPassword}>
-                        <Icon name={showAuthPassword ? "eye-off" : "eye"} size={17} />
+                  {!authOtpStep ? (
+                    <>
+                      <label className="field-group auth-field">
+                        <span className="field-label">EMAIL ADDRESS</span>
+                        <input type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@company.com" />
+                      </label>
+                      <label className="field-group auth-field">
+                        <span className="field-label">PASSWORD</span>
+                        <span className="auth-password-control">
+                          <input type={showAuthPassword ? "text" : "password"} autoComplete={authMode === "sign-up" ? "new-password" : "current-password"} minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Enter your password" />
+                          <button type="button" className="auth-password-toggle" onClick={() => setShowAuthPassword((value) => !value)} aria-label={showAuthPassword ? "Hide password" : "Show password"} aria-pressed={showAuthPassword}>
+                            <Icon name={showAuthPassword ? "eye-off" : "eye"} size={17} />
+                          </button>
+                        </span>
+                        {authMode === "sign-up" && <span className="auth-field-hint">Use at least 8 characters.</span>}
+                      </label>
+                      {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
+                      <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured}>
+                        <span>{authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in to Pilgrix"}</span>
+                        {!authBusy && <Icon name="arrow" size={17} />}
                       </button>
-                    </span>
-                    {authMode === "sign-up" && <span className="auth-field-hint">Use at least 8 characters.</span>}
-                  </label>
-                  {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
-                  <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured}>
-                    <span>{authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in to Pilgrix"}</span>
-                    {!authBusy && <Icon name="arrow" size={17} />}
-                  </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="auth-otp-copy">
+                        <span className="field-label">EMAIL VERIFICATION</span>
+                        <p>Enter the 6-digit code sent to</p>
+                        <strong>{authEmail}</strong>
+                      </div>
+                      <label className="field-group auth-field">
+                        <span className="field-label">VERIFICATION CODE</span>
+                        <input
+                          className="auth-otp-input"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          pattern="[0-9]{6}"
+                          maxLength={6}
+                          required
+                          value={authOtp}
+                          onChange={(event) => setAuthOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+                          placeholder="000000"
+                          aria-label="6-digit email verification code"
+                        />
+                      </label>
+                      {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
+                      <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured || authOtp.length !== 6}>
+                        <span>{authBusy ? "Verifying…" : "Verify email"}</span>
+                        {!authBusy && <Icon name="arrow" size={17} />}
+                      </button>
+                      <button className="auth-resend" type="button" onClick={handleResendOtp} disabled={authBusy || !supabaseConfigured}>
+                        {authBusy ? "Please wait…" : "Resend verification code"}
+                      </button>
+                    </>
+                  )}
                 </form>
 
-                <p className="auth-switch">
-                  {authMode === "sign-up" ? "Already have an account?" : "New to Pilgrix?"}{" "}
-                  <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthMessage(""); setShowAuthPassword(false); }}>
-                    {authMode === "sign-up" ? "Sign in" : "Create an account"}
-                  </button>
-                </p>
+                {authOtpStep ? (
+                  <p className="auth-switch">
+                    <span>Wrong email address?</span>
+                    <button type="button" onClick={() => { setAuthOtpStep(false); setAuthOtp(""); setAuthMessage(""); }}>
+                      Change email
+                    </button>
+                  </p>
+                ) : (
+                  <p className="auth-switch">
+                    {authMode === "sign-up" ? "Already have an account?" : "New to Pilgrix?"}{" "}
+                    <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthOtpStep(false); setAuthOtp(""); setAuthMessage(""); setShowAuthPassword(false); }}>
+                      {authMode === "sign-up" ? "Sign in" : "Create an account"}
+                    </button>
+                  </p>
+                )}
                 {!supabaseConfigured && <p className="auth-config-note">Account access is temporarily unavailable until the Supabase connection is configured.</p>}
                 <div className="auth-main-footer"><Icon name="shield" size={14} /> Your workspace is private to your account.</div>
               </div>
