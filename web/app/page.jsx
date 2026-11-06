@@ -1055,8 +1055,8 @@ export default function HomePage() {
                   </label>
                   <label className="field-group brief-field-benefit">
                     <span className="field-label">What makes it worth choosing? <b>*</b></span>
-                    <textarea value={brief.benefit} onChange={(event) => updateBrief("benefit", event.target.value)} maxLength={500} rows={4} placeholder="Describe what it does, the problem it solves, and the main benefit customers get." />
-                    <span className="field-counter">{brief.benefit.length} / 500</span>
+                    <textarea value={brief.benefit} onChange={(event) => updateBrief("benefit", event.target.value)} rows={4} placeholder="Describe what it does, the problem it solves, and the main benefit customers get. Add as much detail as you need." />
+                    <span className="field-counter">{brief.benefit.length.toLocaleString()} characters</span>
                   </label>
                   <label className="field-group brief-field-audience">
                     <span className="field-label">Who is this for?</span>
