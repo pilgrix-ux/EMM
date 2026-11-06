@@ -229,8 +229,11 @@ export default function HomePage() {
         }
       }
     } catch (error) {
-      logAuthDiagnostic("email authentication form failed", error);
-      setAuthMessage("We couldn't verify your email. Please try again or request a new code.");
+      const wasVerifyingOtp = authOtpStep;
+      logAuthDiagnostic(wasVerifyingOtp ? "signup OTP form failed" : "email sign-in or signup form failed", error);
+      setAuthMessage(wasVerifyingOtp
+        ? "We couldn't verify your email. Please try again or request a new code."
+        : "We couldn't complete that request. Please check your details and try again.");
     } finally {
       setAuthBusy(false);
     }
