@@ -18,7 +18,7 @@ export default function VerifyEmailPage() {
 
     if (params.get("signup") === "sent") {
       setMessageType("success");
-      setMessage("Your signup was received. Enter the newest 6-digit code sent to your email to finish setting up your Pilgrix account.");
+      setMessage("Your signup was received. Enter the newest 8-digit code sent to your email to finish setting up your Pilgrix account.");
     }
   }, []);
 
@@ -32,9 +32,9 @@ export default function VerifyEmailPage() {
       setMessage("Enter the email address you used to create your account.");
       return;
     }
-    if (!/^\d{6}$/.test(code)) {
+    if (!/^\d{8}$/.test(code)) {
       setMessageType("error");
-      setMessage("Enter the 6-digit code from your email.");
+      setMessage("Enter the 8-digit code from your email.");
       return;
     }
 
@@ -81,7 +81,7 @@ export default function VerifyEmailPage() {
       if (error) throw error;
       setToken("");
       setMessageType("success");
-      setMessage("A new 6-digit code has been sent. Use the newest email only; each resend invalidates the previous code. Check your inbox and spam folder.");
+      setMessage("A new 8-digit code has been sent. Use the newest email only; each resend invalidates the previous code. Check your inbox and spam folder.");
     } catch (error) {
       setMessageType("error");
       logAuthDiagnostic("verification page resend failed", error, { flow: "signup-resend" });
@@ -110,7 +110,7 @@ export default function VerifyEmailPage() {
         <span className="verify-eyebrow">SIGNUP RECEIVED</span>
         <h1 id="verify-title">Your account is almost ready.</h1>
         <p className="verify-intro">
-          We received your signup details. Confirm your email address with the latest 6-digit code to finish creating your Pilgrix account.
+          We received your signup details. Confirm your email address with the latest 8-digit code to finish creating your Pilgrix account.
         </p>
 
         <form className="verify-form" onSubmit={verifyEmail}>
@@ -127,20 +127,20 @@ export default function VerifyEmailPage() {
           </label>
 
           <label className="field-group">
-            <span className="field-label">6-DIGIT VERIFICATION CODE</span>
+            <span className="field-label">8-DIGIT VERIFICATION CODE</span>
             <input
               className="verify-code-input"
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern="[0-9]{8}"
+              maxLength={8}
               required
               autoFocus
               value={token}
-              onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="000000"
-              aria-label="6-digit email verification code"
+              onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 8))}
+              placeholder="00000000"
+              aria-label="8-digit email verification code"
             />
           </label>
 
@@ -150,7 +150,7 @@ export default function VerifyEmailPage() {
             </p>
           )}
 
-          <button className="button button-dark verify-submit" type="submit" disabled={busy || token.length !== 6 || !email.trim()}>
+          <button className="button button-dark verify-submit" type="submit" disabled={busy || token.length !== 8 || !email.trim()}>
             {busy ? "Verifying…" : "Verify email"}
           </button>
         </form>
