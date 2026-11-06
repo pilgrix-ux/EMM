@@ -43,10 +43,9 @@ export default function VerifyEmailPage() {
       setMessage("Email verified. Opening your Pilgrix workspace…");
       window.location.replace("/studio");
     } catch (error) {
+      logAuthDiagnostic("verification page submission failed", error, { flow: "signup-confirmation" });
       setMessageType("error");
-      setMessage(error.code === "otp_expired" || /token has expired or is invalid/i.test(error.message || "")
-        ? "That code was rejected. Use only the newest Pilgrix email; every resend invalidates older codes. If this keeps happening, the Confirm signup template must send {{ .Token }} only and must not include {{ .ConfirmationURL }}."
-        : error.message || "We could not verify that code. Check it and try again.");
+      setMessage("We couldn't verify that code. Please request a new code and try again.");
       setBusy(false);
     }
   }
@@ -73,7 +72,8 @@ export default function VerifyEmailPage() {
       setMessage("A new 6-digit code has been sent. Use the newest email only; each resend invalidates the previous code. Check your inbox and spam folder.");
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "We could not resend the code. Please try again.");
+      logAuthDiagnostic("verification page resend failed", error, { flow: "signup-resend" });
+      setMessage("We couldn't send a new verification code. Please try again shortly.");
     } finally {
       setBusy(false);
     }
