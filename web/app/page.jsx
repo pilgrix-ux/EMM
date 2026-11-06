@@ -243,7 +243,12 @@ export default function HomePage() {
         }
       }
     } catch (error) {
-      setAuthMessage(error.message || "Authentication failed. Please try again.");
+      const invalidOtp =
+        error.code === "otp_expired" ||
+        /token has expired or is invalid/i.test(error.message || "");
+      setAuthMessage(invalidOtp
+        ? "That code was rejected. Use only the newest Pilgrix email; every resend invalidates older codes. If this keeps happening, the Confirm signup template must send {{ .Token }} only and must not include {{ .ConfirmationURL }}."
+        : error.message || "Authentication failed. Please try again.");
     } finally {
       setAuthBusy(false);
     }
