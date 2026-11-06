@@ -1,14 +1,14 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "EMM Ads Studio",
+  title: "Pilgrix Ads Studio",
   description:
     "A focused creative workspace for turning your product footage into standout advertisements.",
-  applicationName: "EMM Ads Studio",
+  applicationName: "Pilgrix Ads Studio",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "EMM Ads Studio",
+    title: "Pilgrix Ads Studio",
   },
   formatDetection: {
     telephone: false,
