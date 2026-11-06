@@ -54,7 +54,7 @@ function Icon({ name, size = 18, strokeWidth = 1.7, className = "" }) {
   return <svg {...common}>{paths[name] || paths.info}</svg>;
 }
 
-export default function HomePage() {
+export default function HomePage({ workspaceOnly = false } = {}) {
   const fileInputRef = useRef(null);
   const videoSectionRef = useRef(null);
   const briefSectionRef = useRef(null);
@@ -936,51 +936,77 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden pb-12">
+    <main className={workspaceOnly ? "min-h-screen overflow-x-hidden pb-12 studio-create-page" : "min-h-screen overflow-x-hidden pb-12"}>
 
-      <header className="topbar-wrap">
-        <div className="topbar glass-panel">
-          <a className="brand-lockup" href="#home" aria-label="Pilgrix Ads Studio home">
-            <span className="brand-mark">P</span>
-            <span className="brand-copy">
-              <strong>Pilgrix Ads Studio</strong>
-              <small>AI ADVERTISING WORKSPACE</small>
-            </span>
-          </a>
-          <nav className="topbar-nav" aria-label="Main navigation">
-            <a href="#source-video">Source video</a>
-            <a href="#product-brief">How it works</a>
-            {user && <a href="/studio">Your workspace</a>}
-          </nav>
-          <div className="topbar-actions">
-            {user ? (
-              <>
-                <a className="button button-quiet topbar-action" href="/studio">Open workspace</a>
-                <button className="button button-quiet topbar-action" type="button" onClick={handleSignOut}>
-                  <span>Sign out</span>
-                </button>
-              </>
-            ) : (
-              <button className="button button-quiet topbar-action" type="button" onClick={() => {
-                setAuthMode("sign-in");
-                setAuthOtpStep(false);
-                setAuthOtp("");
-                setAuthMessage("");
-                setAuthOpen(true);
-              }}>
-                Sign in
-              </button>
-            )}
-            <button className="button button-dark topbar-action topbar-new-ad" type="button" onClick={openAdBuilder}>
-              <Icon name="plus" size={14} />
-              <span>Start a new ad</span>
-            </button>
+      {workspaceOnly ? (
+        <header className="topbar-wrap">
+          <div className="topbar glass-panel">
+            <a className="brand-lockup" href="/studio" aria-label="Back to Pilgrix workspace">
+              <span className="brand-mark">P</span>
+              <span className="brand-copy">
+                <strong>Pilgrix Ads Studio</strong>
+                <small>YOUR CREATIVE WORKSPACE</small>
+              </span>
+            </a>
+            <div className="topbar-actions">
+              <a className="button button-quiet topbar-action" href="/studio">
+                <Icon name="arrow" size={15} /> Back to workspace
+              </a>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      ) : (
+        <header className="topbar-wrap">
+          <div className="topbar glass-panel">
+            <a className="brand-lockup" href="#home" aria-label="Pilgrix Ads Studio home">
+              <span className="brand-mark">P</span>
+              <span className="brand-copy">
+                <strong>Pilgrix Ads Studio</strong>
+                <small>AI ADVERTISING WORKSPACE</small>
+              </span>
+            </a>
+            <nav className="topbar-nav" aria-label="Main navigation">
+              <a href="#source-video">Source video</a>
+              <a href="#product-brief">How it works</a>
+              {user && <a href="/studio">Your workspace</a>}
+            </nav>
+            <div className="topbar-actions">
+              {user ? (
+                <>
+                  <a className="button button-quiet topbar-action" href="/studio">Open workspace</a>
+                  <button className="button button-quiet topbar-action" type="button" onClick={handleSignOut}>
+                    <span>Sign out</span>
+                  </button>
+                </>
+              ) : (
+                <button className="button button-quiet topbar-action" type="button" onClick={() => {
+                  setAuthMode("sign-in");
+                  setAuthOtpStep(false);
+                  setAuthOtp("");
+                  setAuthMessage("");
+                  setAuthOpen(true);
+                }}>
+                  Sign in
+                </button>
+              )}
+              <button className="button button-dark topbar-action topbar-new-ad" type="button" onClick={openAdBuilder}>
+                <Icon name="plus" size={14} />
+                <span>Start a new ad</span>
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
 
-      <div className="workspace" id="home">
-        <section className="hero-grid hero-grid-premium">
+      <div className={workspaceOnly ? "workspace studio-create-workspace" : "workspace"} id="home">
+        {workspaceOnly && (
+          <section className="studio-create-intro">
+            <span className="eyebrow"><span className="eyebrow-dot" /> PRIVATE AD CREATION</span>
+            <h1>Create your next ad.</h1>
+            <p>Upload your footage, add your product details and build a polished ad plan in your workspace.</p>
+          </section>
+        {!workspaceOnly && (
+          <section className="hero-grid hero-grid-premium">
           <div className="hero-copy hero-copy-premium">
             <div className="eyebrow"><span className="eyebrow-dot" /> VIDEO-FIRST AI AD CREATION</div>
             <h1>
@@ -1044,9 +1070,10 @@ export default function HomePage() {
               <div><span>03</span><strong>Render</strong><small>Your final edit</small></div>
             </div>
           </aside>
-        </section>
+          </section>
+        )}
 
-        <section className="content-grid">
+        <section className={workspaceOnly ? "content-grid studio-create-grid" : "content-grid"}>
           <section className="surface-card video-card" ref={videoSectionRef} id="source-video">
             <div className="section-heading">
               <div>
@@ -1178,7 +1205,7 @@ export default function HomePage() {
           </section>
         </section>
 
-        {user && (
+        {!workspaceOnly && user && (
           <section className="surface-card saved-projects" id="recent-projects">
             <div className="section-heading">
               <div>
@@ -1209,16 +1236,20 @@ export default function HomePage() {
           </section>
         )}
 
-        <div className="prototype-note">
-          <span className="prototype-pulse" />
-          <span>Pilgrix ADS WORKSPACE</span>
-          <i />
-          <span>AI ad planning and cloud video rendering are connected</span>
-        </div>
-        <footer className="footer-line">
-          <span>Pilgrix ADS STUDIO</span>
-          <span>CREATE. REVIEW. APPROVE.</span>
-        </footer>
+        {!workspaceOnly && (
+          <>
+            <div className="prototype-note">
+              <span className="prototype-pulse" />
+              <span>Pilgrix ADS WORKSPACE</span>
+              <i />
+              <span>AI ad planning and cloud video rendering are connected</span>
+            </div>
+            <footer className="footer-line">
+              <span>Pilgrix ADS STUDIO</span>
+              <span>CREATE. REVIEW. APPROVE.</span>
+            </footer>
+          </>
+        )}
       </div>
 
       {reviewOpen && (
