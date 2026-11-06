@@ -3,6 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 
+async function verifySignupCode(supabase, email, token) {
+  // Current supabase-js uses "email" for email OTP verification. Keep a
+  // compatibility retry for signup-issued tokens from older Auth flows.
+  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (!result.error) return result;
+
+  const isOtpMismatch =
+    result.error.code === "otp_expired" ||
+    /token has expired or is invalid/i.test(result.error.message || "");
+  if (!isOtpMismatch) return result;
+
+  const legacyResult = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+  return legacyResult.error ? result : legacyResult;
+}
+
 const initialBrief = {
   productName: "",
   benefit: "",
@@ -169,11 +184,8 @@ export default function HomePage() {
         if (!/^\d{6}$/.test(token)) {
           throw new Error("Enter the 6-digit code from your email.");
         }
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: authEmail.trim(),
-          token,
-          type: "email",
-        });
+        const normalizedEmail = authEmail.trim().toLowerCase();
+        const { data, error } = await verifySignupCode(supabase, normalizedEmail, token);
         if (error) throw error;
 
         const verifiedUser = data.user || data.session?.user || null;
@@ -190,7 +202,7 @@ export default function HomePage() {
 
       if (authMode === "sign-up") {
         const { data, error } = await supabase.auth.signUp({
-          email: authEmail.trim(),
+          email: authEmail.trim().toLowerCase(),
           password: authPassword,
         });
         if (error) throw error;
@@ -206,12 +218,12 @@ export default function HomePage() {
           setAuthPassword("");
           setAuthOtpStep(false);
           setAuthOtp("");
-          window.location.assign("/verify?email=" + encodeURIComponent(authEmail.trim()));
+          window.location.assign("/verify?email=" + encodeURIComponent(authEmail.trim().toLowerCase()));
           return;
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: authEmail.trim(),
+          email: authEmail.trim().toLowerCase(),
           password: authPassword,
         });
         if (error) {
@@ -244,11 +256,11 @@ export default function HomePage() {
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email: authEmail.trim(),
+        email: authEmail.trim().toLowerCase(),
       });
       if (error) throw error;
       setAuthOtp("");
-      setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim() + ".");
+      setAuthMessage("A new 6-digit verification code has been sent to " + authEmail.trim().toLowerCase() + ". Use the newest email only; each resend invalidates the previous code.");
     } catch (error) {
       setAuthMessage(error.message || "Could not resend the code. Please try again.");
     } finally {
