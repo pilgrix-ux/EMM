@@ -18,7 +18,7 @@ export default async function StudioPage() {
   const [projectResult, totalResult, planResult, completedResult] = await Promise.all([
     supabase
       .from("ad_projects")
-      .select("id, title, status, source_video_name, created_at")
+      .select("id, title, status, source_video_name, created_at, updated_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(12),
