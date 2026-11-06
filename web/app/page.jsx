@@ -64,6 +64,7 @@ export default function HomePage() {
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoDragActive, setVideoDragActive] = useState(false);
   const [brief, setBrief] = useState(initialBrief);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [builderStep, setBuilderStep] = useState(1);
@@ -371,10 +372,7 @@ export default function HomePage() {
     fileInputRef.current?.click();
   }
 
-  function handleVideoChange(event) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = "";
+  function processVideoFile(file) {
     if (!file) return;
 
     const supportedVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm|m4v|3gp)$/i.test(file.name);
@@ -416,6 +414,30 @@ export default function HomePage() {
     } catch {
       setFormError("This video could not be opened on your device. Try another clip.");
     }
+  }
+
+  function handleVideoChange(event) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    processVideoFile(file);
+  }
+
+  function handleVideoDragOver(event) {
+    event.preventDefault();
+    if (!videoFile) setVideoDragActive(true);
+  }
+
+  function handleVideoDragLeave(event) {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setVideoDragActive(false);
+    }
+  }
+
+  function handleVideoDrop(event) {
+    event.preventDefault();
+    setVideoDragActive(false);
+    processVideoFile(event.dataTransfer.files?.[0]);
   }
 
   function removeVideo() {
@@ -891,57 +913,99 @@ export default function HomePage() {
               <small>AI ADVERTISING WORKSPACE</small>
             </span>
           </a>
+          <nav className="topbar-nav" aria-label="Main navigation">
+            <a href="#source-video">Source video</a>
+            <a href="#product-brief">How it works</a>
+            {user && <a href="#recent-projects">Your workspace</a>}
+          </nav>
           <div className="topbar-actions">
-            {user && (
-              <button className="button button-dark topbar-action" type="button" onClick={handleSignOut}>
-                <Icon name="close" size={14} />
-                <span>Sign out</span>
+            {user ? (
+              <>
+                <span className="topbar-user"><span className="topbar-user-dot" />SIGNED IN</span>
+                <button className="button button-quiet topbar-action" type="button" onClick={handleSignOut}>
+                  <span>Sign out</span>
+                </button>
+              </>
+            ) : (
+              <button className="button button-quiet topbar-action" type="button" onClick={() => {
+                setAuthMode("sign-in");
+                setAuthOtpStep(false);
+                setAuthOtp("");
+                setAuthMessage("");
+                setAuthOpen(true);
+              }}>
+                Sign in
               </button>
             )}
-            <button className="button button-lime topbar-action topbar-new-ad" type="button" onClick={() => jumpTo(videoSectionRef)}>
+            <button className="button button-dark topbar-action topbar-new-ad" type="button" onClick={openAdBuilder}>
               <Icon name="plus" size={14} />
-              <span>New ad</span>
+              <span>Start a new ad</span>
             </button>
           </div>
         </div>
       </header>
 
       <div className="workspace" id="home">
-        <section className="hero-grid">
-          <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> YOUR CREATIVE WORKSPACE</div>
+        <section className="hero-grid hero-grid-premium">
+          <div className="hero-copy hero-copy-premium">
+            <div className="eyebrow"><span className="eyebrow-dot" /> THE CREATIVE STUDIO FOR VIDEO ADS</div>
             <h1>
-              Turn good footage
-              <span className="headline-second">into <span className="headline-highlight">great ads.</span></span>
+              Make your footage
+              <span className="headline-second">work <span className="headline-highlight">harder.</span></span>
             </h1>
             <p className="hero-description">
-              Upload your footage, define what you are advertising, and build a clear creative plan for your next campaign.
+              Bring your product video and your idea. Pilgrix helps you shape a focused ad plan, refine every scene, and prepare the final edit.
             </p>
-            <div className="hero-actions">
-              <button className="button button-lime" type="button" onClick={openVideoPicker}>
-                Choose a video <Icon name="arrow" size={16} />
+            <div className="hero-actions hero-actions-premium">
+              <button className="button button-dark" type="button" onClick={openVideoPicker}>
+                <Icon name="upload" size={16} /> Choose your footage
               </button>
               <button className="text-action" type="button" onClick={openAdBuilder}>
-                Create an ad <span aria-hidden="true">↗</span>
+                Open ad studio <Icon name="arrow" size={15} />
               </button>
             </div>
-            <div className="hero-footnote">
-              <span className="footnote-line" />
-              <span>YOUR FOOTAGE. YOUR STORY. A STRONGER AD.</span>
+            <div className="hero-proof-row">
+              <span><Icon name="check" size={14} /> Guided creative planning</span>
+              <i />
+              <span><Icon name="check" size={14} /> You approve before rendering</span>
             </div>
           </div>
 
-          <aside className="manifesto-card">
-            <div className="manifesto-top">
-              <span>THE Pilgrix WORKFLOW</span>
+          <aside className="hero-showcase" aria-label="Pilgrix creative workflow preview">
+            <div className="hero-showcase-top">
+              <div className="hero-showcase-brand">
+                <span className="hero-showcase-mark">P</span>
+                <span><strong>PILGRIX</strong><small>CREATIVE STUDIO</small></span>
+              </div>
+              <span className="hero-showcase-live"><i /> YOUR WORKFLOW</span>
             </div>
-            <div className="manifesto-content">
-              <span className="lime-kicker">FROM FOOTAGE TO AD PLAN</span>
-              <h2>Build a stronger ad, step by step.</h2>
+
+            <div className="hero-showcase-screen">
+              <div className="hero-screen-topline">
+                <span>CAMPAIGN PREVIEW</span>
+                <span>01 / 03</span>
+              </div>
+              <div className="hero-screen-art">
+                <span className="hero-art-orbit hero-art-orbit-one" />
+                <span className="hero-art-orbit hero-art-orbit-two" />
+                <span className="hero-art-glow" />
+                <span className="hero-art-tag"><Icon name="film" size={12} /> SOURCE FOOTAGE</span>
+                <span className="hero-art-play"><Icon name="play" size={22} /></span>
+                <span className="hero-art-caption">YOUR PRODUCT.<br /><b>YOUR STORY.</b></span>
+                <span className="hero-art-ratio">9:16</span>
+              </div>
+              <div className="hero-screen-footer">
+                <span><i /> CREATIVE DIRECTION</span>
+                <strong>Built around your brief.</strong>
+              </div>
             </div>
-            <div className="manifesto-bottom">
-              <span>FROM BRIEF TO APPROVED PLAN</span>
-              <span>Pilgrix STUDIO <span className="manifesto-arrow">↗</span></span>
+
+            <div className="hero-workflow-steps">
+              <div><span>01</span><strong>Upload</strong><small>Your video</small></div>
+              <span className="hero-workflow-connector" />
+              <div><span>02</span><strong>Shape</strong><small>Your ad plan</small></div>
+              <span className="hero-workflow-connector" />
+              <div><span>03</span><strong>Render</strong><small>Your final edit</small></div>
             </div>
           </aside>
         </section>
@@ -960,7 +1024,13 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className={`video-stage ${videoFile ? "video-stage-loaded" : ""}`}>
+            <div
+              className={`video-stage ${videoFile ? "video-stage-loaded" : ""} ${videoDragActive ? "video-drag-active" : ""}`}
+              onDragOver={handleVideoDragOver}
+              onDragLeave={handleVideoDragLeave}
+              onDrop={handleVideoDrop}
+              aria-label="Source video upload and preview"
+            >
               {videoUrl ? (
                 <>
                   <video
@@ -1015,16 +1085,27 @@ export default function HomePage() {
                 <div className="video-empty">
                   <div className="video-empty-icon"><Icon name="upload" size={20} /></div>
                   <strong>No video selected</strong>
-                  <p>Select a video from your device. Your preview will appear here before you continue.</p>
+                  <p>Choose a clip from your device or drag it into this area. You can preview it before building your ad.</p>
                   <button className="button button-lime upload-button" type="button" onClick={openVideoPicker}>
-                    <Icon name="plus" size={16} /> Choose video
+                    <Icon name="upload" size={16} /> Browse videos
                   </button>
+                  <span className="video-empty-formats">MP4, MOV or WEBM · Up to 100 MB for cloud processing</span>
                 </div>
               )}
             </div>
 
-            <div className="video-foot">
-              <span><Icon name="shield" size={14} /> Unsupported clips are sent to Shotstack for conversion. Its temporary copy is link-accessible during processing, then deleted when the MP4 is saved privately in your Pilgrix workspace.</span>
+            {videoFile && (
+              <div className="video-selected-meta">
+                <span className="video-selected-icon"><Icon name="film" size={16} /></span>
+                <span className="video-selected-copy">
+                  <strong title={videoFile.name}>{videoFile.name}</strong>
+                  <small>{(videoFile.size / (1024 * 1024)).toFixed(1)} MB · Ready for your ad brief</small>
+                </span>
+                <button type="button" onClick={openVideoPicker}>Replace</button>
+              </div>
+            )}
+            <div className="video-foot video-foot-premium">
+              <span><Icon name="shield" size={14} /> Your original clip stays unchanged. Unsupported formats may be converted for preview.</span>
               <span>MP4 · MOV · WEBM</span>
             </div>
             <input
@@ -1062,7 +1143,7 @@ export default function HomePage() {
         </section>
 
         {user && (
-          <section className="surface-card saved-projects">
+          <section className="surface-card saved-projects" id="recent-projects">
             <div className="section-heading">
               <div>
                 <div className="section-kicker">YOUR Pilgrix WORKSPACE</div>
