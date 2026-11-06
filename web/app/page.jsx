@@ -84,6 +84,7 @@ export default function HomePage() {
   const [authPassword, setAuthPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [savedProjectId, setSavedProjectId] = useState("");
@@ -1261,34 +1262,73 @@ export default function HomePage() {
           if (event.target === event.currentTarget && !authBusy) setAuthOpen(false);
         }}>
           <section className="review-modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-            <div className="modal-topline">
-              <span className="section-kicker">YOUR EMM WORKSPACE</span>
-              <button className="modal-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)} disabled={authBusy}><Icon name="close" size={18} /></button>
+            <div className="auth-shell">
+              <aside className="auth-aside">
+                <div className="auth-brand-lockup">
+                  <span className="auth-brand-mark">E</span>
+                  <span className="auth-brand-name"><strong>EMM</strong><small>ADS STUDIO</small></span>
+                </div>
+                <div className="auth-aside-copy">
+                  <span className="auth-aside-label"><span /> YOUR CREATIVE WORKSPACE</span>
+                  <h2>Good ideas deserve great execution.</h2>
+                  <p>Bring your ad briefs, source videos and creative plans together in one focused studio.</p>
+                </div>
+                <div className="auth-benefits">
+                  <div className="auth-benefit">
+                    <span className="auth-benefit-icon"><Icon name="film" size={17} /></span>
+                    <span><strong>Everything in one place</strong><small>Keep projects and source footage together.</small></span>
+                  </div>
+                  <div className="auth-benefit">
+                    <span className="auth-benefit-icon"><Icon name="sliders" size={17} /></span>
+                    <span><strong>A clearer creative process</strong><small>Shape your ideas into a practical ad plan.</small></span>
+                  </div>
+                </div>
+                <div className="auth-aside-footer"><span className="auth-footer-dot" /> MADE FOR THE NEXT BIG IDEA</div>
+              </aside>
+
+              <div className="auth-main">
+                <div className="auth-main-top">
+                  <span>EMM <i>/</i> ACCOUNT</span>
+                  <button className="modal-close auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)} disabled={authBusy}><Icon name="close" size={18} /></button>
+                </div>
+                <div className="auth-heading">
+                  <span className="auth-eyebrow">{authMode === "sign-up" ? "GET STARTED" : "WELCOME BACK"}</span>
+                  <h2 id="auth-title">{authMode === "sign-up" ? "Create your account." : "Your studio awaits."}</h2>
+                  <p>{authMode === "sign-up" ? "Set up your EMM account and keep your creative work organised." : "Sign in to pick up where your next campaign left off."}</p>
+                </div>
+
+                <form className="auth-form" onSubmit={handleAuthSubmit}>
+                  <label className="field-group auth-field">
+                    <span className="field-label">EMAIL ADDRESS</span>
+                    <input type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@company.com" />
+                  </label>
+                  <label className="field-group auth-field">
+                    <span className="field-label">PASSWORD</span>
+                    <span className="auth-password-control">
+                      <input type={showAuthPassword ? "text" : "password"} autoComplete={authMode === "sign-up" ? "new-password" : "current-password"} minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="Enter your password" />
+                      <button type="button" className="auth-password-toggle" onClick={() => setShowAuthPassword((value) => !value)} aria-label={showAuthPassword ? "Hide password" : "Show password"} aria-pressed={showAuthPassword}>
+                        <Icon name={showAuthPassword ? "eye-off" : "eye"} size={17} />
+                      </button>
+                    </span>
+                    {authMode === "sign-up" && <span className="auth-field-hint">Use at least 8 characters.</span>}
+                  </label>
+                  {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
+                  <button className="button button-dark review-button auth-submit" type="submit" disabled={authBusy || !supabaseConfigured}>
+                    <span>{authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in to EMM"}</span>
+                    {!authBusy && <Icon name="arrow" size={17} />}
+                  </button>
+                </form>
+
+                <p className="auth-switch">
+                  {authMode === "sign-up" ? "Already have an account?" : "New to EMM?"}{" "}
+                  <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthMessage(""); setShowAuthPassword(false); }}>
+                    {authMode === "sign-up" ? "Sign in" : "Create an account"}
+                  </button>
+                </p>
+                {!supabaseConfigured && <p className="auth-config-note">Account access is temporarily unavailable until the Supabase connection is configured.</p>}
+                <div className="auth-main-footer"><Icon name="shield" size={14} /> Your workspace is private to your account.</div>
+              </div>
             </div>
-            <div className="modal-success-icon"><Icon name="shield" size={20} /></div>
-            <h2 id="auth-title">{authMode === "sign-up" ? "Create your workspace access." : "Welcome back."}</h2>
-            <p className="modal-intro">Sign in to save your ad briefs and private source videos.</p>
-            <form className="auth-form" onSubmit={handleAuthSubmit}>
-              <label className="field-group">
-                <span className="field-label">EMAIL ADDRESS</span>
-                <input type="email" autoComplete="email" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" />
-              </label>
-              <label className="field-group">
-                <span className="field-label">PASSWORD</span>
-                <input type="password" autoComplete={authMode === "sign-up" ? "new-password" : "current-password"} minLength={8} required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="At least 8 characters" />
-              </label>
-              {authMessage && <p className="auth-feedback" role="status">{authMessage}</p>}
-              <button className="button button-dark review-button" type="submit" disabled={authBusy || !supabaseConfigured}>
-                {authBusy ? "Please wait…" : authMode === "sign-up" ? "Create account" : "Sign in"} <Icon name="arrow" size={16} />
-              </button>
-            </form>
-            <p className="auth-switch">
-              {authMode === "sign-up" ? "Already have an account?" : "New to EMM?"}{" "}
-              <button type="button" onClick={() => { setAuthMode(authMode === "sign-up" ? "sign-in" : "sign-up"); setAuthMessage(""); }}>
-                {authMode === "sign-up" ? "Sign in" : "Create account"}
-              </button>
-            </p>
-            {!supabaseConfigured && <p className="auth-config-note">Supabase environment variables still need to be added to the Vercel project.</p>}
           </section>
         </div>
       )}
