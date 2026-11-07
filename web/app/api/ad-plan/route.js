@@ -54,7 +54,7 @@ export async function POST(request) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const authorization = request.headers.get("authorization");
   if (!supabaseUrl || !supabaseKey || !authorization?.startsWith("Bearer ")) {
-    return json({ error: "Sign in to your Pilgrix workspace before generating an ad plan." }, 401);
+    return json({ error: "Start your guest workspace before generating an ad plan." }, 401);
   }
 
   try {
@@ -66,7 +66,7 @@ export async function POST(request) {
       cache: "no-store",
     });
     if (!authResponse.ok) {
-      return json({ error: "Your Pilgrix session is not valid. Sign in again to continue." }, 401);
+      return json({ error: "Your Pilgrix guest session is not valid. Refresh the dashboard and try again." }, 401);
     }
 
     const body = await request.json();
