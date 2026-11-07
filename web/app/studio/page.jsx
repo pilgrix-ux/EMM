@@ -40,6 +40,7 @@ export default async function StudioPage() {
     id: claims.sub,
     email: claims.email,
     user_metadata: claims.user_metadata || {},
+    is_anonymous: claims.is_anonymous === true,
   };
 
   const [projectResult, totalResult, planResult, completedResult] = await Promise.all([
