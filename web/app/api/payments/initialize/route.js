@@ -6,6 +6,7 @@ import {
   PaymentError,
   paystackSecretIsConfigured,
   adminKeyIsConfigured,
+  checkoutIsEnabled,
 } from "../../../../lib/payments/server";
 
 export const runtime = "nodejs";
@@ -17,6 +18,9 @@ function json(data, status = 200) {
 export async function POST(request) {
   try {
     const auth = await authenticateRequest(request);
+    if (!checkoutIsEnabled()) {
+      throw new PaymentError("Credit checkout is not enabled for this deployment yet.", 503);
+    }
     if (!paystackSecretIsConfigured() || !adminKeyIsConfigured()) {
       throw new PaymentError("Checkout is not configured yet. Add the Paystack and Supabase server secrets in Vercel.", 503);
     }
