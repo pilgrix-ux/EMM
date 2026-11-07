@@ -28,7 +28,7 @@ The `EMM` Supabase project is connected at the code level. The database has an o
 
 - Responsive Pilgrix Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
 - Automatic Supabase guest sessions without a login or registration page.
-- Paystack credit purchases with verified server-side fulfillment (after payment credentials and packages are configured).
+- Paystack credit purchase foundation with server-side verification (checkout remains inactive until credentials, packages, usage costs and account recovery are configured).
 - A private per-device guest session with row-level project isolation.
 - A credit wallet panel and configurable Paystack checkout.
 
