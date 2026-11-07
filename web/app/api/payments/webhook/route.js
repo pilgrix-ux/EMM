@@ -6,6 +6,8 @@ import {
   verifyPaystackTransaction,
 } from "../../../../lib/payments/server";
 
+export const runtime = "nodejs";
+
 function json(data, status = 200) {
   return Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 }
