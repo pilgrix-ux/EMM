@@ -79,14 +79,16 @@ export async function adminFetch(path, options = {}) {
   const supabaseUrl = SUPABASE_URL();
   const adminKey = ADMIN_KEY();
   if (!supabaseUrl || !adminKey) {
-    throw new PaymentError("Add SUPABASE_SERVICE_ROLE_KEY to the server environment to enable secure credit payments.", 503);
+    throw new PaymentError("Add SUPABASE_SECRET_KEY (preferred) or the legacy SUPABASE_SERVICE_ROLE_KEY to the server environment to enable secure credit payments.", 503);
   }
 
   const response = await fetch(supabaseUrl + path, {
     ...options,
     headers: {
       apikey: adminKey,
-      Authorization: "Bearer " + adminKey,
+      // New sb_secret_ keys are opaque and must be sent as apikey only.
+      // The legacy service_role key is a JWT and is also sent as Bearer.
+      ...(adminKey.startsWith("sb_secret_") ? {} : { Authorization: "Bearer " + adminKey }),
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
