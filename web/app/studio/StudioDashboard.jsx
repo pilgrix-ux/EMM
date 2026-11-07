@@ -188,7 +188,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
       const accessToken = data.session?.access_token;
       if (!accessToken) throw new Error("Your guest workspace is not ready. Refresh and try again.");
       if (!selectedPackage) throw new Error("Choose a credit package first.");
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(creditEmail.trim())) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(creditEmail.trim())) {
         throw new Error("Enter an email address for your payment receipt.");
       }
 
