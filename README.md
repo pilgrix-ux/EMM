@@ -27,14 +27,12 @@ The `EMM` Supabase project is connected at the code level. The database has an o
 ## Current web experience
 
 - Responsive Pilgrix Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
-- Browser video selection and local preview.
-- Product name, benefit, audience, and advertising goal fields.
 - Automatic Supabase guest sessions without a login or registration page.
 - Paystack credit purchases with verified server-side fulfillment (after payment credentials and packages are configured).
-- Save a draft and upload its source clip to private storage.
-- Single-item floating Home navigation dock.
+- A private per-device guest session with row-level project isolation.
+- A credit wallet panel and configurable Paystack checkout.
 
-The current web interface keeps the Studio dashboard as its only full page. AI planning and rendering APIs remain in the repository as backend routes; the dashboard's credit purchase UI becomes active when Paystack credentials and package pricing are configured.
+The current web interface keeps the Studio dashboard as its only full page. AI planning, video preview, and rendering remain backend routes; the credit purchase UI becomes active when Paystack credentials, the Supabase server key, and package pricing are configured. The dashboard does not yet expose the complete video-creation workflow.
 
 ## Android prototype
 
