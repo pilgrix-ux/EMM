@@ -23,8 +23,8 @@ export default async function StudioPage() {
     authError = error;
   }
 
-  // No cookie-backed session is a real sign-in requirement. A different Auth
-  // error may be temporary, so keep the user in Studio and let them retry.
+  // When there is no cookie-backed session, the dashboard client starts an
+  // anonymous guest session and refreshes this server-rendered project list.
   const sessionMissing =
     authError?.name === "AuthSessionMissingError" ||
     authError?.message === "Auth session missing!";
