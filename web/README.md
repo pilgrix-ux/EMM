@@ -43,6 +43,7 @@ Environment variables:
 - `SUPABASE_SECRET_KEY` (preferred server-only key; legacy `SUPABASE_SERVICE_ROLE_KEY` JWT is supported as a fallback)
 - `PAYSTACK_SECRET_KEY` and `PAYSTACK_WEBHOOK_SECRET` (server-only)
 - `PILGRIX_CREDIT_PACKAGES` (server-only JSON array defining package IDs, credits, and NGN prices)
+- `PILGRIX_ENABLE_CHECKOUT` (set to `true` only after usage debits and account recovery are implemented)
 - `NEXT_PUBLIC_APP_URL` (canonical deployed app URL used for Paystack callbacks)
 
 Add `GEMINI_API_KEY` and the matching Shotstack key to Vercel Project Settings → Environment Variables for **Production** and **Preview**, then redeploy. Pilgrix Ads Studio selects `SHOTSTACK_SANDBOX_API_KEY` with `SHOTSTACK_ENV=stage` and `SHOTSTACK_PRODUCTION_API_KEY` with `SHOTSTACK_ENV=v1`. The legacy `SHOTSTACK_API_KEY` is accepted as a fallback, but its value must match the selected environment. Keep all keys server-side: do not prefix them with `NEXT_PUBLIC_`, commit their values, or place them in browser code. Never add a `service_role` or `sb_secret_...` key to a `NEXT_PUBLIC_` variable or browser code.
@@ -80,7 +81,7 @@ The repository retains server-side AI planning, private video preview, and Shots
 
 ## Paystack credit checkout
 
-Set `PILGRIX_CREDIT_PACKAGES` in Vercel to a JSON array. Each package requires a unique `id`, display `name`, integer `credits`, and integer `amountNaira`. For example, use your own reviewed prices and quantities:
+Keep `PILGRIX_ENABLE_CHECKOUT=false` for now. Checkout is deliberately disabled until the product has defined AI/render credit costs, implemented usage debits, and provided a way for a paid guest to recover the workspace. Once those safeguards are completed, set `PILGRIX_ENABLE_CHECKOUT=true` and set `PILGRIX_CREDIT_PACKAGES` in Vercel to a JSON array. Each package requires a unique `id`, display `name`, integer `credits`, and integer `amountNaira`. For example, use your own reviewed prices and quantities:
 
 ```json
 [
@@ -88,4 +89,4 @@ Set `PILGRIX_CREDIT_PACKAGES` in Vercel to a JSON array. Each package requires a
 ]
 ```
 
-The dashboard collects a receipt email only when a user chooses to purchase. The server reads prices and credit amounts from its allowlist; it never trusts a client-supplied amount. Configure the Paystack webhook URL as `https://YOUR-APP-DOMAIN/api/payments/webhook`. Credits are granted only after server-side transaction verification, with an atomic database function preventing duplicate fulfillment. The live app needs valid Paystack test/live keys and the server-only Supabase secret key before checkout will be available. Checkout is a payment-credit foundation only: do not sell packages until AI/render credit consumption and workspace recovery are wired into the product.
+The dashboard collects a receipt email only when a user chooses to purchase. The server reads prices and credit amounts from its allowlist; it never trusts a client-supplied amount. Configure the Paystack webhook URL as `https://YOUR-APP-DOMAIN/api/payments/webhook`. Credits are granted only after server-side transaction verification, with an atomic database function preventing duplicate fulfillment. The live app needs valid Paystack test/live keys, the server-only Supabase secret key, defined credit consumption and workspace recovery before checkout should be enabled. Checkout is a payment-credit foundation only: do not sell packages until AI/render credit consumption and workspace recovery are wired into the product.
