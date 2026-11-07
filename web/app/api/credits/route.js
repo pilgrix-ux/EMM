@@ -1,4 +1,4 @@
-import { authenticateRequest, getCreditPackages, PaymentError } from "../../../lib/payments/server";
+import { authenticateRequest, checkoutIsEnabled, getCreditPackages, PaymentError } from "../../../lib/payments/server";
 
 function json(data, status = 200) {
   return Response.json(data, {
@@ -29,9 +29,9 @@ export async function GET(request) {
     return json({
       balance: Number(rows?.[0]?.balance) || 0,
       packages: getCreditPackages(),
-      paymentConfigured: Boolean(
+      paymentConfigured: checkoutIsEnabled() && Boolean(
         process.env.PAYSTACK_SECRET_KEY
-        && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)
+        && (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)
       ),
     });
   } catch (error) {
