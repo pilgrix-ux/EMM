@@ -52,7 +52,7 @@ Shotstack's `stage` environment is for watermarked sandbox testing. Ordinary san
 
 - `public.ad_projects` stores a user's product brief, private source-video object path, creative settings, and editable AI ad plan.
 - The `ad_plan`, `creative_settings`, and `ad_plan_approved_at` columns were added by migration `20261105020640_add_ad_plan_and_creative_settings.sql`.
-- Row Level Security is enabled. Signed-in users can only access rows whose `user_id` matches `auth.uid()`.
+- Row Level Security is enabled. Guest and signed-in users can only access rows whose `user_id` matches `auth.uid()`.
 - `emm-source-videos` is a private Storage bucket. Object paths must begin with the authenticated user's ID.
 - The bucket currently allows supported MP4, MOV, WebM, M4V and 3GPP video MIME types up to 100 MB.
 
@@ -74,21 +74,9 @@ This repository also contains the original Android prototype under `app/`. When 
 
 Add the Supabase URL and publishable key to Vercel **Preview** and **Production**, enable Anonymous Sign-Ins in Supabase Auth settings, and add the server-only `GEMINI_API_KEY` to enable AI planning. For credit purchases, also add the server-only Supabase service-role key, Paystack secret key, webhook signing secret, canonical app URL, and a `PILGRIX_CREDIT_PACKAGES` JSON array. Never prefix server secrets with `NEXT_PUBLIC_`.
 
-## Video rendering
+## Backend capabilities
 
-The Generate Ads workflow calls the guest-session-protected `/api/ad-plan` endpoint and uses Gemini to create an editable hook, script, scene plan, captions, and call to action. The source video's actual frames are not sent to Gemini yet, so the plan does not claim to have visually analysed the clip.
-
-After approving a plan, a guest workspace can save it without rendering, or choose **Render final video**. Pilgrix Ads Studio then:
-
-1. Creates a short-lived signed URL for the private source clip.
-2. Uses Shotstack's media-probe endpoint to inspect the actual video stream and duration, then limits the output timeline to the shorter of the requested duration and the source clip duration. This avoids rendering a long blank tail when a short clip is selected.
-3. Sends an edit timeline to Shotstack's cloud renderer. Video assets use Shotstack's `transcode: true` preprocessing option to normalize source formats/codecs before editing.
-4. Adds the scene text, call to action and, when selected, word-synchronised captions. English and French voiceovers use Shotstack's current native text-to-speech asset. The provider currently documents support for English and French voice choices in this integration; turn voiceover off for Nigerian Pidgin, Yoruba, Hausa or Igbo.
-5. Polls the asynchronous render job and lets the signed-in project owner download the finished MP4 through the authenticated Pilgrix Ads Studio API. The download fallback accepts the temporary S3 output URL returned by the render-status endpoint while the permanent CDN asset is being published.
-
-The local preview is intentionally lightweight and does not encode large source files inside the browser. Some phone/browser combinations cannot preview every MOV or HEVC codec; in that case Pilgrix Ads Studio displays a compatibility message while the original upload can still be sent to cloud preprocessing.
-
-The renderer requires `SHOTSTACK_API_KEY` in Vercel. Keep `SHOTSTACK_ENV=stage` for watermarked sandbox testing; set it to `v1` only when paid production renders are intended. Rendering, generated speech and automated captions consume provider resources/credits according to the provider account. The Pilgrix Ads Studio application does not currently provide a licensed background-music library, automatic visual scene analysis, or a saved-project reopen/edit screen.
+The repository retains server-side AI planning, private video preview, and Shotstack render API routes. They accept a valid Supabase guest-session bearer token and keep provider secrets on the server. The current web interface intentionally exposes the Studio dashboard as its only full page; a complete ad-creation interface is not currently connected to that dashboard.
 
 ## Paystack credit checkout
 
