@@ -159,6 +159,10 @@ export async function fulfillVerifiedPayment(payment, transaction) {
   return rpc;
 }
 
+export function checkoutIsEnabled() {
+  return process.env.PILGRIX_ENABLE_CHECKOUT === "true";
+}
+
 export function paystackSecretIsConfigured() {
   return Boolean(PAYSTACK_KEY());
 }
