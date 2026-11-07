@@ -63,7 +63,7 @@ async function authorize(request) {
     throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
   }
   if (!authorization?.startsWith("Bearer ")) {
-    throw new ApiError("Sign in to your Pilgrix workspace before rendering a video.", 401);
+    throw new ApiError("Start your guest workspace before rendering a video.", 401);
   }
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -72,7 +72,7 @@ async function authorize(request) {
   });
   const user = await readResponse(response);
   if (!response.ok || !user?.id) {
-    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
+    throw new ApiError("Your guest workspace session has expired. Refresh the dashboard and retry.", 401);
   }
 
   return { supabaseUrl, publishableKey, authorization, user };

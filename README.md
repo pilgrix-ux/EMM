@@ -18,22 +18,21 @@ The web application lives in [`web/`](web/) and uses Next.js, React, Tailwind CS
 
 The Android project remains in [`app/`](app/) and is not used by the web deployment.
 
-See [web/README.md](web/README.md) for local setup, Supabase configuration, Auth redirects, storage, and deployment details.
+See [web/README.md](web/README.md) for local setup, guest authentication, private storage, credit payments, and deployment details.
 
 ## Supabase foundation
 
-The `EMM` Supabase project is connected at the code level. The database has an owner-scoped `public.ad_projects` table and a private `emm-source-videos` bucket. RLS restricts each signed-in user to their own project rows and video folder. Only the Supabase URL and publishable key are intended for the browser; never expose service-role or secret keys.
+The `EMM` Supabase project is connected at the code level. The database has an owner-scoped `public.ad_projects` table and a private `emm-source-videos` bucket. RLS restricts each guest or signed-in user to their own project rows and video folder. Only the Supabase URL and publishable key are intended for the browser; never expose service-role or secret keys.
 
 ## Current web experience
 
 - Responsive Pilgrix Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
-- Browser video selection and local preview.
-- Product name, benefit, audience, and advertising goal fields.
-- Supabase email/password sign-up and sign-in.
-- Save a draft and upload its source clip to private storage.
-- Single-item floating Home navigation dock.
+- Automatic Supabase guest sessions without a login or registration page.
+- Paystack credit purchase foundation with server-side verification (checkout is deliberately disabled until usage debits and guest account recovery are implemented).
+- A private per-device guest session with row-level project isolation.
+- A credit wallet panel and configurable Paystack checkout.
 
-AI planning, cloud rendering, completed-video export, and the saved-project dashboard are not connected yet. The app does not claim otherwise.
+The current web interface keeps the Studio dashboard as its only full page. AI planning, video preview, and rendering remain backend routes; the credit purchase UI becomes active when Paystack credentials, the Supabase server key, and package pricing are configured. The dashboard does not yet expose the complete video-creation workflow.
 
 ## Android prototype
 
@@ -42,9 +41,8 @@ The original Kotlin Android prototype remains under `app/` for reference and opt
 ## Next milestones
 
 1. Deploy and verify the web workspace.
-2. Confirm Supabase email verification, sign-in, private upload, and RLS behavior on the deployed domain.
-3. Add a saved-project dashboard and draft editing.
-4. Connect secure AI planning.
-5. Connect background video rendering and real MP4 export.
+2. Enable Supabase Anonymous Sign-Ins and confirm guest sessions, private storage, and RLS on the deployed domain.
+3. Configure Paystack test keys and actual credit package pricing, then test webhook fulfillment.
+4. Connect the dashboard to the full ad-creation workflow and verify AI planning and video rendering with guest sessions.
 
 The detailed requirements are in [PRODUCT_SPEC.md](PRODUCT_SPEC.md).
