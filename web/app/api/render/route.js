@@ -72,7 +72,7 @@ async function authorize(request) {
   });
   const user = await readResponse(response);
   if (!response.ok || !user?.id) {
-    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
+    throw new ApiError("Your guest workspace session has expired. Refresh the dashboard and retry.", 401);
   }
 
   return { supabaseUrl, publishableKey, authorization, user };
