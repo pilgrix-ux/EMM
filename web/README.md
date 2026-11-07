@@ -40,7 +40,7 @@ Environment variables:
 - `SHOTSTACK_SANDBOX_API_KEY` (server-only; use for sandbox test renders)
 - `SHOTSTACK_PRODUCTION_API_KEY` (server-only; use for watermark-free production renders)
 - `SHOTSTACK_ENV` (optional; defaults to `stage`; set to `v1` for production renders)
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for payment records and credit fulfillment)
+- `SUPABASE_SECRET_KEY` (preferred server-only key; legacy `SUPABASE_SERVICE_ROLE_KEY` JWT is supported as a fallback)
 - `PAYSTACK_SECRET_KEY` and `PAYSTACK_WEBHOOK_SECRET` (server-only)
 - `PILGRIX_CREDIT_PACKAGES` (server-only JSON array defining package IDs, credits, and NGN prices)
 - `NEXT_PUBLIC_APP_URL` (canonical deployed app URL used for Paystack callbacks)
@@ -72,7 +72,7 @@ This repository also contains the original Android prototype under `app/`. When 
 - **Output Directory:** default (`.next`)
 - **Install Command:** default (`npm install`)
 
-Add the Supabase URL and publishable key to Vercel **Preview** and **Production**, enable Anonymous Sign-Ins in Supabase Auth settings, and add the server-only `GEMINI_API_KEY` to enable AI planning. For credit purchases, also add the server-only Supabase service-role key, Paystack secret key, webhook signing secret, canonical app URL, and a `PILGRIX_CREDIT_PACKAGES` JSON array. Never prefix server secrets with `NEXT_PUBLIC_`.
+Add the Supabase URL and publishable key to Vercel **Preview** and **Production**, enable Anonymous Sign-Ins in Supabase Auth settings, and add the server-only `GEMINI_API_KEY` to enable AI planning. For credit purchases, also add the server-only Supabase secret key, Paystack secret key, webhook signing secret, canonical app URL, and a `PILGRIX_CREDIT_PACKAGES` JSON array. Never prefix server secrets with `NEXT_PUBLIC_`.
 
 ## Backend capabilities
 
@@ -88,4 +88,4 @@ Set `PILGRIX_CREDIT_PACKAGES` in Vercel to a JSON array. Each package requires a
 ]
 ```
 
-The dashboard collects a receipt email only when a user chooses to purchase. The server reads prices and credit amounts from its allowlist; it never trusts a client-supplied amount. Configure the Paystack webhook URL as `https://YOUR-APP-DOMAIN/api/payments/webhook`. Credits are granted only after server-side transaction verification, with an atomic database function preventing duplicate fulfillment. The live app needs valid Paystack test/live keys and the server-only Supabase admin key before checkout will be available.
+The dashboard collects a receipt email only when a user chooses to purchase. The server reads prices and credit amounts from its allowlist; it never trusts a client-supplied amount. Configure the Paystack webhook URL as `https://YOUR-APP-DOMAIN/api/payments/webhook`. Credits are granted only after server-side transaction verification, with an atomic database function preventing duplicate fulfillment. The live app needs valid Paystack test/live keys and the server-only Supabase secret key before checkout will be available. Checkout is a payment-credit foundation only: do not sell packages until AI/render credit consumption and workspace recovery are wired into the product.
