@@ -7075,7 +7075,7 @@ a:focus-visible {
 
 .studio-v2-content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.48fr) minmax(275px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 17px;
 }
