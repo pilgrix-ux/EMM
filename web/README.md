@@ -58,7 +58,7 @@ Shotstack's `stage` environment is for watermarked sandbox testing. Ordinary san
 
 ### Guest authentication
 
-Enable **Anonymous Sign-Ins** in Supabase Dashboard → Authentication → Sign In / Providers. The dashboard creates a Supabase anonymous user automatically; users do not see a login or registration page. Anonymous users receive the `authenticated` Postgres role, so the existing `auth.uid() = user_id` project and storage policies continue to protect each guest's data. Keep the dashboard dynamically rendered and enable CAPTCHA / abuse protection before broad public launch.
+Enable **Anonymous Sign-Ins** in Supabase Dashboard → Authentication → Sign In / Providers. The dashboard creates a Supabase anonymous user automatically; users do not see a login or registration page. Anonymous users receive the `authenticated` Postgres role, so the existing `auth.uid() = user_id` project and storage policies continue to protect each guest's data. Keep the dashboard dynamically rendered and configure signup abuse controls and rate limits before broad public launch. If Supabase Auth CAPTCHA is enabled, also add a client CAPTCHA provider and pass its token to `signInAnonymously`; this branch does not yet integrate a CAPTCHA widget.
 
 Guest sessions are device/browser-specific. Clearing site data or moving to another device can make an anonymous workspace unrecoverable. An optional account-linking/recovery flow should be added before treating guest balances as high-value stored funds.
 
