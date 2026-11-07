@@ -199,49 +199,9 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
               )}
             </section>
 
-            <aside className="studio-v2-side-stack">
-              <section className="studio-v2-create-card">
-                <span className="studio-v2-create-orbit" aria-hidden="true"><Icon name="spark" size={19} /></span>
-                <span className="studio-v2-create-kicker">MAKE YOUR NEXT MOVE</span>
-                <h2>Good ideas deserve great ads.</h2>
-                <p>Start with your footage. Build the story, review the scenes and create a video made to connect.</p>
-                <a className="button button-lime studio-v2-create-action" href="/studio/create">
-                  Start a new ad
-                  <Icon name="arrow" size={15} />
-                </a>
-                <span className="studio-v2-create-note"><Icon name="upload" size={13} /> Start with a video from your device</span>
-              </section>
-
-              <section className="studio-v2-panel studio-v2-steps-panel">
-                <div className="studio-v2-panel-heading studio-v2-steps-heading">
-                  <div>
-                    <span className="studio-v2-section-kicker">A SIMPLE WORKFLOW</span>
-                    <h2>From clip to creative</h2>
-                  </div>
-                </div>
-                <div className="studio-v2-steps-list">
-                  <div>
-                    <span>01</span>
-                    <div><strong>Upload your footage</strong><small>Choose a clip from your device.</small></div>
-                  </div>
-                  <div>
-                    <span>02</span>
-                    <div><strong>Build your ad plan</strong><small>Set your product, audience and style.</small></div>
-                  </div>
-                  <div>
-                    <span>03</span>
-                    <div><strong>Review and render</strong><small>Approve your creative before export.</small></div>
-                  </div>
-                </div>
-              </section>
-            </aside>
           </div>
         </div>
 
-        <footer className="studio-v2-footer">
-          <span>PILGRIX ADS STUDIO</span>
-          <span>YOUR FOOTAGE. YOUR CREATIVE CONTROL.</span>
-        </footer>
       </div>
     </main>
   );
