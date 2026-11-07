@@ -4,7 +4,7 @@ import {
   getPayment,
   PaymentError,
   verifyPaystackTransaction,
-} from "../../../../../lib/payments/server";
+} from "../../../../lib/payments/server";
 
 function json(data, status = 200) {
   return Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
