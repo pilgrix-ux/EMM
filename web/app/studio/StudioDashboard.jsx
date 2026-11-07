@@ -105,14 +105,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
               <p>{sessionError ? "We couldn’t verify your sign-in on this request. Retry the workspace to reconnect without clearing your session." : user ? "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching." : "Start with a video, build your ad and review every edit before you render. Sign in when you’re ready to save your work."}</p>
             </div>
             {!sessionError && (
-              <div className="studio-v2-welcome-action-wrap">
-                <span>Ready for your next project?</span>
-                <a className="button button-dark studio-v2-primary-action" href="/studio/create">
-                  <Icon name="plus" size={16} />
-                  Create new ad
-                  <Icon name="arrow" size={15} />
-                </a>
-              </div>
+              
             )}
           </section>
 
@@ -191,10 +184,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                   <span className="studio-v2-empty-icon"><Icon name="film" size={22} /></span>
                   <h3>Your first ad starts with a video.</h3>
                   <p>Upload a product clip, add a few details and shape it into a polished creative. Your saved work will appear here.</p>
-                  <a className="button button-dark studio-v2-empty-action" href="/studio/create">
-                    <Icon name="plus" size={15} />
-                    Create your first ad
-                  </a>
+                  
                 </div>
               )}
             </section>
