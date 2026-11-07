@@ -63,7 +63,7 @@ async function authorize(request) {
     throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
   }
   if (!authorization?.startsWith("Bearer ")) {
-    throw new ApiError("Sign in to your Pilgrix workspace before rendering a video.", 401);
+    throw new ApiError("Start your guest workspace before rendering a video.", 401);
   }
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
