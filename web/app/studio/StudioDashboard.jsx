@@ -71,6 +71,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
   const [guestError, setGuestError] = useState("");
   const [creditBalance, setCreditBalance] = useState(0);
   const [creditPackages, setCreditPackages] = useState([]);
+  const [paymentConfigured, setPaymentConfigured] = useState(false);
   const [creditEmail, setCreditEmail] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -105,6 +106,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
       if (!active) return;
       setCreditBalance(Number(result.balance) || 0);
       setCreditPackages(Array.isArray(result.packages) ? result.packages : []);
+      setPaymentConfigured(result.paymentConfigured === true);
       setSelectedPackage((current) => current || result.packages?.[0]?.id || "");
     }
 
@@ -128,6 +130,8 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
           }
           session = await guestSessionPromise;
           if (active) router.refresh();
+        } else if (!user?.id && active) {
+          router.refresh();
         }
 
         if (!session?.access_token) {
@@ -282,7 +286,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
               <p role="alert" className="generation-feedback">
                 {guestError} Enable Anonymous Sign-Ins in Supabase Auth settings, then refresh this page.
               </p>
-            ) : creditPackages.length ? (
+            ) : creditPackages.length && paymentConfigured ? (
               <form onSubmit={buyCredits} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) auto", gap: 12, alignItems: "end" }}>
                 <label className="field-group">
                   <span className="field-label">CREDIT PACKAGE</span>
@@ -303,7 +307,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                 </button>
               </form>
             ) : (
-              <p>Credit packages will appear here once Paystack is configured and package prices are added to the server environment.</p>
+              <p>Credit checkout is not active yet. Add your Paystack keys, Supabase server key and approved credit package prices to the Vercel environment.</p>
             )}
             {paymentMessage && <p role="status" className="save-feedback" style={{ marginTop: 12 }}>{paymentMessage}</p>}
           </section>
