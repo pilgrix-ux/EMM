@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   adminFetch,
   authenticateRequest,
@@ -6,6 +7,8 @@ import {
   paystackSecretIsConfigured,
   adminKeyIsConfigured,
 } from "../../../../lib/payments/server";
+
+export const runtime = "nodejs";
 
 function json(data, status = 200) {
   return Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
@@ -30,8 +33,9 @@ export async function POST(request) {
       throw new PaymentError("That credit package is unavailable. Refresh the dashboard and try again.", 400);
     }
 
-    const reference = "pilgrix-" + crypto.randomUUID().replace(/-/g, "");
+    const reference = "pilgrix-" + randomUUID().replace(/-/g, "");
     const amountSubunit = creditPackage.amountNaira * 100;
+    if (!Number.isSafeInteger(amountSubunit)) throw new PaymentError("This credit package amount is too large.", 400);
     const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
 
     await adminFetch("/rest/v1/credit_payments", {
