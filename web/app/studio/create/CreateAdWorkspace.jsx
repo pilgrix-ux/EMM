@@ -595,7 +595,10 @@ export default function CreateAdWorkspace() {
                           setError("This video is larger than 100 MB. Choose a smaller clip.");
                         } else {
                           setSelectedVideo(file);
+                          setSourcePath("");
+                          setFinishedVideoUrl("");
                           setError("");
+                          setNotice("");
                         }
                       }}
                     >
