@@ -16,6 +16,7 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -37,21 +38,26 @@ class MainActivity : Activity() {
     private lateinit var audienceInput: EditText
     private lateinit var adGoalInput: EditText
     private lateinit var benefitCount: TextView
+    private lateinit var videoSection: View
+    private lateinit var videoModeButton: View
+    private lateinit var ideaModeButton: View
 
     private var selectedVideo: Uri? = null
     private var videoView: VideoView? = null
+    private var isVideoMode = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = Color.rgb(238, 240, 244)
-        window.navigationBarColor = Color.rgb(238, 240, 244)
-        window.decorView.systemUiVisibility =
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.statusBarColor = Color.rgb(9, 11, 12)
+        window.navigationBarColor = Color.rgb(9, 11, 12)
+        window.decorView.systemUiVisibility = 0
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         setContentView(R.layout.activity_main)
         bindViews()
         setupInteractions()
+        setCreationMode(useVideo = true)
     }
 
     private fun bindViews() {
@@ -66,28 +72,27 @@ class MainActivity : Activity() {
         audienceInput = findViewById(R.id.audienceInput)
         adGoalInput = findViewById(R.id.adGoalInput)
         benefitCount = findViewById(R.id.benefitCount)
+        videoSection = findViewById(R.id.videoSection)
+        videoModeButton = findViewById(R.id.videoModeButton)
+        ideaModeButton = findViewById(R.id.ideaModeButton)
     }
 
     private fun setupInteractions() {
+        videoModeButton.setOnClickListener {
+            setCreationMode(useVideo = true)
+            if (selectedVideo == null) openVideoPicker()
+        }
+
+        ideaModeButton.setOnClickListener {
+            setCreationMode(useVideo = false)
+        }
+
         findViewById<TextView>(R.id.uploadClipButton).setOnClickListener {
             openVideoPicker()
         }
 
-        findViewById<TextView>(R.id.startWithVideoButton).setOnClickListener {
-            scrollTo(R.id.videoSection)
-            openVideoPicker()
-        }
-
         findViewById<TextView>(R.id.newAdButton).setOnClickListener {
-            scrollTo(R.id.videoSection)
-        }
-
-        findViewById<TextView>(R.id.exploreBriefButton).setOnClickListener {
-            scrollTo(R.id.briefSection)
-        }
-
-        findViewById<View>(R.id.homeDockButton).setOnClickListener {
-            scrollTo(R.id.homeTop)
+            resetDraft()
         }
 
         findViewById<TextView>(R.id.reviewBriefButton).setOnClickListener {
@@ -98,28 +103,36 @@ class MainActivity : Activity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                benefitCount.text = "${s?.length ?: 0} characters"
+                benefitCount.text = "\${s?.length ?: 0} / 500"
             }
 
             override fun afterTextChanged(s: Editable?) = Unit
         })
     }
 
-    private fun scrollTo(viewId: Int) {
-        val target = findViewById<View>(viewId)
-        contentScroll.post {
-            val targetLocation = IntArray(2)
-            val scrollLocation = IntArray(2)
-            target.getLocationOnScreen(targetLocation)
-            contentScroll.getLocationOnScreen(scrollLocation)
-            val targetScroll = contentScroll.scrollY +
-                targetLocation[1] - scrollLocation[1] - dp(10)
-            contentScroll.smoothScrollTo(0, targetScroll.coerceAtLeast(0))
-        }
+    private fun setCreationMode(useVideo: Boolean) {
+        isVideoMode = useVideo
+        videoSection.visibility = if (useVideo) View.VISIBLE else View.GONE
+        videoModeButton.setBackgroundResource(
+            if (useVideo) R.drawable.emm_dark_choice_active else R.drawable.emm_dark_choice
+        )
+        ideaModeButton.setBackgroundResource(
+            if (useVideo) R.drawable.emm_dark_choice else R.drawable.emm_dark_choice_active
+        )
+    }
+
+    private fun resetDraft() {
+        productNameInput.text?.clear()
+        productDescriptionInput.text?.clear()
+        audienceInput.text?.clear()
+        adGoalInput.text?.clear()
+        clearVideo()
+        setCreationMode(useVideo = true)
+        contentScroll.smoothScrollTo(0, 0)
+        Toast.makeText(this, "New ad started.", Toast.LENGTH_SHORT).show()
     }
 
     private fun openVideoPicker() {
-        // Android 13+ presents the system Photo Picker without opening a separate Gallery app.
         val pickerIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                 type = "video/*"
@@ -136,7 +149,7 @@ class MainActivity : Activity() {
         } catch (_: Exception) {
             Toast.makeText(
                 this,
-                "The system video picker is not available on this device.",
+                "The video picker is not available on this device.",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -145,10 +158,8 @@ class MainActivity : Activity() {
     @Deprecated("Uses Android's activity result callback for broad device compatibility.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         if (requestCode == VIDEO_PICKER_REQUEST && resultCode == RESULT_OK) {
-            val uri = data?.data ?: return
-            showVideo(uri)
+            data?.data?.let(::showVideo)
         }
     }
 
@@ -167,7 +178,7 @@ class MainActivity : Activity() {
             setOnErrorListener { _, _, _ ->
                 Toast.makeText(
                     this@MainActivity,
-                    "This video could not be previewed on this device.",
+                    "This clip cannot be previewed on this device.",
                     Toast.LENGTH_LONG
                 ).show()
                 true
@@ -187,7 +198,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(8), dp(8))
-            background = rounded(0xB8000000.toInt(), 13f, 0x33FFFFFF)
+            background = rounded(0xD9101415.toInt(), 13f, 0x44FFFFFF)
         }
 
         val fileName = TextView(this).apply {
@@ -207,9 +218,9 @@ class MainActivity : Activity() {
             text = "Remove"
             textSize = 9f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
+            setTextColor(0xFFE7EDE8.toInt())
             setPadding(dp(10), dp(7), dp(10), dp(7))
-            background = rounded(0x35FFFFFF, 30f)
+            background = rounded(0x44515A5B, 30f)
             isClickable = true
             isFocusable = true
             setOnClickListener { clearVideo() }
@@ -219,24 +230,21 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                marginStart = dp(8)
-            }
+            ).apply { marginStart = dp(8) }
         )
 
-        val metadataParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM
-        ).apply {
-            setMargins(dp(11), 0, dp(11), dp(11))
-        }
-        videoFrame.addView(metadata, metadataParams)
+        videoFrame.addView(
+            metadata,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
+            ).apply { setMargins(dp(10), 0, dp(10), dp(10)) }
+        )
 
         clipStatus.text = "VIDEO READY"
-        clipStatus.setTextColor(0xFF526600.toInt())
-        clipStatus.background = rounded(0xFFEAF4C9.toInt(), 30f)
-        sourceHint.text = "Video selected  ·  Preview ready"
+        clipStatus.setTextColor(0xFFD9F65A.toInt())
+        sourceHint.text = "Clip selected · Preview ready"
     }
 
     private fun getDisplayName(uri: Uri): String {
@@ -268,31 +276,30 @@ class MainActivity : Activity() {
             )
         )
 
-        clipStatus.text = "NO CLIP"
-        clipStatus.setTextColor(0xFF828A97.toInt())
-        clipStatus.background = rounded(0xFFF0F2F5.toInt(), 30f)
-        sourceHint.text = "Previewed locally on this device  ·  MP4 · MOV · WebM"
+        clipStatus.text = "NO VIDEO"
+        clipStatus.setTextColor(0xFF9BA3A2.toInt())
+        sourceHint.text = "Your video stays on this screen until you continue."
     }
 
     private fun reviewAdBrief() {
-        if (selectedVideo == null) {
-            Toast.makeText(this, "Choose a source video first.", Toast.LENGTH_SHORT).show()
-            scrollTo(R.id.videoSection)
+        val productName = productNameInput.text?.toString()?.trim().orEmpty()
+        val description = productDescriptionInput.text?.toString()?.trim().orEmpty()
+
+        if (isVideoMode && selectedVideo == null) {
+            Toast.makeText(this, "Choose a video first, or switch to Describe an idea.", Toast.LENGTH_LONG).show()
+            openVideoPicker()
             return
         }
 
-        val productName = productNameInput.text?.toString()?.trim().orEmpty()
-        val productDescription = productDescriptionInput.text?.toString()?.trim().orEmpty()
-
         if (productName.isBlank()) {
-            productNameInput.error = "Enter a product or service name"
+            productNameInput.error = "Enter a product or business name"
             productNameInput.requestFocus()
             scrollTo(R.id.briefSection)
             return
         }
 
-        if (productDescription.isBlank()) {
-            productDescriptionInput.error = "Describe the main benefit"
+        if (description.isBlank()) {
+            productDescriptionInput.error = "Describe what you are promoting"
             productDescriptionInput.requestFocus()
             scrollTo(R.id.briefSection)
             return
@@ -301,15 +308,20 @@ class MainActivity : Activity() {
         val audience = audienceInput.text?.toString()?.trim().orEmpty()
             .ifBlank { "Not specified" }
         val goal = adGoalInput.text?.toString()?.trim().orEmpty()
-            .ifBlank { "Introduce the product or service" }
+            .ifBlank { "Create awareness" }
 
         val summary = buildString {
-            append("Product or service: ").append(productName).append("\n\n")
-            append("Main benefit: ").append(productDescription).append("\n\n")
+            append("Creation type: ")
+                .append(if (isVideoMode) "Use a video" else "Describe an idea")
+                .append("\n\n")
+            append("Product or business: ").append(productName).append("\n\n")
+            append("Creative direction: ").append(description).append("\n\n")
             append("Audience: ").append(audience).append("\n\n")
-            append("Ad objective: ").append(goal).append("\n\n")
-            append("Source video: ").append(getDisplayName(selectedVideo!!)).append("\n\n")
-            append("Your brief is ready to review. AI planning and video rendering are not connected yet.")
+            append("Goal: ").append(goal)
+            if (isVideoMode) {
+                append("\n\nSource video: ").append(getDisplayName(selectedVideo!!))
+            }
+            append("\n\nYour brief is ready. AI planning and final video rendering will be connected to this native screen next.")
         }
 
         AlertDialog.Builder(this)
@@ -320,11 +332,20 @@ class MainActivity : Activity() {
             .show()
     }
 
-    private fun rounded(
-        color: Int,
-        radiusDp: Float,
-        strokeColor: Int? = null
-    ): GradientDrawable {
+    private fun scrollTo(viewId: Int) {
+        val target = findViewById<View>(viewId)
+        contentScroll.post {
+            val targetLocation = IntArray(2)
+            val scrollLocation = IntArray(2)
+            target.getLocationOnScreen(targetLocation)
+            contentScroll.getLocationOnScreen(scrollLocation)
+            val targetScroll = contentScroll.scrollY +
+                targetLocation[1] - scrollLocation[1] - dp(12)
+            contentScroll.smoothScrollTo(0, targetScroll.coerceAtLeast(0))
+        }
+    }
+
+    private fun rounded(color: Int, radiusDp: Float, strokeColor: Int? = null): GradientDrawable {
         return GradientDrawable().apply {
             setColor(color)
             cornerRadius = dp(radiusDp.toInt()).toFloat()
