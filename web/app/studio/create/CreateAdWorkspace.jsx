@@ -134,7 +134,10 @@ export default function CreateAdWorkspace() {
 
     if (signInError) {
       const message = String(signInError.message || "");
-      if (/anonymous|disabled|not enabled|captcha/i.test(message)) {
+      if (/captcha/i.test(message)) {
+        throw new Error("Guest sign-in is protected by CAPTCHA in Supabase. Configure CAPTCHA for anonymous sign-ins before enabling public guest access.");
+      }
+      if (/anonymous|disabled|not enabled/i.test(message)) {
         throw new Error("Guest access is not enabled yet. In Supabase, open Authentication → Settings and enable Anonymous Sign-Ins, then try again.");
       }
       throw new Error(message || "We couldn't start your private guest workspace.");
@@ -354,7 +357,10 @@ export default function CreateAdWorkspace() {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result?.error || "Could not check the render status.");
         setRenderMessage(result.message || "Your video is being processed.");
-        if (result.status === "failed") throw new Error(result.message || "The video render failed. You can retry it.");
+        if (result.status === "failed") {
+          setStage("plan");
+          throw new Error(result.message || "The video render failed. You can retry it.");
+        }
         if (result.ready || result.status === "done") {
           setStage("complete");
           setRenderMessage("Your finished video is ready.");
@@ -365,7 +371,6 @@ export default function CreateAdWorkspace() {
       setNotice("Your render is still processing. You can check again without starting a second render.");
     } catch (caught) {
       setError(caught?.message || "The render status could not be checked.");
-      setStage("plan");
     } finally {
       setBusy(false);
     }
@@ -382,10 +387,15 @@ export default function CreateAdWorkspace() {
     try {
       const client = getSupabase();
       const token = await getAccessToken();
+      const cleanScript = editedScript.trim();
+      const scriptWithSelectedHook = selectedHook
+        && !cleanScript.toLowerCase().startsWith(selectedHook.trim().toLowerCase())
+        ? selectedHook.trim() + "\n\n" + cleanScript
+        : cleanScript;
       const approvedPlan = {
         ...plan,
         selectedHook,
-        script: editedScript,
+        script: scriptWithSelectedHook,
         callToAction: editedCta,
       };
       const approvedSettings = { ...settings };
