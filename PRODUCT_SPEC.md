@@ -367,31 +367,31 @@ Design rules:
 
 ## 14. Current implementation status
 
-The repository now contains a web-first Next.js and Tailwind workspace in `web/`. The original Android prototype remains preserved in `app/` for reference; it is not the Vercel deployment target.
+The repository contains a web-first Next.js and Tailwind application in `web/`. The original Kotlin Android prototype remains under `app/` for reference and is not the Vercel deployment target.
 
-Already implemented:
-- Browser video file selection and local video preview/removal in the web workspace.
-- Local video playback and removal.
-- Structured product/service, benefit, audience, and goal fields.
-- 
-- Local brief validation and review dialog.
-- A local ad-brief review dialog.
-- Clear prototype labeling for services that are not connected.
+Implemented in the web code:
+- The root route opens the focused creator at `/studio/create`; the project dashboard remains at `/studio`.
+- Two starting modes: upload a source clip or describe an ad idea.
+- Local video preview, video type/size validation, and upload to the private Supabase source-video bucket.
+- A concise brief for product/service, benefit, audience, goal, platform, duration, style, captions, voiceover, and original audio.
+- Supabase anonymous guest sessions, with user-scoped project rows and private storage paths.
+- Secure server-side Gemini ad planning through `/api/ad-plan`.
+- A plan-review screen for choosing a hook, editing the script and call to action, and reviewing scenes.
+- Secure Shotstack rendering through `/api/render`, actual render-status polling, and authenticated MP4 download/preview.
+- A saved-project dashboard at `/studio`.
 
-Removed from the main workspace:
+Important limitations and setup:
+- Enable Supabase Anonymous Sign-Ins in the project Auth settings before testing guest creation. Add CAPTCHA protection and pass a CAPTCHA token for public production use.
+- Add `GEMINI_API_KEY` and a matching server-side Shotstack key to the Vercel environment. Keep provider keys out of browser code.
+- Gemini currently receives the written brief and source filename, not the actual video frames. Its scene directions are therefore suggestions for footage the user supplied, not visual-analysis results.
+- The description-only mode creates an ad plan, but it cannot produce a final video without source footage. A separate text-to-video integration is not connected.
+- The saved-project dashboard lists saved work, but opening, editing, and recovering old guest projects are not yet implemented. Guest access is tied to the browser session and cannot be recovered after clearing browser data.
+- The implementation has not yet been verified end-to-end on the deployed Vercel domain. Configure the services and run the full upload → plan → render → preview/download flow before treating it as production-ready.
+
+Removed from the main creator experience:
 - Horizontal starter-direction cards.
 - The old creative-tools strip.
-- The local demo chat panel.
-- The bottom message composer.
-
-Not implemented or connected:
-- Live AI planning.
-- Cloud upload and project persistence.
-- Actual video rendering.
-- User authentication.
-- Remote output storage and completed-video sharing flow.
-
-The ad-brief review is a local validation step, not an AI-generated script. The Build ad plan action does not render a video. The interface must continue to communicate these limitations until the services are implemented and tested.
+- The demo chat panel and message composer.
 
 ## 15. Delivery milestones
 
