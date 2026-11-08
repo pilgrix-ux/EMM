@@ -51,12 +51,12 @@ Shotstack's `stage` environment is for watermarked sandbox testing. Ordinary san
 - `emm-source-videos` is a private Storage bucket. Object paths must begin with the authenticated user's ID.
 - The bucket currently allows supported MP4, MOV, WebM, M4V and 3GPP video MIME types up to 100 MB.
 
-### Email confirmation
+### Guest sessions
 
-New accounts may require email confirmation. After deployment, set the Supabase Auth **Site URL** to the Vercel domain and add these Redirect URLs:
+The creation workspace uses Supabase Anonymous Sign-Ins so a new user can create an ad plan without entering an email address or password. Enable **Authentication → Settings → Allow anonymous sign-ins** in the Supabase Dashboard before testing the guest flow.
 
-- `http://localhost:3000/auth/callback`
-- `https://YOUR-VERCEL-DOMAIN/auth/callback`
+Anonymous users receive their own authenticated user ID, so the existing `auth.uid() = user_id` row policies and user-folder storage policies continue to isolate each workspace. A guest cannot recover their work after clearing browser data or moving to another device; add account linking before promising cross-device access. Supabase recommends CAPTCHA protection for public anonymous sign-in endpoints to reduce automated account creation. Configure CAPTCHA and pass its token to the anonymous sign-in call before opening the feature to unrestricted traffic.
+
 
 ## Vercel deployment
 

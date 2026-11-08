@@ -26,14 +26,16 @@ The `EMM` Supabase project is connected at the code level. The database has an o
 
 ## Current web experience
 
-- Responsive Pilgrix Ads Studio workspace with the lime, charcoal, and soft-neumorphic design system.
-- Browser video selection and local preview.
-- Product name, benefit, audience, and advertising goal fields.
-- Supabase email/password sign-up and sign-in.
-- Save a draft and upload its source clip to private storage.
-- Single-item floating Home navigation dock.
+- Mobile-first creation workspace at `/` and `/studio/create`, with separate video-upload and idea-description starting modes.
+- Local video preview and private upload to the `emm-source-videos` Supabase bucket (up to 100 MB).
+- A guided brief for product, benefit, audience, goal, platform, duration, and creative style.
+- Supabase anonymous guest sessions, so a first-time user can start without an email/password form.
+- Gemini-backed ad-plan generation through the secure `/api/ad-plan` route.
+- Hook selection, script and call-to-action editing, and a scene-by-scene review before rendering.
+- Shotstack rendering through the secure `/api/render` route, with real job-status checks and an authenticated MP4 download.
+- Saved-project dashboard at `/studio`.
 
-AI planning, cloud rendering, completed-video export, and the saved-project dashboard are not connected yet. The app does not claim otherwise.
+The AI planning and rendering routes are implemented, but they still require valid server-side Gemini and Shotstack keys. Anonymous Sign-Ins must also be enabled in the Supabase Auth settings. The text-only mode currently produces an ad plan; it cannot render a finished video until source footage or a separate text-to-video provider is available. The deployed end-to-end flow still needs verification.
 
 ## Android prototype
 
@@ -41,10 +43,9 @@ The original Kotlin Android prototype remains under `app/` for reference and opt
 
 ## Next milestones
 
-1. Deploy and verify the web workspace.
-2. Confirm Supabase email verification, sign-in, private upload, and RLS behavior on the deployed domain.
-3. Add a saved-project dashboard and draft editing.
-4. Connect secure AI planning.
-5. Connect background video rendering and real MP4 export.
+1. Enable Supabase Anonymous Sign-Ins and add appropriate CAPTCHA protection before opening guest creation publicly.
+2. Verify guest sessions, RLS, private video uploads, Gemini planning, Shotstack rendering, preview, and download on the deployed domain.
+3. Add project reopening/editing and a way for guest users to preserve access across devices.
+4. Add usage limits, cleanup for abandoned guest accounts, privacy controls, and operational monitoring.
 
 The detailed requirements are in [PRODUCT_SPEC.md](PRODUCT_SPEC.md).

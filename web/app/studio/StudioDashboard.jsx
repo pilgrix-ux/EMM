@@ -81,7 +81,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
     <main className="studio-page studio-page-refresh">
       <div className="studio-shell studio-shell-refresh">
         <header className="studio-v2-topbar">
-          <a className="studio-v2-brand" href="/studio" aria-label="Pilgrix Ads Studio workspace">
+          <a className="studio-v2-brand" href="/studio/create" aria-label="Pilgrix Ads Studio workspace">
             <span className="studio-v2-brand-mark">P</span>
             <span className="studio-v2-brand-copy">
               <strong>Pilgrix</strong>
@@ -191,8 +191,9 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
                 <span className="studio-v2-create-orbit" aria-hidden="true"><Icon name="spark" size={19} /></span>
                 <span className="studio-v2-create-kicker">MAKE YOUR NEXT MOVE</span>
                 <h2>Good ideas deserve great ads.</h2>
-                <p>Start with your footage. Build the story, review the scenes and create a video made to connect.</p>
-                <span className="studio-v2-create-note"><Icon name="upload" size={13} /> Start with a video from your device</span>
+                <p>Start with your footage or a simple idea. Shape the story, review the plan and make an ad worth watching.</p>
+                <a className="studio-v2-create-action" href="/studio/create"><Icon name="plus" size={15} /> Create an ad <Icon name="arrow" size={14} /></a>
+                <span className="studio-v2-create-note"><Icon name="upload" size={13} /> Video or idea — you choose</span>
               </section>
 
               <section className="studio-v2-panel studio-v2-steps-panel">
