@@ -49,6 +49,23 @@ export async function POST() {
     }
 
     const visitorId = await registerWorkspace(token);
+    if (created) {
+      const { supabaseUrl, publishableKey } = config();
+      await fetch(`${supabaseUrl}/rest/v1/rpc/track_workspace_event`, {
+        method: "POST",
+        headers: {
+          apikey: publishableKey,
+          "x-workspace-token": token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          p_event_name: "workspace_started",
+          p_project_id: null,
+          p_properties: { source: "web" },
+        }),
+        cache: "no-store",
+      }).catch(() => null);
+    }
     const response = NextResponse.json({ ok: true, visitorId });
     if (created) {
       response.cookies.set(COOKIE_NAME, token, {
