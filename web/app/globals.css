@@ -7812,14 +7812,16 @@ a:focus-visible {
 .creator-mode-option {
   position: relative;
   isolation: isolate;
+  box-sizing: border-box;
   overflow: hidden;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   min-height: 128px;
   display: grid;
-  grid-template-columns: 54px minmax(0,1fr) auto;
+  grid-template-columns: 54px minmax(0,1fr);
   align-items: center;
-  gap: 17px;
+  gap: 12px 17px;
   padding: 23px 25px;
   color: #fff;
   text-align: left;
@@ -7860,6 +7862,8 @@ a:focus-visible {
 }
 .creator-mode-option.is-active { border-left-color: #c8ef00; }
 .creator-mode-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
   width: 54px;
   height: 54px;
   display: grid;
@@ -7870,7 +7874,14 @@ a:focus-visible {
   background: rgba(200,239,0,.1);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
 }
-.creator-mode-copy { min-width: 0; display: grid; gap: 5px; }
+.creator-mode-copy {
+  grid-column: 2;
+  min-width: 0;
+  max-width: 100%;
+  display: grid;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
 .creator-mode-kicker {
   color: #c8ef00;
   font-size: 8px;
@@ -7878,18 +7889,31 @@ a:focus-visible {
   letter-spacing: .15em;
 }
 .creator-mode-copy strong {
+  min-width: 0;
+  max-width: 100%;
   color: #fff;
   font-size: 16px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
   font-weight: 820;
   letter-spacing: -.035em;
 }
 .creator-mode-copy small {
+  min-width: 0;
+  max-width: 100%;
   color: #b3bdc8;
   font-size: 10px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 .creator-mode-action {
+  grid-column: 2;
+  justify-self: start;
   display: inline-flex;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
   align-items: center;
   justify-content: center;
   gap: 10px;
@@ -8542,17 +8566,17 @@ a:focus-visible {
   .creator-mode-option {
     min-height: 0;
     grid-template-columns: 43px minmax(0,1fr);
-    gap: 12px;
+    gap: 10px 12px;
     padding: 17px 15px;
     border-radius: 17px;
   }
-  .creator-mode-icon { width: 43px; height: 43px; grid-row: 1 / 3; border-radius: 13px; }
+  .creator-mode-icon { width: 43px; height: 43px; grid-row: 1 / span 2; border-radius: 13px; }
   .creator-mode-icon svg { width: 21px; height: 21px; }
-  .creator-mode-copy { grid-column: 2; }
+  .creator-mode-copy { grid-column: 2; min-width: 0; }
   .creator-mode-copy strong { font-size: 14px; }
   .creator-mode-copy small { font-size: 9px; line-height: 1.5; }
   .creator-mode-kicker { font-size: 7px; }
-  .creator-mode-action { grid-column: 2; justify-self: start; min-height: 38px; margin-top: 6px; padding: 0 12px; font-size: 8px; }
+  .creator-mode-action { grid-column: 2; justify-self: start; min-height: 38px; margin-top: 2px; padding: 0 12px; font-size: 8px; }
   .creator-upload-section,.creator-brief-section,.creator-settings-section { margin-top: 22px; padding-top: 19px; }
   .creator-dropzone { min-height: 185px; padding: 23px 14px; }
   .creator-upload-symbol { width: 48px; height: 48px; }
@@ -8577,7 +8601,7 @@ a:focus-visible {
 }
 
 @media (max-width: 390px) {
-  .creator-mode-option { grid-template-columns: 37px minmax(0,1fr); gap: 10px; padding: 14px 12px; }
+  .creator-mode-option { grid-template-columns: 37px minmax(0,1fr); gap: 9px 10px; padding: 14px 12px; }
   .creator-mode-icon { width: 37px; height: 37px; }
   .creator-mode-copy strong { font-size: 12px; }
   .creator-mode-copy small { font-size: 8px; }
