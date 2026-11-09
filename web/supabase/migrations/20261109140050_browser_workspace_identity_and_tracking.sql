@@ -127,8 +127,8 @@ begin
 end;
 $function$;
 
-revoke all on function public.register_workspace_visitor(text) from public, authenticated;
-grant execute on function public.register_workspace_visitor(text) to anon;
+revoke all on function public.register_workspace_visitor(text) from public, anon, authenticated;
+grant execute on function public.register_workspace_visitor(text) to service_role;
 
 create or replace function public.track_workspace_event(
   p_token text,
