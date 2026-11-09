@@ -78,6 +78,7 @@ function wait(milliseconds) {
 export default function CreateAdWorkspace() {
   const fileInputRef = useRef(null);
   const clientRef = useRef(null);
+  const workspaceRef = useRef(null);
 
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
@@ -122,27 +123,54 @@ export default function CreateAdWorkspace() {
     return clientRef.current;
   }
 
-  async function getOrCreateSession(client) {
-    const { data: sessionData, error: sessionError } = await client.auth.getSession();
-    if (sessionError) throw new Error(sessionError.message || "Could not check your workspace session.");
-    if (sessionData?.session) return sessionData.session;
-
-    const { data, error: signInError } = await client.auth.signInAnonymously({
-      options: { data: { display_name: "Pilgrix guest" } },
-    });
-
-    if (signInError) {
-      const message = String(signInError.message || "");
-      if (/captcha/i.test(message)) {
-        throw new Error("Guest sign-in is protected by CAPTCHA in Supabase. Configure CAPTCHA for anonymous sign-ins before enabling public guest access.");
-      }
-      if (/anonymous|disabled|not enabled/i.test(message)) {
-        throw new Error("Guest access is not enabled yet. In Supabase, open Authentication → Settings and enable Anonymous Sign-Ins, then try again.");
-      }
-      throw new Error(message || "We couldn't start your private guest workspace.");
+  async function getWorkspace() {
+    if (!workspaceRef.current) {
+      workspaceRef.current = (async () => {
+        const response = await fetch("/api/workspace/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result?.visitorId) {
+          throw new Error(result?.error || "Your private workspace could not start. Refresh and try again.");
+        }
+        return { visitorId: result.visitorId, client: getSupabase() };
+      })().catch((error) => {
+        workspaceRef.current = null;
+        throw error;
+      });
     }
-    if (!data?.session) throw new Error("Supabase did not return a guest session. Please try again.");
-    return data.session;
+    return workspaceRef.current;
+  }
+
+  async function saveProject(method, id, fields) {
+    const response = await fetch("/api/workspace/projects", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, fields }),
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.project?.id) {
+      const error = new Error(result?.error || "Your ad project could not be saved.");
+      error.status = response.status;
+      throw error;
+    }
+    return result.project;
+  }
+
+  async function trackWorkspaceEvent(eventName, project = null, properties = {}) {
+    try {
+      await fetch("/api/workspace/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventName, projectId: project, properties }),
+        cache: "no-store",
+      });
+    } catch {
+      // Analytics must never interrupt ad creation.
+    }
   }
 
   function handleFileChange(event) {
@@ -186,22 +214,13 @@ export default function CreateAdWorkspace() {
 
     setBusy(true);
     try {
-      const client = getSupabase();
-      const session = await getOrCreateSession(client);
-      const user = session.user;
-      const token = session.access_token;
-      const savedSettings = {
-        ...settings,
-        platform: settings.platform,
-        aspectRatio: settings.aspectRatio,
-      };
+      const workspace = await getWorkspace();
+      const savedSettings = { ...settings };
       const cleanProductName = productName.trim().slice(0, 120) || "My product or service";
       const title = cleanProductName === "My product or service"
         ? description.trim().slice(0, 70)
         : cleanProductName;
-
       const projectFields = {
-        user_id: user.id,
         title: title || "Untitled ad",
         status: "plan_pending",
         product_name: cleanProductName,
@@ -217,21 +236,22 @@ export default function CreateAdWorkspace() {
 
       let activeProjectId = projectId;
       if (activeProjectId) {
-        const { error: updateError } = await client
-          .from("ad_projects")
-          .update(projectFields)
-          .eq("id", activeProjectId);
-        if (updateError) activeProjectId = "";
+        try {
+          await saveProject("PATCH", activeProjectId, projectFields);
+        } catch (caught) {
+          if (caught?.status !== 404) throw caught;
+          activeProjectId = "";
+          setProjectId("");
+        }
       }
       if (!activeProjectId) {
-        const { data: newProject, error: insertError } = await client
-          .from("ad_projects")
-          .insert(projectFields)
-          .select("id")
-          .single();
-        if (insertError) throw new Error(insertError.message || "Could not create your project.");
-        activeProjectId = newProject.id;
+        const savedProject = await saveProject("POST", null, projectFields);
+        activeProjectId = savedProject.id;
         setProjectId(activeProjectId);
+        await trackWorkspaceEvent("project_created", activeProjectId, {
+          platform: savedSettings.platform,
+          goal,
+        });
       }
 
       let activeSourcePath = sourcePath;
@@ -239,42 +259,53 @@ export default function CreateAdWorkspace() {
       if (selectedVideo) {
         sourceVideoName = selectedVideo.name;
         if (!activeSourcePath) {
-          const storagePath = user.id + "/" + activeProjectId + "/" + safeFilename(selectedVideo.name);
-          const { error: uploadError } = await client.storage
+          const grantResponse = await fetch("/api/workspace/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: activeProjectId,
+              fileName: selectedVideo.name,
+              contentType: selectedVideo.type,
+              size: selectedVideo.size,
+            }),
+            cache: "no-store",
+          });
+          const grant = await grantResponse.json().catch(() => ({}));
+          if (!grantResponse.ok || !grant.path || !grant.token) {
+            throw new Error(grant?.error || "A private upload could not be prepared.");
+          }
+
+          const { error: uploadError } = await workspace.client.storage
             .from("emm-source-videos")
-            .upload(storagePath, selectedVideo, {
+            .uploadToSignedUrl(grant.path, grant.token, selectedVideo, {
               contentType: selectedVideo.type,
               upsert: true,
               cacheControl: "3600",
             });
           if (uploadError) throw new Error(uploadError.message || "Your video could not be uploaded.");
-          activeSourcePath = storagePath;
-          setSourcePath(storagePath);
+          activeSourcePath = grant.path;
+          setSourcePath(grant.path);
         }
 
-        const { error: sourceUpdateError } = await client
-          .from("ad_projects")
-          .update({
-            source_video_path: activeSourcePath,
-            source_video_name: sourceVideoName || selectedVideo.name,
-            source_video_mime_type: selectedVideo.type,
-            source_video_size_bytes: selectedVideo.size,
-          })
-          .eq("id", activeProjectId);
-        if (sourceUpdateError) throw new Error(sourceUpdateError.message || "Your video was uploaded but could not be attached to the project.");
+        await saveProject("PATCH", activeProjectId, {
+          source_video_path: activeSourcePath,
+          source_video_name: sourceVideoName || selectedVideo.name,
+          source_video_mime_type: selectedVideo.type,
+          source_video_size_bytes: selectedVideo.size,
+        });
+        await trackWorkspaceEvent("video_uploaded", activeProjectId, {
+          contentType: selectedVideo.type,
+          sizeBytes: selectedVideo.size,
+        });
       } else {
         activeSourcePath = "";
         setSourcePath("");
-        const { error: clearSourceError } = await client
-          .from("ad_projects")
-          .update({
-            source_video_path: null,
-            source_video_name: null,
-            source_video_mime_type: null,
-            source_video_size_bytes: null,
-          })
-          .eq("id", activeProjectId);
-        if (clearSourceError) throw new Error(clearSourceError.message || "Could not update the project source.");
+        await saveProject("PATCH", activeProjectId, {
+          source_video_path: null,
+          source_video_name: null,
+          source_video_mime_type: null,
+          source_video_size_bytes: null,
+        });
       }
 
       const brief = {
@@ -294,11 +325,9 @@ export default function CreateAdWorkspace() {
 
       const planResponse = await fetch("/api/ad-plan", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          projectId: activeProjectId,
           brief,
           sourceVideoName: sourceVideoName || selectedVideo?.name || "Selected source video",
         }),
@@ -310,19 +339,18 @@ export default function CreateAdWorkspace() {
       }
 
       const nextPlan = planResult.plan;
-      const { error: planSaveError } = await client
-        .from("ad_projects")
-        .update({
-          title: nextPlan.projectTitle || title || "Untitled ad",
-          ad_plan: nextPlan,
-          ad_plan_approved_at: null,
-          status: "plan_ready",
-          creative_settings: savedSettings,
-        })
-        .eq("id", activeProjectId);
-      if (planSaveError) throw new Error(planSaveError.message || "The plan was created but could not be saved.");
+      await saveProject("PATCH", activeProjectId, {
+        title: nextPlan.projectTitle || title || "Untitled ad",
+        ad_plan: nextPlan,
+        ad_plan_approved_at: null,
+        status: "plan_ready",
+        creative_settings: savedSettings,
+      });
 
-      setProjectId(activeProjectId);
+      await trackWorkspaceEvent("ad_plan_generated", activeProjectId, {
+        platform: savedSettings.platform,
+        durationSeconds: savedSettings.targetDuration,
+      });
       setPlan(nextPlan);
       setSelectedHook(nextPlan.selectedHook || nextPlan.hooks?.[0] || "");
       setEditedScript(nextPlan.script || "");
@@ -337,20 +365,13 @@ export default function CreateAdWorkspace() {
     }
   }
 
-  async function getAccessToken() {
-    const client = getSupabase();
-    const session = await getOrCreateSession(client);
-    return session.access_token;
-  }
-
-  async function monitorRender(token) {
+  async function monitorRender() {
     setBusy(true);
     setError("");
     try {
       for (let attempt = 0; attempt < 45; attempt += 1) {
         await wait(4000);
         const response = await fetch("/api/render?projectId=" + encodeURIComponent(projectId), {
-          headers: { Authorization: "Bearer " + token },
           cache: "no-store",
         });
         const result = await response.json().catch(() => ({}));
@@ -384,8 +405,7 @@ export default function CreateAdWorkspace() {
     setError("");
     setNotice("");
     try {
-      const client = getSupabase();
-      const token = await getAccessToken();
+      await getWorkspace();
       const cleanScript = editedScript.trim();
       const scriptWithSelectedHook = selectedHook
         && !cleanScript.toLowerCase().startsWith(selectedHook.trim().toLowerCase())
@@ -399,23 +419,20 @@ export default function CreateAdWorkspace() {
       };
       const approvedSettings = { ...settings };
 
-      const { error: saveError } = await client
-        .from("ad_projects")
-        .update({
-          ad_plan: approvedPlan,
-          ad_plan_approved_at: new Date().toISOString(),
-          status: "render_queued",
-          creative_settings: approvedSettings,
-        })
-        .eq("id", projectId);
-      if (saveError) throw new Error(saveError.message || "Could not save your approved ad plan.");
+      await saveProject("PATCH", projectId, {
+        ad_plan: approvedPlan,
+        ad_plan_approved_at: new Date().toISOString(),
+        status: "render_queued",
+        creative_settings: approvedSettings,
+      });
+      await trackWorkspaceEvent("render_started", projectId, {
+        platform: approvedSettings.platform,
+        durationSeconds: approvedSettings.targetDuration,
+      });
 
       const response = await fetch("/api/render", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId }),
         cache: "no-store",
       });
@@ -423,11 +440,21 @@ export default function CreateAdWorkspace() {
       if (!response.ok) throw new Error(result?.error || "The rendering service could not start.");
       setStage("rendering");
       setRenderMessage(result.message || "Your video has been queued for rendering.");
-      await monitorRender(token);
+      await monitorRender();
     } catch (caught) {
       setError(caught?.message || "The video render could not start.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleCheckRender() {
+    setError("");
+    try {
+      await getWorkspace();
+      await monitorRender();
+    } catch (caught) {
+      setError(caught?.message || "Could not reconnect to your workspace.");
     }
   }
 
@@ -445,10 +472,10 @@ export default function CreateAdWorkspace() {
     setLoadingPreview(true);
     setError("");
     try {
-      const token = await getAccessToken();
+      await getWorkspace();
       const response = await fetch(
         "/api/render?projectId=" + encodeURIComponent(projectId) + "&download=1",
-        { headers: { Authorization: "Bearer " + token }, cache: "no-store" }
+        { cache: "no-store" }
       );
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -476,6 +503,7 @@ export default function CreateAdWorkspace() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    void trackWorkspaceEvent("video_downloaded", projectId, {});
   }
 
   function startAnotherAd() {
