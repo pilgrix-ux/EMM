@@ -256,6 +256,7 @@ export default function CreateAdWorkspace() {
 
       let activeSourcePath = sourcePath;
       let sourceVideoName = "";
+      let didUploadVideo = false;
       if (selectedVideo) {
         sourceVideoName = selectedVideo.name;
         if (!activeSourcePath) {
@@ -284,6 +285,7 @@ export default function CreateAdWorkspace() {
             });
           if (uploadError) throw new Error(uploadError.message || "Your video could not be uploaded.");
           activeSourcePath = grant.path;
+          didUploadVideo = true;
           setSourcePath(grant.path);
         }
 
@@ -293,10 +295,12 @@ export default function CreateAdWorkspace() {
           source_video_mime_type: selectedVideo.type,
           source_video_size_bytes: selectedVideo.size,
         });
-        await trackWorkspaceEvent("video_uploaded", activeProjectId, {
-          contentType: selectedVideo.type,
-          sizeBytes: selectedVideo.size,
-        });
+        if (didUploadVideo) {
+          await trackWorkspaceEvent("video_uploaded", activeProjectId, {
+            contentType: selectedVideo.type,
+            sizeBytes: selectedVideo.size,
+          });
+        }
       } else {
         activeSourcePath = "";
         setSourcePath("");
@@ -425,11 +429,6 @@ export default function CreateAdWorkspace() {
         status: "render_queued",
         creative_settings: approvedSettings,
       });
-      await trackWorkspaceEvent("render_started", projectId, {
-        platform: approvedSettings.platform,
-        durationSeconds: approvedSettings.targetDuration,
-      });
-
       const response = await fetch("/api/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
