@@ -1,3 +1,5 @@
+import { getWorkspaceContext, workspaceHeaders } from "../../../lib/supabase/server";
+
 export const runtime = "nodejs";
 export const maxDuration = 45;
 
@@ -50,26 +52,28 @@ export async function POST(request) {
     }, 503);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const authorization = request.headers.get("authorization");
-  if (!supabaseUrl || !supabaseKey || !authorization?.startsWith("Bearer ")) {
-    return json({ error: "Sign in to your Pilgrix workspace before generating an ad plan." }, 401);
-  }
-
   try {
-    const authResponse = await fetch(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: authorization,
-      },
-      cache: "no-store",
-    });
-    if (!authResponse.ok) {
-      return json({ error: "Your Pilgrix session is not valid. Sign in again to continue." }, 401);
+    const workspace = await getWorkspaceContext();
+    const body = await request.json().catch(() => ({}));
+    const projectId = text(body?.projectId, 80);
+    if (!/^[0-9a-f-]{36}$/i.test(projectId)) {
+      return json({ error: "Save your ad project before asking Pilgrix to build its plan." }, 400);
     }
 
-    const body = await request.json();
+    const projectQuery = new URLSearchParams({
+      id: `eq.${projectId}`,
+      visitor_id: `eq.${workspace.visitorId}`,
+      select: "id",
+    });
+    const projectResponse = await fetch(`${workspace.supabaseUrl}/rest/v1/ad_projects?${projectQuery}`, {
+      headers: workspaceHeaders(workspace),
+      cache: "no-store",
+    });
+    const ownedRows = await projectResponse.json().catch(() => []);
+    if (!projectResponse.ok || !Array.isArray(ownedRows) || !ownedRows.length) {
+      return json({ error: "This ad project is not in the current browser workspace." }, 404);
+    }
+
     const brief = body?.brief || {};
     const productName = text(brief.productName, 120);
     const benefit = text(brief.benefit);
