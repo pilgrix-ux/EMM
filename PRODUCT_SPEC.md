@@ -374,18 +374,18 @@ Implemented in the web code:
 - Two starting modes: upload a source clip or describe an ad idea.
 - Local video preview, video type/size validation, and upload to the private Supabase source-video bucket.
 - A concise brief for product/service, benefit, audience, goal, platform, duration, style, captions, voiceover, and original audio.
-- Supabase anonymous guest sessions, with user-scoped project rows and private storage paths.
+- No-sign-in browser workspaces, with HttpOnly workspace cookies, hashed visitor identifiers, visitor-scoped project rows, and usage-event tracking.
 - Secure server-side Gemini ad planning through `/api/ad-plan`.
 - A plan-review screen for choosing a hook, editing the script and call to action, and reviewing scenes.
-- Secure Shotstack rendering through `/api/render`, actual render-status polling, and authenticated MP4 download/preview.
+- Secure Shotstack rendering through `/api/render`, actual render-status polling, and browser-workspace-scoped MP4 download/preview.
 - A saved-project dashboard at `/studio`.
 
 Important limitations and setup:
-- Enable Supabase Anonymous Sign-Ins in the project Auth settings before testing guest creation. Add CAPTCHA protection and pass a CAPTCHA token for public production use.
+- Supabase Auth is not used for the initial browser workspace. A random browser key is held in an HttpOnly cookie and stored only as a hash in the database. Work is tied to that browser; clearing cookies or changing devices starts a new workspace.
 - Add `GEMINI_API_KEY` and a matching server-side Shotstack key to the Vercel environment. Keep provider keys out of browser code.
 - Gemini currently receives the written brief and source filename, not the actual video frames. Its scene directions are therefore suggestions for footage the user supplied, not visual-analysis results.
 - The description-only mode creates an ad plan, but it cannot produce a final video without source footage. A separate text-to-video integration is not connected.
-- The saved-project dashboard lists saved work, but opening, editing, and recovering old guest projects are not yet implemented. Guest access is tied to the browser session and cannot be recovered after clearing browser data.
+- The saved-project dashboard lists projects belonging to the current browser workspace. Opening, editing, and recovering work after clearing browser data or moving to another device are not yet implemented.
 - The implementation has not yet been verified end-to-end on the deployed Vercel domain. Configure the services and run the full upload → plan → render → preview/download flow before treating it as production-ready.
 
 Removed from the main creator experience:
@@ -415,7 +415,7 @@ Removed from the main creator experience:
 - Preview and save/share finished MP4 files.
 
 ### Milestone 4 — Production readiness
-- Add authentication and per-user access controls.
+- Add abuse controls, rate limits, and workspace cleanup; introduce account linking only if cross-device recovery is needed.
 - Add deletion, privacy, usage limits, monitoring, and support.
 - Test on modern mobile and desktop browsers, including slower network conditions.
 - Consider billing after actual infrastructure costs and reliability are understood.
