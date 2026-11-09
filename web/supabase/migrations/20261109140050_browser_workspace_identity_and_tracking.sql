@@ -131,37 +131,42 @@ revoke all on function public.register_workspace_visitor(text) from public, auth
 grant execute on function public.register_workspace_visitor(text) to anon;
 
 create or replace function public.track_workspace_event(
+  p_token text,
   p_event_name text,
   p_project_id uuid default null,
   p_properties jsonb default '{}'::jsonb
 )
-returns void
-language plpgsql
-security definer
-set search_path = ''
+returns void language plpgsql security definer set search_path = ''
 as $function$
 declare
   v_visitor_id uuid;
+  v_token_digest text;
 begin
-  v_visitor_id := private.current_workspace_visitor_id();
+  if p_token is null or length(p_token) <> 43
+     or p_token !~ '^[A-Za-z0-9_-]{43}$' then
+    raise exception 'A valid browser workspace key is required' using errcode = '22023';
+  end if;
+
+  v_token_digest := encode(
+    extensions.digest(convert_to(p_token, 'UTF8'), 'sha256'),
+    'hex'
+  );
+
+  select visitor.id into v_visitor_id
+  from private.workspace_visitors as visitor
+  where visitor.token_hash = v_token_digest
+    and visitor.expires_at > now()
+  limit 1;
 
   if v_visitor_id is null then
-    raise exception 'Workspace key is missing or expired'
-      using errcode = '28000';
+    raise exception 'Workspace key is missing or expired' using errcode = '28000';
   end if;
 
   if p_event_name not in (
-    'workspace_started',
-    'project_created',
-    'video_uploaded',
-    'ad_plan_generated',
-    'render_started',
-    'render_completed',
-    'render_failed',
-    'video_downloaded'
+    'workspace_started','project_created','video_uploaded','ad_plan_generated',
+    'render_started','render_completed','render_failed','video_downloaded'
   ) then
-    raise exception 'Unsupported workspace event'
-      using errcode = '22023';
+    raise exception 'Unsupported workspace event' using errcode = '22023';
   end if;
 
   if p_properties is null or jsonb_typeof(p_properties) <> 'object'
@@ -171,37 +176,26 @@ begin
   end if;
 
   if p_project_id is not null and not exists (
-    select 1
-    from public.ad_projects as project
-    where project.id = p_project_id
-      and project.visitor_id = v_visitor_id
+    select 1 from public.ad_projects as project
+    where project.id = p_project_id and project.visitor_id = v_visitor_id
   ) then
-    raise exception 'Project does not belong to this workspace'
-      using errcode = '42501';
+    raise exception 'Project does not belong to this workspace' using errcode = '42501';
   end if;
 
-  insert into private.workspace_events (
-    visitor_id, project_id, event_name, properties
-  )
-  values (
-    v_visitor_id,
-    p_project_id,
-    p_event_name,
-    p_properties
-  );
+  insert into private.workspace_events (visitor_id, project_id, event_name, properties)
+  values (v_visitor_id, p_project_id, p_event_name, p_properties);
 
   update private.workspace_visitors
   set last_seen_at = case
     when last_seen_at < now() - interval '5 minutes' then now()
-    else last_seen_at
-  end,
-  expires_at = now() + interval '365 days'
+    else last_seen_at end,
+    expires_at = now() + interval '365 days'
   where id = v_visitor_id;
 end;
 $function$;
 
-revoke all on function public.track_workspace_event(text, uuid, jsonb) from public, authenticated;
-grant execute on function public.track_workspace_event(text, uuid, jsonb) to anon;
+revoke all on function public.track_workspace_event(text, text, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.track_workspace_event(text, text, uuid, jsonb) to service_role;
 
 grant select, insert, update, delete on public.ad_projects to anon;
 
