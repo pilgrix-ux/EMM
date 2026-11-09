@@ -57,7 +57,16 @@ Pilgrix does not create Supabase Auth users and does not show a sign-in form. On
 
 The workspace cookie stays on that browser. Clearing site cookies/data or using another browser/device creates a different workspace; there is no cross-device recovery until an account-linking feature is intentionally added. This is a privacy-friendly pseudonymous visitor identity, not a verified person identity.
 
-`private.workspace_events` records workspace starts, project creation, video uploads, plan generation, render starts/completions/failures, and downloads. Event properties are limited and do not include an email address. Private Storage is accessed through the `workspace-storage` Edge Function: it validates the workspace token and project ownership, then issues one-file signed upload grants or short-lived signed download links. The service-role key remains inside the Supabase Edge Function and is never sent to the browser or Vercel frontend.
+`private.workspace_events` records workspace starts, project creation, video uploads, plan generation, render starts/completions/failures, and downloads. Event properties are limited and do not include an email address. These records stay in the private schema and are not exposed to the browser. For an internal usage snapshot, query `private.workspace_events` by event name and date from the Supabase SQL Editor.
+
+Private Storage is accessed through the `workspace-storage` Edge Function: it validates the workspace token and project ownership, then issues one-file signed upload grants or short-lived signed download links. The function source is in `web/supabase/functions/workspace-storage/index.ts`, and `web/supabase/config.toml` sets its `verify_jwt = false` setting because the function performs its own workspace-token validation. Deploy it to the same Supabase project with:
+
+```bash
+cd web
+supabase functions deploy workspace-storage --project-ref kjncppfwujuedesyyswk
+```
+
+The service-role key remains inside the Supabase Edge Function runtime and is never sent to the browser or Vercel frontend.
 
 
 ## Vercel deployment
