@@ -528,31 +528,6 @@ export default function CreateAdWorkspace() {
         {isInputStage ? (
           <form className="creator-workspace" onSubmit={handleGenerate}>
             <section className="creator-start-panel">
-              <div className="creator-panel-heading">
-                <div>
-                  <span className="creator-step-label">01 / START YOUR AD</span>
-                  <h2>Start with a video</h2>
-                  <p>Bring your footage. Pilgrix helps shape it into a polished ad.</p>
-                </div>
-              </div>
-
-              <div className="creator-mode-grid" aria-label="Video workflow">
-                <button
-                  className="creator-mode-option is-active"
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Choose a video to start creating an ad"
-                >
-                  <span className="creator-mode-icon"><Icon name="video" size={24} /></span>
-                  <span className="creator-mode-copy">
-                    <span className="creator-mode-kicker">VIDEO WORKFLOW</span>
-                    <strong>Start with video</strong>
-                    <small>Use a product clip or existing footage as the foundation for your ad.</small>
-                  </span>
-                  <span className="creator-mode-action">Choose video <Icon name="arrow" size={15} /></span>
-                </button>
-              </div>
-
               <div className="creator-upload-section">
                   <div className="creator-subheading">
                     <div><strong>Upload your footage</strong><small>Choose a clip or drag it into the upload area.</small></div>
