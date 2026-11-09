@@ -67,15 +67,14 @@ export async function POST() {
       }).catch(() => null);
     }
     const response = NextResponse.json({ ok: true, visitorId });
-    if (created) {
-      response.cookies.set(COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: COOKIE_AGE,
-      });
-    }
+    // Refresh the one-year browser workspace lifetime on each successful visit.
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: COOKIE_AGE,
+    });
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   } catch (error) {
