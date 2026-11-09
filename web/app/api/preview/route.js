@@ -1,3 +1,5 @@
+import { getWorkspaceContext, workspaceStorage } from "../../../lib/supabase/server";
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -47,58 +49,24 @@ function getProviderConfig() {
   };
 }
 
-async function authorize(request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const authorization = request.headers.get("authorization");
-
-  if (!supabaseUrl || !publishableKey) {
-    throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
+async function authorize() {
+  try {
+    return await getWorkspaceContext();
+  } catch (error) {
+    throw new ApiError(error?.message || "Your private browser workspace could not be verified.", error?.status || 401);
   }
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new ApiError("Sign in to prepare a compatible video preview.", 401);
-  }
-
-  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: publishableKey, Authorization: authorization },
-    cache: "no-store",
-  });
-  const user = await readResponse(response);
-  if (!response.ok || !user?.id) {
-    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
-  }
-
-  return { supabaseUrl, publishableKey, authorization, user };
 }
 
-async function createPrivateSourceUrl(storagePath, auth) {
-  const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
-  const response = await fetch(
-    `${auth.supabaseUrl}/storage/v1/object/sign/${BUCKET}/${encodedPath}`,
-    {
-      method: "POST",
-      headers: {
-        apikey: auth.publishableKey,
-        Authorization: auth.authorization,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ expiresIn: 86400 }),
-      cache: "no-store",
-    }
-  );
-  const result = await readResponse(response);
-  if (!response.ok || !result?.signedURL) {
-    throw new ApiError(
-      cleanText(result?.message || result?.error, 240)
-        || "Pilgrix could not prepare the private video for conversion.",
-      502
-    );
+async function createPrivateSourceUrl(storagePath, projectId, auth) {
+  const result = await workspaceStorage(auth, {
+    action: "sign-download",
+    projectId,
+    path: storagePath,
+  });
+  if (!result?.signedUrl) {
+    throw new ApiError("Pilgrix could not prepare the private video for conversion.", 502);
   }
-
-  const signedPath = String(result.signedURL);
-  if (/^https:\/\//i.test(signedPath)) return signedPath;
-  if (signedPath.startsWith("/storage/v1/")) return auth.supabaseUrl + signedPath;
-  return auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
+  return result.signedUrl;
 }
 
 async function shotstackFetch(url, apiKey, options = {}) {
@@ -126,17 +94,18 @@ async function shotstackFetch(url, apiKey, options = {}) {
   return data;
 }
 
-function createPreviewToken(sourceId, userId, apiKey) {
+function createPreviewToken(sourceId, projectId, visitorId, apiKey) {
   const payload = Buffer.from(JSON.stringify({
     sourceId,
-    userId,
+    projectId,
+    visitorId,
     expiresAt: Date.now() + 60 * 60 * 1000,
   })).toString("base64url");
   const signature = createHmac("sha256", apiKey).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
 
-function verifyPreviewToken(token, userId, apiKey) {
+function verifyPreviewToken(token, visitorId, apiKey) {
   const [payload, signature, extra] = String(token || "").split(".");
   if (!payload || !signature || extra) {
     throw new ApiError("This preview session is invalid. Prepare the preview again.", 400);
@@ -159,8 +128,8 @@ function verifyPreviewToken(token, userId, apiKey) {
   } catch {
     throw new ApiError("This preview session is invalid. Prepare the preview again.", 400);
   }
-  if (decoded.userId !== userId) {
-    throw new ApiError("This preview belongs to a different Pilgrix account.", 403);
+  if (decoded.visitorId !== visitorId || !/^[0-9a-f-]{36}$/i.test(decoded.projectId || "")) {
+    throw new ApiError("This preview belongs to a different browser workspace.", 403);
   }
   if (!Number.isFinite(decoded.expiresAt) || decoded.expiresAt < Date.now()) {
     throw new ApiError("This preview session has expired. Prepare the preview again.", 410);
@@ -173,22 +142,25 @@ function verifyPreviewToken(token, userId, apiKey) {
 
 async function handlePost(request) {
   const provider = getProviderConfig();
-  const auth = await authorize(request);
+  const auth = await authorize();
   const body = await request.json().catch(() => ({}));
+  const projectId = cleanText(body?.projectId, 80);
   const storagePath = cleanText(body?.storagePath, 500);
   const parts = storagePath.split("/");
 
   if (
-    parts.length !== 3
-    || parts[0] !== auth.user.id
-    || parts[1] !== "preview"
-    || !/^[a-z0-9._-]{1,180}$/i.test(parts[2])
+    !/^[0-9a-f-]{36}$/i.test(projectId)
+    || parts.length !== 4
+    || parts[0] !== auth.visitorId
+    || parts[1] !== projectId
+    || parts[2] !== "preview"
+    || !/^[a-z0-9._-]{1,180}$/i.test(parts[3])
     || storagePath.includes("..")
   ) {
-    throw new ApiError("The temporary video path is invalid for this Pilgrix account.", 403);
+    throw new ApiError("The temporary video path is invalid for this browser workspace.", 403);
   }
 
-  const sourceUrl = await createPrivateSourceUrl(storagePath, auth);
+  const sourceUrl = await createPrivateSourceUrl(storagePath, projectId, auth);
   const queued = await shotstackFetch(`${provider.ingestBaseUrl}/sources`, provider.apiKey, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -212,7 +184,7 @@ async function handlePost(request) {
   }
 
   return json({
-    token: createPreviewToken(sourceId, auth.user.id, provider.apiKey),
+    token: createPreviewToken(sourceId, projectId, auth.visitorId, provider.apiKey),
     status: "queued",
     message: "Your video is being converted into a browser-friendly MP4.",
   }, 202);
@@ -220,9 +192,9 @@ async function handlePost(request) {
 
 async function handleGet(request) {
   const provider = getProviderConfig();
-  const auth = await authorize(request);
+  const auth = await authorize();
   const url = new URL(request.url);
-  const preview = verifyPreviewToken(url.searchParams.get("token"), auth.user.id, provider.apiKey);
+  const preview = verifyPreviewToken(url.searchParams.get("token"), auth.visitorId, provider.apiKey);
 
   const result = await shotstackFetch(
     `${provider.ingestBaseUrl}/sources/${encodeURIComponent(preview.sourceId)}`,
@@ -239,35 +211,19 @@ async function handleGet(request) {
   // If a previous ready response was interrupted after Shotstack deletion,
   // re-issue a signed link to the already-copied private Supabase rendition.
   if (sourceStatus === "deleted") {
-    const storagePath = `${auth.user.id}/preview-output/${preview.sourceId}.mp4`;
-    const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
-    const signResponse = await fetch(
-      `${auth.supabaseUrl}/storage/v1/object/sign/${BUCKET}/${encodedPath}`,
-      {
-        method: "POST",
-        headers: {
-          apikey: auth.publishableKey,
-          Authorization: auth.authorization,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ expiresIn: 86400 }),
-        cache: "no-store",
-      }
-    );
-    const signed = await readResponse(signResponse);
-    if (!signResponse.ok || !signed?.signedURL) {
+    const storagePath = `${auth.visitorId}/${preview.projectId}/preview-${preview.sourceId}.mp4`;
+    const saved = await workspaceStorage(auth, {
+      action: "sign-download",
+      projectId: preview.projectId,
+      path: storagePath,
+    });
+    if (!saved?.signedUrl) {
       throw new ApiError("The temporary conversion has ended, but Pilgrix could not recover the private preview. Prepare it again.", 409);
     }
-    const signedPath = String(signed.signedURL);
-    const privateUrl = /^https:\/\//i.test(signedPath)
-      ? signedPath
-      : signedPath.startsWith("/storage/v1/")
-        ? auth.supabaseUrl + signedPath
-        : auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
     return json({
       status: "ready",
       sourceIngested: true,
-      url: privateUrl,
+      url: saved.signedUrl,
       storagePath,
       message: "Compatible MP4 ready in your private Pilgrix workspace.",
     });
@@ -295,71 +251,15 @@ async function handleGet(request) {
       throw new ApiError("The converted preview returned an untrusted video host.", 502);
     }
 
-    // Store the rendition in the user's private bucket before deleting the
-    // link-accessible Shotstack source and its generated renditions.
-    const mediaResponse = await fetch(previewUrl.toString(), { cache: "no-store" });
-    if (!mediaResponse.ok || !mediaResponse.body) {
-      throw new ApiError("The converted MP4 could not be retrieved from the video service.", 502);
+    const saved = await workspaceStorage(auth, {
+      action: "store-preview",
+      projectId: preview.projectId,
+      sourceId: preview.sourceId,
+      sourceUrl: previewUrl.toString(),
+    });
+    if (!saved?.signedUrl || !saved?.path) {
+      throw new ApiError("Pilgrix could not save the converted preview to your private workspace.", 502);
     }
-    const contentLength = Number(mediaResponse.headers.get("content-length") || 0);
-    if (contentLength > 104857600) {
-      throw new ApiError("The compatible preview is larger than Pilgrix's 100 MB private storage limit.", 413);
-    }
-    const mediaBuffer = Buffer.from(await mediaResponse.arrayBuffer());
-    if (!mediaBuffer.length || mediaBuffer.length > 104857600) {
-      throw new ApiError("The compatible preview is empty or exceeds Pilgrix's 100 MB private storage limit.", 413);
-    }
-
-    const storagePath = `${auth.user.id}/preview-output/${preview.sourceId}.mp4`;
-    const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
-    const uploadResponse = await fetch(
-      `${auth.supabaseUrl}/storage/v1/object/${BUCKET}/${encodedPath}`,
-      {
-        method: "POST",
-        headers: {
-          apikey: auth.publishableKey,
-          Authorization: auth.authorization,
-          "Content-Type": "video/mp4",
-          "Cache-Control": "3600",
-          "x-upsert": "true",
-        },
-        body: mediaBuffer,
-        cache: "no-store",
-      }
-    );
-    if (!uploadResponse.ok) {
-      const uploadError = await readResponse(uploadResponse);
-      throw new ApiError(
-        cleanText(uploadError?.message || uploadError?.error, 240)
-          || "Pilgrix could not save the compatible preview to your private workspace.",
-        502
-      );
-    }
-
-    const signResponse = await fetch(
-      `${auth.supabaseUrl}/storage/v1/object/sign/${BUCKET}/${encodedPath}`,
-      {
-        method: "POST",
-        headers: {
-          apikey: auth.publishableKey,
-          Authorization: auth.authorization,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ expiresIn: 86400 }),
-        cache: "no-store",
-      }
-    );
-    const signed = await readResponse(signResponse);
-    if (!signResponse.ok || !signed?.signedURL) {
-      throw new ApiError("Pilgrix saved the preview but could not create its private playback link.", 502);
-    }
-
-    const signedPath = String(signed.signedURL);
-    const privateUrl = /^https:\/\//i.test(signedPath)
-      ? signedPath
-      : signedPath.startsWith("/storage/v1/")
-        ? auth.supabaseUrl + signedPath
-        : auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
 
     // Shotstack's DELETE /sources/{id} also deletes generated renditions.
     await shotstackFetch(
@@ -371,8 +271,8 @@ async function handleGet(request) {
     return json({
       status: "ready",
       sourceIngested: true,
-      url: privateUrl,
-      storagePath,
+      url: saved.signedUrl,
+      storagePath: saved.path,
       message: "Compatible MP4 ready in your private Pilgrix workspace. Temporary Shotstack media has been deleted.",
     });
   }
