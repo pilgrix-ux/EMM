@@ -522,7 +522,7 @@ export default function CreateAdWorkspace() {
         <section className="creator-heading">
           <span className="creator-eyebrow"><i /> YOUR AI ADVERTISING STUDIO</span>
           <h1>Let's make something <span>that sells.</span></h1>
-          <p>Start with a video or describe your idea. Pilgrix turns your direction into an ad plan you can review and refine.</p>
+          <p>Upload your footage. Pilgrix helps turn it into a polished ad plan you can review and refine.</p>
         </section>
 
         {isInputStage ? (
