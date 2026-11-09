@@ -1,10 +1,12 @@
+import { getWorkspaceContext, workspaceHeaders, workspaceStorage, trackWorkspaceEvent } from "../../../lib/supabase/server";
+
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_TEXT = 4000;
 const PROJECT_FIELDS = [
   "id",
-  "user_id",
+  "visitor_id",
   "source_video_path",
   "source_video_name",
   "creative_settings",
@@ -54,28 +56,12 @@ async function readResponse(response) {
   return response.json().catch(() => ({}));
 }
 
-async function authorize(request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const authorization = request.headers.get("authorization");
-
-  if (!supabaseUrl || !publishableKey) {
-    throw new ApiError("The Pilgrix Supabase connection is not configured.", 503);
+async function authorize() {
+  try {
+    return await getWorkspaceContext();
+  } catch (error) {
+    throw new ApiError(error?.message || "Your private browser workspace could not be verified.", error?.status || 401);
   }
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new ApiError("Sign in to your Pilgrix workspace before rendering a video.", 401);
-  }
-
-  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: publishableKey, Authorization: authorization },
-    cache: "no-store",
-  });
-  const user = await readResponse(response);
-  if (!response.ok || !user?.id) {
-    throw new ApiError("Your Pilgrix session has expired. Sign in again and retry.", 401);
-  }
-
-  return { supabaseUrl, publishableKey, authorization, user };
 }
 
 async function getProject(projectId, auth) {
@@ -85,14 +71,11 @@ async function getProject(projectId, auth) {
 
   const query = new URLSearchParams({
     id: `eq.${projectId}`,
+    visitor_id: `eq.${auth.visitorId}`,
     select: PROJECT_FIELDS,
   });
   const response = await fetch(`${auth.supabaseUrl}/rest/v1/ad_projects?${query}`, {
-    headers: {
-      apikey: auth.publishableKey,
-      Authorization: auth.authorization,
-      Accept: "application/json",
-    },
+    headers: workspaceHeaders(auth, { Accept: "application/json" }),
     cache: "no-store",
   });
   const rows = await readResponse(response);
@@ -104,14 +87,14 @@ async function getProject(projectId, auth) {
   }
 
   const project = Array.isArray(rows) ? rows[0] : null;
-  if (!project || project.user_id !== auth.user.id) {
-    throw new ApiError("This saved project could not be found in your workspace.", 404);
+  if (!project || project.visitor_id !== auth.visitorId) {
+    throw new ApiError("This saved project could not be found in your browser workspace.", 404);
   }
   if (!project.source_video_path || !project.ad_plan) {
     throw new ApiError("Save an approved ad plan with its source video before rendering.", 400);
   }
-  if (!project.source_video_path.startsWith(auth.user.id + "/")) {
-    throw new ApiError("The source video does not belong to this workspace.", 403);
+  if (!project.source_video_path.startsWith(auth.visitorId + "/" + project.id + "/")) {
+    throw new ApiError("The source video does not belong to this workspace project.", 403);
   }
   return project;
 }
@@ -124,16 +107,18 @@ async function updateCreativeSettings(project, auth, patch, projectStatus = null
     creative_settings: { ...settings, ...patch },
     ...(projectStatus ? { status: projectStatus } : {}),
   };
+  const query = new URLSearchParams({
+    id: `eq.${project.id}`,
+    visitor_id: `eq.${auth.visitorId}`,
+  });
   const response = await fetch(
-    `${auth.supabaseUrl}/rest/v1/ad_projects?id=eq.${project.id}&user_id=eq.${auth.user.id}`,
+    `${auth.supabaseUrl}/rest/v1/ad_projects?${query}`,
     {
       method: "PATCH",
-      headers: {
-        apikey: auth.publishableKey,
-        Authorization: auth.authorization,
+      headers: workspaceHeaders(auth, {
         "Content-Type": "application/json",
         Prefer: "return=minimal",
-      },
+      }),
       body: JSON.stringify(update),
       cache: "no-store",
     }
@@ -148,35 +133,15 @@ async function updateCreativeSettings(project, auth, patch, projectStatus = null
 }
 
 async function createSourceUrl(project, auth) {
-  const encodedPath = project.source_video_path
-    .split("/")
-    .map((part) => encodeURIComponent(part))
-    .join("/");
-  const response = await fetch(
-    `${auth.supabaseUrl}/storage/v1/object/sign/emm-source-videos/${encodedPath}`,
-    {
-      method: "POST",
-      headers: {
-        apikey: auth.publishableKey,
-        Authorization: auth.authorization,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ expiresIn: 86400 }),
-      cache: "no-store",
-    }
-  );
-  const result = await readResponse(response);
-  if (!response.ok || !result?.signedURL) {
-    throw new ApiError(
-      cleanText(result?.message || result?.error, 240) || "Pilgrix could not prepare the private source video for rendering.",
-      502
-    );
+  const result = await workspaceStorage(auth, {
+    action: "sign-download",
+    projectId: project.id,
+    path: project.source_video_path,
+  });
+  if (!result?.signedUrl) {
+    throw new ApiError("Pilgrix could not prepare the private source video for rendering.", 502);
   }
-
-  const signedPath = String(result.signedURL);
-  if (/^https:\/\//i.test(signedPath)) return signedPath;
-  if (signedPath.startsWith("/storage/v1/")) return auth.supabaseUrl + signedPath;
-  return auth.supabaseUrl + "/storage/v1" + (signedPath.startsWith("/") ? signedPath : "/" + signedPath);
+  return result.signedUrl;
 }
 
 function buildTextAsset(text, size = 48) {
@@ -475,7 +440,7 @@ async function getHostedVideoUrl(renderId, status, provider) {
 
 async function handlePost(request) {
   const provider = getProviderConfig();
-  const auth = await authorize(request);
+  const auth = await authorize();
   const body = await request.json().catch(() => ({}));
   const project = await getProject(body?.projectId, auth);
   const sourceUrl = await createSourceUrl(project, auth);
@@ -501,6 +466,15 @@ async function handlePost(request) {
     shotstackOutputDurationSeconds: edit.output.range.length,
   }, "render_queued");
 
+  try {
+    await trackWorkspaceEvent(auth, "render_started", project.id, {
+      environment: provider.environment,
+      durationSeconds: edit.output.range.length,
+    });
+  } catch {
+    // Activity logging is best-effort and must not interrupt a render.
+  }
+
   return json({
     renderId,
     status: "queued",
@@ -511,7 +485,7 @@ async function handlePost(request) {
 
 async function handleGet(request) {
   const provider = getProviderConfig();
-  const auth = await authorize(request);
+  const auth = await authorize();
   const url = new URL(request.url);
   const project = await getProject(url.searchParams.get("projectId"), auth);
   const settings = project.creative_settings && typeof project.creative_settings === "object"
@@ -536,6 +510,12 @@ async function handleGet(request) {
         ? "render_queued"
         : "rendering";
   await updateCreativeSettings(project, auth, patch, projectStatus);
+
+  if (status.status === "done" && settings.shotstackRenderStatus !== "done") {
+    try { await trackWorkspaceEvent(auth, "render_completed", project.id, { credits: status.credits }); } catch {}
+  } else if (status.status === "failed" && settings.shotstackRenderStatus !== "failed") {
+    try { await trackWorkspaceEvent(auth, "render_failed", project.id, { message: cleanText(status.message, 220) }); } catch {}
+  }
 
   if (url.searchParams.get("download") === "1") {
     if (status.status !== "done") {
