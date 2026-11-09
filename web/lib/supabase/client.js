@@ -1,4 +1,4 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 let browserClient;
 
@@ -7,11 +7,17 @@ export function createClient() {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
-    throw new Error("Supabase is not configured. Add the public URL and publishable key.");
+    throw new Error("The private video upload service is not configured.");
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient(url, publishableKey);
+    browserClient = createSupabaseClient(url, publishableKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
 
   return browserClient;

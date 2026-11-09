@@ -1,0 +1,4 @@
+project_id = "kjncppfwujuedesyyswk"
+
+[functions.workspace-storage]
+verify_jwt = false

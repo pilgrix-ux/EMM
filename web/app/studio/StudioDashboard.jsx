@@ -64,7 +64,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
     user?.user_metadata?.full_name?.trim() ||
     user?.user_metadata?.name?.trim() ||
     user?.email?.split("@")[0] ||
-    "there";
+    "Creator";
   const firstName = displayName.split(/[ ._-]/)[0] || "there";
   const initials = displayName
     .split(/\s+/)
@@ -89,10 +89,10 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
             </span>
           </a>
 
-          <div className="studio-v2-actions" aria-label="Signed-in account">
-            <span className="studio-v2-user-chip" title={user?.email || "Guest workspace"}>
+          <div className="studio-v2-actions" aria-label="Private browser workspace">
+            <span className="studio-v2-user-chip" title={user?.email || "Saved on this browser"}>
               <span className="studio-v2-user-avatar" aria-hidden="true">{initials}</span>
-              <span className="studio-v2-user-label">{sessionError ? "Session check" : user?.email || "Guest workspace"}</span>
+              <span className="studio-v2-user-label">{sessionError ? "Workspace unavailable" : user?.email || "This browser"}</span>
             </span>
           </div>
         </header>
@@ -102,7 +102,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
             <div className="studio-v2-welcome-copy">
               <span className="studio-v2-eyebrow"><i /> YOUR CREATIVE WORKSPACE</span>
               <h1>{sessionError ? "Reconnecting your workspace." : user ? `Welcome back, ${firstName}.` : "Your creative workspace."}</h1>
-              <p>{sessionError ? "We couldn’t verify your sign-in on this request. Retry the workspace to reconnect without clearing your session." : user ? "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching." : "Start with a video, build your ad and review every edit before you render. Sign in when you’re ready to save your work."}</p>
+              <p>{sessionError ? "We couldn’t open your private browser workspace. Check your connection and try again." : user ? "Bring your next idea to life. Pick up where you left off or turn a fresh video into an ad worth watching." : "Build your ad, review every edit and come back to your saved work on this browser."}</p>
             </div>
           </section>
 
@@ -149,8 +149,8 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
               {projectsError || sessionError ? (
                 <div className="studio-v2-empty studio-v2-empty-error" role="alert">
                   <span className="studio-v2-empty-icon"><Icon name="folder" size={22} /></span>
-                  <h3>{sessionError ? "We couldn’t verify your session just now." : "We couldn’t load your projects."}</h3>
-                  <p>{sessionError ? "Your sign-in has not been cleared. This may be a temporary connection issue. Retry the workspace to check your session again." : "Your account is still signed in. Refresh the workspace to try loading your saved work again."}</p>
+                  <h3>{sessionError ? "We couldn’t open your browser workspace just now." : "We couldn’t load your projects."}</h3>
+                  <p>{sessionError ? "Your saved work is still attached to this browser. Check your connection and retry the workspace." : "Your private workspace is still available. Refresh to try loading your saved work again."}</p>
                   <a className="button button-quiet studio-v2-retry-button" href="/studio">{sessionError ? "Retry workspace" : "Refresh projects"}</a>
                 </div>
               ) : projects.length ? (
@@ -179,7 +179,7 @@ export default function StudioDashboard({ user, projects = [], stats = {}, proje
               ) : (
                 <div className="studio-v2-empty">
                   <span className="studio-v2-empty-icon"><Icon name="film" size={22} /></span>
-                  <h3>Your first ad starts with a video.</h3>
+                  <h3>Your first ad starts with an idea.</h3>
                   <p>Upload a product clip, add a few details and shape it into a polished creative. Your saved work will appear here.</p>
                   
                 </div>
