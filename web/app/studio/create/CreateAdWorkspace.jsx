@@ -458,16 +458,6 @@ export default function CreateAdWorkspace() {
     }
   }
 
-  async function handleCheckRender() {
-    setError("");
-    try {
-      const token = await getAccessToken();
-      await monitorRender(token);
-    } catch (caught) {
-      setError(caught?.message || "Could not reconnect to the render service.");
-    }
-  }
-
   async function handleLoadPreview() {
     setLoadingPreview(true);
     setError("");
