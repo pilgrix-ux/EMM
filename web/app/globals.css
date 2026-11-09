@@ -9148,3 +9148,10 @@ a:focus-visible {
   .creator-project-link,
   .creator-primary-button { transition: none; }
 }
+
+/* Keep the upload area at the top after removing the video workflow card. */
+.creator-start-panel > .creator-upload-section {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
