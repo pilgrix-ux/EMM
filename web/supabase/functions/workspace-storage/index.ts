@@ -56,7 +56,7 @@ const admin = createClient(supabaseUrl, serviceKey, {
 
 async function resolveVisitor(token: string) {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
-  const { data, error } = await admin.rpc("resolve_workspace_token", { p_token: token });
+  const { data, error } = await admin.rpc("register_workspace_visitor", { p_token: token });
   if (error || !validUuid(data)) return null;
   return data;
 }
@@ -85,16 +85,51 @@ Deno.serve(async (request: Request) => {
   if (!supabaseUrl || !serviceKey) return json({ error: "Storage service is not configured." }, 503);
 
   const token = request.headers.get("x-workspace-token") ?? "";
+  const body = await request.json().catch(() => ({}));
+  const action = text(body?.action, 40);
   const visitorId = await resolveVisitor(token);
   if (!visitorId) return json({ error: "This browser workspace is invalid or has expired. Refresh the page and try again." }, 401);
 
-  const body = await request.json().catch(() => ({}));
-  const action = text(body?.action, 40);
-  const projectId = text(body?.projectId, 80);
-  const project = await ownedProject(projectId, visitorId);
-  if (!project) return json({ error: "This project was not found in the current browser workspace." }, 404);
+  if (action === "register") {
+    return json({ visitorId });
+  }
 
   try {
+    if (action === "track-event") {
+      const eventName = text(body?.eventName, 40);
+      const allowed = new Set([
+        "workspace_started", "project_created", "video_uploaded",
+        "ad_plan_generated", "render_started", "render_completed",
+        "render_failed", "video_downloaded",
+      ]);
+      if (!allowed.has(eventName)) return json({ error: "Unsupported workspace event." }, 400);
+
+      const projectId = text(body?.projectId, 80);
+      if (projectId && !await ownedProject(projectId, visitorId)) {
+        return json({ error: "This project was not found in the current browser workspace." }, 404);
+      }
+
+      const properties = body?.properties && typeof body.properties === "object" && !Array.isArray(body.properties)
+        ? body.properties
+        : {};
+      if (JSON.stringify(properties).length > 4000) {
+        return json({ error: "The activity details are too large." }, 400);
+      }
+
+      const { error } = await admin.rpc("track_workspace_event", {
+        p_token: token,
+        p_event_name: eventName,
+        p_project_id: projectId || null,
+        p_properties: properties,
+      });
+      if (error) return json({ error: error.message || "Workspace activity could not be recorded." }, 502);
+      return json({ ok: true });
+    }
+
+    const projectId = text(body?.projectId, 80);
+    const project = await ownedProject(projectId, visitorId);
+    if (!project) return json({ error: "This project was not found in the current browser workspace." }, 404);
+
     if (action === "create-upload") {
       const fileName = safeFilename(body?.fileName);
       const contentType = text(body?.contentType, 80).toLowerCase();
