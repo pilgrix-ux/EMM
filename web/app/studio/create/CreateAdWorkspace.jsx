@@ -79,7 +79,6 @@ export default function CreateAdWorkspace() {
   const fileInputRef = useRef(null);
   const clientRef = useRef(null);
 
-  const [mode, setMode] = useState("video");
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
   const [audience, setAudience] = useState("");
@@ -180,8 +179,8 @@ export default function CreateAdWorkspace() {
       setError("Describe what you're advertising and what you want people to do.");
       return;
     }
-    if (mode === "video" && !selectedVideo && !sourcePath) {
-      setError("Choose a video clip first, or switch to Describe an ad.");
+    if (!selectedVideo && !sourcePath) {
+      setError("Choose a video clip first.");
       return;
     }
 
@@ -237,7 +236,7 @@ export default function CreateAdWorkspace() {
 
       let activeSourcePath = sourcePath;
       let sourceVideoName = "";
-      if (mode === "video" && selectedVideo) {
+      if (selectedVideo) {
         sourceVideoName = selectedVideo.name;
         if (!activeSourcePath) {
           const storagePath = user.id + "/" + activeProjectId + "/" + safeFilename(selectedVideo.name);
@@ -301,7 +300,7 @@ export default function CreateAdWorkspace() {
         },
         body: JSON.stringify({
           brief,
-          sourceVideoName: mode === "video" ? sourceVideoName || selectedVideo?.name || "Selected source video" : "No source video",
+          sourceVideoName: sourceVideoName || selectedVideo?.name || "Selected source video",
         }),
         cache: "no-store",
       });
@@ -328,9 +327,9 @@ export default function CreateAdWorkspace() {
       setSelectedHook(nextPlan.selectedHook || nextPlan.hooks?.[0] || "");
       setEditedScript(nextPlan.script || "");
       setEditedCta(nextPlan.callToAction || "");
-      setPlanIncludesVideo(Boolean(mode === "video" && activeSourcePath));
+      setPlanIncludesVideo(Boolean(activeSourcePath));
       setStage("plan");
-      setNotice(mode === "video" ? "Your ad plan is ready to review." : "Your idea has become an ad plan. Add footage when you're ready to render.");
+      setNotice("Your ad plan is ready to review.");
     } catch (caught) {
       setError(caught?.message || "Something interrupted ad creation. Please try again.");
     } finally {
@@ -480,7 +479,6 @@ export default function CreateAdWorkspace() {
   }
 
   function startAnotherAd() {
-    setMode("video");
     setProductName("");
     setDescription("");
     setAudience("");
@@ -534,37 +532,24 @@ export default function CreateAdWorkspace() {
                 <div>
                   <span className="creator-step-label">01 / START YOUR AD</span>
                   <h2>How would you like to start?</h2>
-                  <p>Choose a video to work with, or start with an idea.</p>
+                  <p>Start with a video clip and turn it into an ad.</p>
                 </div>
               </div>
 
-              <div className="creator-mode-grid" role="group" aria-label="Choose a starting method">
+              <div className="creator-mode-grid" aria-label="Starting method">
                 <button
-                  className={"creator-mode-option" + (mode === "video" ? " is-active" : "")}
+                  className="creator-mode-option is-active"
                   type="button"
-                  onClick={() => { setMode("video"); setError(""); }}
-                  aria-pressed={mode === "video"}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <span className="creator-mode-icon"><Icon name="video" size={22} /></span>
-                  <span className="creator-mode-copy"><strong>Use a video</strong><small>Upload a clip and turn it into an ad.</small></span>
+                  <span className="creator-mode-copy"><strong>Start with video</strong><small>Upload a clip and turn it into an ad.</small></span>
                   <span className="creator-mode-check"><Icon name="check" size={13} /></span>
-                  <span className="creator-mode-tag">BEST FOR A FINISHED VIDEO</span>
-                </button>
-                <button
-                  className={"creator-mode-option" + (mode === "idea" ? " is-active" : "")}
-                  type="button"
-                  onClick={() => { setMode("idea"); setError(""); }}
-                  aria-pressed={mode === "idea"}
-                >
-                  <span className="creator-mode-icon"><Icon name="text" size={22} /></span>
-                  <span className="creator-mode-copy"><strong>Describe an ad</strong><small>Start with a product, service or idea.</small></span>
-                  <span className="creator-mode-check"><Icon name="check" size={13} /></span>
-                  <span className="creator-mode-tag">START WITH WORDS</span>
+                  <span className="creator-mode-tag">YOUR FOOTAGE, REIMAGINED</span>
                 </button>
               </div>
 
-              {mode === "video" && (
-                <div className="creator-upload-section">
+              <div className="creator-upload-section">
                   <div className="creator-subheading">
                     <div><strong>Your source video</strong><small>One clip is enough to get started.</small></div>
                     <span>MAX 100 MB</span>
@@ -616,8 +601,6 @@ export default function CreateAdWorkspace() {
                     onChange={handleFileChange}
                   />
                 </div>
-              )}
-
               <div className="creator-brief-section">
                 <div className="creator-subheading">
                   <div><strong>Tell us about the ad</strong><small>A few clear details help the AI make a stronger plan.</small></div>
@@ -813,7 +796,7 @@ export default function CreateAdWorkspace() {
                 <div className="creator-idea-only-note">
                   <span className="creator-idea-icon"><Icon name="spark" size={18} /></span>
                   <div><strong>Your ad plan is ready. Video rendering needs footage.</strong><p>Text-to-video generation is not connected yet. Add a source clip to turn this plan into a finished MP4.</p></div>
-                  <button type="button" onClick={() => { setMode("video"); setStage("input"); setError(""); }}>Add a video</button>
+                  <button type="button" onClick={() => { setStage("input"); setError(""); }}>Add a video</button>
                 </div>
               )}
               {error && <p className="creator-error" role="alert">{error}</p>}
