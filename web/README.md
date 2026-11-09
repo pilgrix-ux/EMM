@@ -8,7 +8,6 @@ This folder is the web-first Pilgrix Ads Studio application.
 - React
 - Tailwind CSS v4
 - Supabase Postgres and private Storage with browser workspace identity (no Supabase Auth)
-- Supabase Postgres and private Storage
 - Responsive mobile and desktop UI
 
 ## Local development
