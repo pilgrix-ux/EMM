@@ -531,28 +531,32 @@ export default function CreateAdWorkspace() {
               <div className="creator-panel-heading">
                 <div>
                   <span className="creator-step-label">01 / START YOUR AD</span>
-                  <h2>How would you like to start?</h2>
-                  <p>Start with a video clip and turn it into an ad.</p>
+                  <h2>Start with a video</h2>
+                  <p>Bring your footage. Pilgrix helps shape it into a polished ad.</p>
                 </div>
               </div>
 
-              <div className="creator-mode-grid" aria-label="Starting method">
+              <div className="creator-mode-grid" aria-label="Video workflow">
                 <button
                   className="creator-mode-option is-active"
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
+                  aria-label="Choose a video to start creating an ad"
                 >
-                  <span className="creator-mode-icon"><Icon name="video" size={22} /></span>
-                  <span className="creator-mode-copy"><strong>Start with video</strong><small>Upload a clip and turn it into an ad.</small></span>
-                  <span className="creator-mode-check"><Icon name="check" size={13} /></span>
-                  <span className="creator-mode-tag">YOUR FOOTAGE, REIMAGINED</span>
+                  <span className="creator-mode-icon"><Icon name="video" size={24} /></span>
+                  <span className="creator-mode-copy">
+                    <span className="creator-mode-kicker">VIDEO WORKFLOW</span>
+                    <strong>Start with video</strong>
+                    <small>Use a product clip or existing footage as the foundation for your ad.</small>
+                  </span>
+                  <span className="creator-mode-action">Choose video <Icon name="arrow" size={15} /></span>
                 </button>
               </div>
 
               <div className="creator-upload-section">
                   <div className="creator-subheading">
-                    <div><strong>Your source video</strong><small>One clip is enough to get started.</small></div>
-                    <span>MAX 100 MB</span>
+                    <div><strong>Upload your footage</strong><small>Choose a clip or drag it into the upload area.</small></div>
+                    <span>UP TO 100 MB</span>
                   </div>
 
                   {selectedVideo && videoUrl ? (
@@ -588,9 +592,9 @@ export default function CreateAdWorkspace() {
                       }}
                     >
                       <span className="creator-upload-symbol"><Icon name="upload" size={23} /></span>
-                      <strong>Choose a video from your device</strong>
+                      <strong>Drop your video here</strong>
                       <small>MP4, MOV, WebM or M4V · Up to 100 MB</small>
-                      <span className="creator-browse-label">Browse videos <Icon name="arrow" size={14} /></span>
+                      <span className="creator-browse-label">Browse files <Icon name="arrow" size={14} /></span>
                     </button>
                   )}
                   <input
