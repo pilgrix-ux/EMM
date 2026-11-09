@@ -18,23 +18,31 @@ function config() {
   return { supabaseUrl, publishableKey };
 }
 
-async function registerWorkspace(token) {
+async function callWorkspaceBroker(token, payload) {
   const { supabaseUrl, publishableKey } = config();
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/register_workspace_visitor`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/workspace-storage`, {
     method: "POST",
     headers: {
       apikey: publishableKey,
       "x-workspace-token": token,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ p_token: token }),
+    body: JSON.stringify(payload),
     cache: "no-store",
   });
-  const visitorId = await response.json().catch(() => null);
-  if (!response.ok || !/^[0-9a-f-]{36}$/i.test(String(visitorId || ""))) {
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result?.error || "The private browser workspace could not be registered.");
+  }
+  return result;
+}
+
+async function registerWorkspace(token) {
+  const result = await callWorkspaceBroker(token, { action: "register" });
+  if (!/^[0-9a-f-]{36}$/i.test(String(result?.visitorId || ""))) {
     throw new Error("The private browser workspace could not be registered.");
   }
-  return visitorId;
+  return result.visitorId;
 }
 
 export async function POST() {
@@ -50,20 +58,10 @@ export async function POST() {
 
     const visitorId = await registerWorkspace(token);
     if (created) {
-      const { supabaseUrl, publishableKey } = config();
-      await fetch(`${supabaseUrl}/rest/v1/rpc/track_workspace_event`, {
-        method: "POST",
-        headers: {
-          apikey: publishableKey,
-          "x-workspace-token": token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          p_event_name: "workspace_started",
-          p_project_id: null,
-          p_properties: { source: "web" },
-        }),
-        cache: "no-store",
+      await callWorkspaceBroker(token, {
+        action: "track-event",
+        eventName: "workspace_started",
+        properties: { source: "web" },
       }).catch(() => null);
     }
     const response = NextResponse.json({ ok: true, visitorId });
